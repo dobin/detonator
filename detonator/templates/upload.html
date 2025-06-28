@@ -4,7 +4,13 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-6">Upload File for Analysis</h2>
+    <h2 class="text-2xl font-bold mb-6">Upload File (Storage Only)</h2>
+    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+        <p class="text-blue-800">
+            <strong>Note:</strong> This page only uploads files for storage. No automatic analysis will be started. 
+            To upload and start analysis immediately, use the <a href="/" class="underline">home page</a>.
+        </p>
+    </div>
     
     <form 
         hx-post="/api/upload" 
@@ -24,7 +30,7 @@
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-            <p class="text-gray-500 text-sm mt-1">Upload any file for malware analysis</p>
+            <p class="text-gray-500 text-sm mt-1">Upload any file for storage (no analysis will be started)</p>
         </div>
 
         <div>
@@ -59,7 +65,7 @@
                 type="submit" 
                 class="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-                Upload & Start Analysis
+                Upload File (Storage Only)
             </button>
             <a 
                 href="/files" 
@@ -94,7 +100,7 @@
                                 <div class="mt-2 text-sm text-green-700">
                                     <p><strong>Filename:</strong> ${response.filename}</p>
                                     <p><strong>Hash:</strong> ${response.file_hash}</p>
-                                    <p>Analysis has been automatically started with status "fresh".</p>
+                                    <p>File has been stored. You can manually create a scan from the files page.</p>
                                 </div>
                                 <div class="mt-4">
                                     <div class="flex space-x-2">

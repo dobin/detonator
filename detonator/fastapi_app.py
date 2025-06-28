@@ -34,6 +34,39 @@ async def upload_file(
     comment: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
+    """Upload a file without automatically creating a scan"""
+    # Read file content
+    content = await file.read()
+    file_hash = File.calculate_hash(content)
+    
+    # Check if file already exists
+    existing_file = db.query(File).filter(File.file_hash == file_hash).first()
+    if existing_file:
+        raise HTTPException(status_code=400, detail="File with this hash already exists")
+    
+    # Create file record
+    db_file = File(
+        content=content,
+        filename=file.filename,
+        file_hash=file_hash,
+        source_url=source_url,
+        comment=comment
+    )
+    db.add(db_file)
+    db.commit()
+    db.refresh(db_file)
+    
+    return db_file
+
+@app.post("/api/files/upload-and-scan", response_model=FileResponse)
+async def upload_file_and_scan(
+    file: UploadFile = FastAPIFile(...),
+    source_url: Optional[str] = Form(None),
+    comment: Optional[str] = Form(None),
+    vm_template: Optional[str] = Form(None),
+    edr_template: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
     """Upload a file and automatically create a scan"""
     # Read file content
     content = await file.read()
@@ -56,10 +89,12 @@ async def upload_file(
     db.commit()
     db.refresh(db_file)
     
-    # Automatically create a scan with status "fresh"
+    # Automatically create a scan with status "fresh" and template info
     db_scan = Scan(
         file_id=db_file.id,
-        status="fresh"
+        status="fresh",
+        vm_template=vm_template,
+        edr_template=edr_template
     )
     db.add(db_scan)
     db.commit()

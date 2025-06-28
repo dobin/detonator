@@ -7,27 +7,20 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        .htmx-indicator {
-            opacity: 0;
-            transition: opacity 500ms ease-in;
-        }
-        .htmx-request .htmx-indicator {
-            opacity: 1;
-        }
-        .htmx-request.htmx-indicator {
-            opacity: 1;
-        }
+
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">Detonator</h1>
-            <div class="space-x-4">
-                <a href="/" class="hover:text-blue-200">Home</a>
-                <a href="/files" class="hover:text-blue-200">Files</a>
-                <a href="/scans" class="hover:text-blue-200">Scans</a>
-                <a href="/upload" class="hover:text-blue-200">Upload</a>
+        <div class="container mx-auto">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1 class="text-xl font-bold">Detonator</h1>
+                <div>
+                    <a href="/" style="color: white; text-decoration: none; margin-right: 20px;">Home</a>
+                    <a href="/files" style="color: white; text-decoration: none; margin-right: 20px;">Files</a>
+                    <a href="/scans" style="color: white; text-decoration: none; margin-right: 20px;">Scans</a>
+                    <a href="/upload" style="color: white; text-decoration: none;">Upload</a>
+                </div>
             </div>
         </div>
     </nav>
