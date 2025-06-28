@@ -7,6 +7,7 @@ import time
 
 from .database import get_background_db, Scan
 from .vm_manager import get_vm_manager
+from .utils import mylog
 
 logger = logging.getLogger(__name__)
 
@@ -110,59 +111,44 @@ class VMMonitorTask:
         vm_name = db_scan.vm_instance_name
         time_elapsed = current_time - db_scan.created_at
         
-        # Get current VM status from Azure
         if not vm_name:
             return
             
+        # UPDATE: scan azure_status based on Azure VM status
         vm_status = vm_manager.get_vm_status(vm_name)
-        
-        # Update scan status based on VM status
         if db_scan.azure_status != vm_status:
             db_scan.updated_at = current_time
-
-            logger.info(f"Scan {db_scan.id} VM status changed: {db_scan.azure_status} -> {vm_status}")
+            db_scan.detonator_srv_logs += mylog("VM Monitor: Azure VM status changed: {db_scan.azure_status} -> {vm_status}")
             db_scan.azure_status = vm_status
+            self.db.commit()
         
-            # Log VM status changes
-            status_log = f"[{current_time.isoformat()}] VM Status: {vm_status} (elapsed: {time_elapsed})\n"
-            if db_scan.detonator_srv_logs:
-                db_scan.detonator_srv_logs += status_log
-            else:
-                db_scan.detonator_srv_logs = status_log
-        
-        # Check if VM should be shut down (after 1 minute)
+        # CHECK: if VM should be shut down (after 1 minute)
         should_shutdown = (
             time_elapsed >= timedelta(minutes=1) and 
             db_scan.azure_status in ['running', 'starting']
         )
         if should_shutdown:
-            logger.info(f"VM {vm_name} has been running for 1 minute, scheduling shutdown")
+            db_scan.detonator_srv_logs += mylog(f"VM {vm_name} has been running for 1 minute, scheduling shutdown")
             
             # Shutdown the VM
             shutdown_success = vm_manager.shutdown_vm(vm_name)
-            
             if shutdown_success:
                 db_scan.status = "finished"
                 db_scan.vm_status = "removed"
-                shutdown_log = f"[{current_time.isoformat()}] VM shutdown initiated after 1 minute\n"
+                db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown initiated successfully")
             else:
                 db_scan.status = "finished"
                 db_scan.vm_status = "remove_failed"
-                shutdown_log = f"[{current_time.isoformat()}] VM shutdown failed\n"
-            
-            if db_scan.detonator_srv_logs:
-                db_scan.detonator_srv_logs += shutdown_log
-            else:
-                db_scan.detonator_srv_logs = shutdown_log
+                db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown failed")
+            self.db.commit()            
         
-        # Check if VM has been deallocated and schedule cleanup
+        # CHECK: if VM has been deallocated and schedule cleanup
         should_cleanup = (
             vm_status in ['deallocated', 'not_found'] and 
             time_elapsed >= timedelta(minutes=2) and  # Wait 2 minutes total before cleanup
             db_scan.status != "completed" and
             db_scan.status != "cleanup_failed"
         )
-        
         if should_cleanup:
             logger.info(f"VM {vm_name} is deallocated, scheduling resource cleanup")
             

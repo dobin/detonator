@@ -9,6 +9,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
+from .utils import mylog
 import uuid
 
 from .database import get_background_db, Scan
@@ -48,8 +49,10 @@ class AzureVMManager:
             return
         
         # DB: Indicate we creating the VM currently
+        db_scan.status = "vm_kickoff"
         db_scan.vm_status = "creating"
-        db_scan.detonator_srv_logs += f"[{datetime.utcnow().isoformat()}] To status: {db_scan.status}\n"
+        db_scan.detonator_srv_logs += mylog(f"To status: {db_scan.status}")
+        db_scan.detonator_srv_logs += mylog(f"VM: {db_scan.vm_status}")
         self.db.commit()
         
         # Validate EDR template if provided
@@ -98,9 +101,11 @@ class AzureVMManager:
             vm_result = self._create_vm(vm_name, nic.id, deployment_script)
             if not vm_result:
                 # DB: Failed indicator
-                db_scan.status = "failed"
+                db_scan.status = "error"
                 db_scan.vm_status = "creating_failed"
-                db_scan.detonator_srv_logs += "Failed: _create_vm()\n"
+                db_scan.detonator_srv_logs += mylog(f"To status: {db_scan.status}")
+                db_scan.detonator_srv_logs += mylog(f"VM: {db_scan.vm_status}")
+                db_scan.detonator_srv_logs += mylog(f"Failed: _create_vm() {str(vm_result)}")
                 self.db.commit()
                 logger.error(f"Failed to create VM for scan {scan_id}")
                 return
@@ -115,11 +120,12 @@ class AzureVMManager:
             # Update scan record with VM details
             db_scan.vm_instance_name = vm_name
             db_scan.vm_ip_address = public_ip_info.ip_address
-            db_scan.status = "processing"
+            db_scan.status = "vm_ready"
             db_scan.vm_status = "created"
             db_scan.created_at = datetime.utcnow()
-
-            creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
+            db_scan.detonator_srv_logs += mylog(f"To status: {db_scan.status}")
+            db_scan.detonator_srv_logs += mylog(f"VM: {db_scan.vm_status}")
+            db_scan.detonator_srv_logs += mylog(f"VM successfully created with public IP: {public_ip_info.ip_address}")
             #creation_log += f"VM Name: {vm_info['vm_name']}\n"
             #creation_log += f"Public IP: {vm_info['public_ip']}\n"
             #creation_log += f"EDR Template: {edr_template_id or 'None'}\n"

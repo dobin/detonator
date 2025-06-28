@@ -12,6 +12,7 @@ from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, Scan
 from .vm_manager import initialize_vm_manager, get_vm_manager
 from .vm_monitor import start_vm_monitoring
 from .edr_templates import get_edr_manager
+from .utils import mylog
 
 #load_dotenv()
 
@@ -145,11 +146,11 @@ async def upload_file_and_scan(
     # DB: Create scan record (auto-scan)
     db_scan = Scan(
         file_id=db_file.id,
-        status="started",
+        status="fresh",
         vm_status="none",
         vm_template=vm_template or "Windows 11 Pro",
         edr_template=edr_template,
-        detonator_srv_logs="",
+        detonator_srv_logs=mylog("DB: Scan created"),
     )
     db.add(db_scan)
     db.commit()
@@ -314,18 +315,12 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         
         if shutdown_success:
             db_scan.status = "completed"
-            db_scan.vm_status = "none"
-            shutdown_log = f"[{datetime.utcnow().isoformat()}] Manual VM shutdown initiated\n"
+            db_scan.vm_status = "removed"
+            db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"
         else:
             db_scan.status = "completed"
-            db_scan.vm_status = "shutdown_failed"
-            shutdown_log = f"[{datetime.utcnow().isoformat()}] Manual VM shutdown failed\n"
-        
-        if db_scan.detonator_srv_logs:
-            db_scan.detonator_srv_logs += shutdown_log
-        else:
-            db_scan.detonator_srv_logs = shutdown_log
-        
+            db_scan.vm_status = "remove_failed"
+            db_scan.detonator_srv_logs += f"Manual VM shutdown failed\n"
         db.commit()
         
         return {"message": "VM shutdown initiated" if shutdown_success else "VM shutdown failed"}
