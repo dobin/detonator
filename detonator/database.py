@@ -10,6 +10,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+
 class File(Base):
     __tablename__ = "files"
     
@@ -29,6 +30,7 @@ class File(Base):
         """Calculate SHA256 hash of file content"""
         return hashlib.sha256(content).hexdigest()
 
+
 class Scan(Base):
     __tablename__ = "scans"
     
@@ -41,7 +43,11 @@ class Scan(Base):
     execution_logs = Column(Text, nullable=True)
     edr_logs = Column(Text, nullable=True)
     result = Column(String(50), nullable=True)
+
     status = Column(String(20), default="fresh", nullable=False)
+    vm_status = Column(String(20), default="none", nullable=False)
+    azure_status = Column(String(50), default="", nullable=False)
+
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -51,8 +57,10 @@ class Scan(Base):
     # Relationship
     file = relationship("File", back_populates="scans")
 
+
 # Create tables
 Base.metadata.create_all(bind=engine)
+
 
 # Dependency to get DB session
 def get_db():
@@ -61,6 +69,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 # Function to get a new DB session for background tasks
 def get_background_db():

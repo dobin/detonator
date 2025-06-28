@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -111,14 +111,16 @@ async def upload_file(
     
     return db_file
 
+
 @app.post("/api/files/upload-and-scan", response_model=FileResponse)
 async def upload_file_and_scan(
+    background_tasks: BackgroundTasks,
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
     comment: Optional[str] = Form(None),
     vm_template: Optional[str] = Form("Windows 11 Pro"),
     edr_template: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
     # Read file content
@@ -127,12 +129,7 @@ async def upload_file_and_scan(
 
     logger.info(f"Uploading file: {file.filename}, hash: {file_hash}")
 
-    # Check if file already exists
-    #existing_file = db.query(File).filter(File.file_hash == file_hash).first()
-    #if existing_file:
-    #    raise HTTPException(status_code=400, detail="File with this hash already exists")
-    
-    # Create file record
+    # DB: Create file record
     db_file = File(
         content=content,
         filename=file.filename,
@@ -143,32 +140,26 @@ async def upload_file_and_scan(
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
-    logger.info(f"  Created file with id {db_file.id}")
+    logger.info(f"DB: Created file {db_file.id}")
 
-    # Create scan record (auto-scan)
+    # DB: Create scan record (auto-scan)
     db_scan = Scan(
         file_id=db_file.id,
-        status="initializing",
+        status="started",
+        vm_status="none",
         vm_template=vm_template or "Windows 11 Pro",
-        edr_template=edr_template
+        edr_template=edr_template,
+        detonator_srv_logs="",
     )
     db.add(db_scan)
     db.commit()
     db.refresh(db_scan)
-    
-    # Create Azure VM for the scan
-    db_scan.status = "vm_creating"
-    logs = [
-        f"API: Creating VM initiated for scan {db_scan.id}",
-        f"[{datetime.utcnow().isoformat()}] To status: {db_scan.status}",
-    ]
-    db_scan.detonator_srv_logs = "\n".join(logs) + "\n" # first log entry
-    db.commit()
+    logger.info(f"DB: Created scan {db_scan.id}")
 
+    # Azure: Create VM
     vm_manager = get_vm_manager()
-    await vm_manager.create_windows11_vm(db_scan.id)
-    
-    logger.info(f"Created file {db_file.id} and initiated scan for {db_scan.id}")
+    background_tasks.add_task(vm_manager.create_windows11_vm, db_scan.id)
+    logger.info(f"Azure: Initiated VM creation for scan {db_scan.id}")
     
     return db_file
 
@@ -267,7 +258,8 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         # Update scan with VM information
         db_scan.vm_instance_name = vm_info["vm_name"]
         db_scan.vm_ip_address = vm_info["public_ip"]
-        db_scan.status = "vm_creating"
+        db_scan.status = "started"
+        db_scan.vm_status = "creating"
         
         # Log VM creation
         creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
@@ -321,10 +313,12 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         shutdown_success = await vm_manager.shutdown_vm(db_scan.vm_instance_name)
         
         if shutdown_success:
-            db_scan.status = "vm_shutting_down"
+            db_scan.status = "completed"
+            db_scan.vm_status = "none"
             shutdown_log = f"[{datetime.utcnow().isoformat()}] Manual VM shutdown initiated\n"
         else:
-            db_scan.status = "vm_shutdown_failed"
+            db_scan.status = "completed"
+            db_scan.vm_status = "shutdown_failed"
             shutdown_log = f"[{datetime.utcnow().isoformat()}] Manual VM shutdown failed\n"
         
         if db_scan.detonator_srv_logs:

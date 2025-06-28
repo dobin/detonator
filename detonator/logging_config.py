@@ -5,7 +5,7 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
-            "format": "%(levelname)s %(asctime)s %(message)s",
+            "format": "%(levelname)s %(message)s",
         },
     },
     "handlers": {

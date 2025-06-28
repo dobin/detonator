@@ -75,6 +75,8 @@
             scanHtml += '<div class="flex items-center space-x-3 mb-2">';
             scanHtml += '<h3 class="font-semibold text-lg">Scan #' + scan.id + '</h3>';
             scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.status) + '">' + scan.status + '</span>';
+            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.vm_status) + '">' + scan.vm_status + '</span>';
+            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.azure_status) + '">' + scan.azure_status + '</span>';
             scanHtml += '</div>';
             scanHtml += '<p class="text-gray-600 text-sm">File ID: ' + scan.file_id + '</p>';
             if (scan.vm_template) {

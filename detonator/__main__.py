@@ -11,6 +11,8 @@ import os
 from dotenv import load_dotenv
 
 from .logging_config import setup_logging
+from .vm_manager import initialize_vm_manager
+
 
 load_dotenv()
 
@@ -60,10 +62,11 @@ def main():
     
     command = sys.argv[1].lower()
 
+    # Azure: Init
     if not os.getenv("AZURE_SUBSCRIPTION_ID"):
         print("Error: AZURE_SUBSCRIPTION_ID environment variable is not set.")
         sys.exit(1)
-    
+
     if command == "both":
         run_both()
     elif command == "api":

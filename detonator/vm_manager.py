@@ -37,7 +37,7 @@ class AzureVMManager:
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
 
-    async def create_windows11_vm(self, scan_id: int):
+    def create_windows11_vm(self, scan_id: int):
         """Create a Windows 11 VM for malware analysis with optional EDR template"""
         vm_name = f"detonator-{scan_id}"
 
@@ -48,7 +48,7 @@ class AzureVMManager:
             return
         
         # DB: Indicate we creating the VM currently
-        db_scan.status = "vm_creating"
+        db_scan.vm_status = "creating"
         db_scan.detonator_srv_logs += f"[{datetime.utcnow().isoformat()}] To status: {db_scan.status}\n"
         self.db.commit()
         
@@ -74,32 +74,36 @@ class AzureVMManager:
             #    additional_ports = template_info.get("ports", [])
             #    logger.info(f"Using EDR template: {edr_template} with ports: {additional_ports}")
             
-            logger.info(f"Creating VM: {vm_name} with EDR template: {edr_template}")
+            logger.info(f"Azure: Creating VM: {vm_name} with EDR template: {edr_template}")
+            logger.info(f"Azure: This can take a few minutes")
             
             # Create network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
-            await self._create_network_security_group(nsg_name, edr_template)
+            self._create_network_security_group(nsg_name, edr_template)
             
             # Create virtual network and subnet
             vnet_name = f"{vm_name}-vnet"
             subnet_name = f"{vm_name}-subnet"
-            await self._create_virtual_network(vnet_name, subnet_name)
+            self._create_virtual_network(vnet_name, subnet_name)
             
             # Create public IP
             public_ip_name = f"{vm_name}-ip"
-            public_ip = await self._create_public_ip(public_ip_name)
+            public_ip = self._create_public_ip(public_ip_name)
             
             # Create network interface
             nic_name = f"{vm_name}-nic"
-            nic = await self._create_network_interface(nic_name, vnet_name, subnet_name, public_ip_name, nsg_name)
+            nic = self._create_network_interface(nic_name, vnet_name, subnet_name, public_ip_name, nsg_name)
             
             # Create the VM with deployment script
-            vm_result = await self._create_vm(vm_name, nic.id, deployment_script)
+            vm_result = self._create_vm(vm_name, nic.id, deployment_script)
             if not vm_result:
                 # DB: Failed indicator
                 db_scan.status = "failed"
+                db_scan.vm_status = "creating_failed"
                 db_scan.detonator_srv_logs += "Failed: _create_vm()\n"
                 self.db.commit()
+                logger.error(f"Failed to create VM for scan {scan_id}")
+                return
             
             # Get public IP address
             public_ip_info = self.network_client.public_ip_addresses.get(
@@ -111,7 +115,8 @@ class AzureVMManager:
             # Update scan record with VM details
             db_scan.vm_instance_name = vm_name
             db_scan.vm_ip_address = public_ip_info.ip_address
-            db_scan.status = "vm_created"
+            db_scan.status = "processing"
+            db_scan.vm_status = "running"
             db_scan.created_at = datetime.utcnow()
 
             creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
@@ -133,7 +138,7 @@ class AzureVMManager:
             raise
     
     
-    async def _create_network_security_group(self, nsg_name: str, edr_template: str = None):
+    def _create_network_security_group(self, nsg_name: str, edr_template: str = None):
         """Create network security group with basic rules and EDR-specific rules"""
         # Base security rules
         security_rules = [
@@ -168,7 +173,7 @@ class AzureVMManager:
         return operation.result()
     
 
-    async def _create_virtual_network(self, vnet_name: str, subnet_name: str):
+    def _create_virtual_network(self, vnet_name: str, subnet_name: str):
         """Create virtual network and subnet"""
         vnet_params = {
             'location': self.location,
@@ -189,7 +194,7 @@ class AzureVMManager:
         return operation.result()
     
 
-    async def _create_public_ip(self, public_ip_name: str):
+    def _create_public_ip(self, public_ip_name: str):
         """Create public IP address"""
         public_ip_params = {
             'location': self.location,
@@ -203,7 +208,7 @@ class AzureVMManager:
         return operation.result()
     
 
-    async def _create_network_interface(self, nic_name: str, vnet_name: str, subnet_name: str, 
+    def _create_network_interface(self, nic_name: str, vnet_name: str, subnet_name: str, 
                                        public_ip_name: str, nsg_name: str):
         """Create network interface"""
         subnet = self.network_client.subnets.get(self.resource_group, vnet_name, subnet_name)
@@ -228,7 +233,7 @@ class AzureVMManager:
         return operation.result()
     
 
-    async def _create_vm(self, vm_name: str, nic_id: str, deployment_script: str = None):
+    def _create_vm(self, vm_name: str, nic_id: str, deployment_script: str = None):
         """Create Windows 11 virtual machine with optional deployment script"""
         vm_params = {
             'location': self.location,
@@ -303,7 +308,7 @@ class AzureVMManager:
         return operation.result()
     
 
-    async def get_vm_status(self, vm_name: str) -> str:
+    def get_vm_status(self, vm_name: str) -> str:
         """Get the current status of a VM"""
         try:
             vm_instance_view = self.compute_client.virtual_machines.instance_view(
@@ -324,7 +329,7 @@ class AzureVMManager:
             return "error"
     
 
-    async def shutdown_vm(self, vm_name: str) -> bool:
+    def shutdown_vm(self, vm_name: str) -> bool:
         """Shutdown and deallocate a VM"""
         try:
             logger.info(f"Shutting down VM: {vm_name}")
@@ -346,7 +351,7 @@ class AzureVMManager:
             return False
         
     
-    async def delete_vm_resources(self, vm_name: str) -> bool:
+    def delete_vm_resources(self, vm_name: str) -> bool:
         """Delete VM and all associated resources"""
         try:
             logger.info(f"Deleting VM and resources: {vm_name}")
@@ -403,6 +408,6 @@ def initialize_vm_manager(subscription_id: str, resource_group: str, location: s
 
 def get_vm_manager() -> AzureVMManager:
     """Get the global VM manager instance"""
-    if vm_manager is None:
-        raise RuntimeError("VM Manager not initialized. Call initialize_vm_manager() first.")
+    #if vm_manager is None:
+    #    raise RuntimeError("VM Manager not initialized. Call initialize_vm_manager() first.")
     return vm_manager
