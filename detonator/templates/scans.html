@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Scans{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Scan Management</h2>
+        <div class="space-x-2">
+            <button 
+                hx-get="/api/scans" 
+                hx-target="#scans-container"
+                hx-indicator="#loading"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Scans List -->
+    <div 
+        id="scans-container" 
+        hx-get="/api/scans" 
+        hx-trigger="load"
+        hx-indicator="#loading"
+    >
+        <div class="text-center text-gray-500">Loading scans...</div>
+    </div>
+</div>
+
+<!-- Modal for scan details -->
+<div id="scan-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Scan Details</h3>
+                <button onclick="closeScanModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="scan-modal-content">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // HTMX response handler for scans
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'scans-container') {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (Array.isArray(response)) {
+                renderScans(response);
+            }
+        }
+    });
+
+    function renderScans(scans) {
+        const container = document.getElementById('scans-container');
+        if (scans.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-8">No scans found. <a href="/upload" class="text-blue-500 hover:underline">Upload a file</a> to start analysis.</div>';
+            return;
+        }
+        
+        let scanHtml = '<div class="grid grid-cols-1 gap-4">';
+        
+        scans.forEach(scan => {
+            scanHtml += '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">';
+            scanHtml += '<div class="flex justify-between items-start">';
+            scanHtml += '<div class="flex-1">';
+            scanHtml += '<div class="flex items-center space-x-3 mb-2">';
+            scanHtml += '<h3 class="font-semibold text-lg">Scan #' + scan.id + '</h3>';
+            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.status) + '">' + scan.status + '</span>';
+            scanHtml += '</div>';
+            scanHtml += '<p class="text-gray-600 text-sm">File ID: ' + scan.file_id + '</p>';
+            if (scan.vm_template) {
+                scanHtml += '<p class="text-gray-600 text-sm">VM Template: ' + scan.vm_template + '</p>';
+            }
+            if (scan.edr_template) {
+                scanHtml += '<p class="text-gray-600 text-sm">EDR Template: ' + scan.edr_template + '</p>';
+            }
+            if (scan.vm_instance_name) {
+                scanHtml += '<p class="text-gray-600 text-sm">VM Instance: ' + scan.vm_instance_name + '</p>';
+            }
+            if (scan.vm_ip_address) {
+                scanHtml += '<p class="text-gray-600 text-sm">VM IP: ' + scan.vm_ip_address + '</p>';
+            }
+            if (scan.result) {
+                scanHtml += '<p class="text-gray-700 mt-2"><strong>Result:</strong> ' + scan.result + '</p>';
+            }
+            scanHtml += '<div class="text-gray-500 text-xs mt-2">';
+            scanHtml += '<p>Created: ' + new Date(scan.created_at).toLocaleString() + '</p>';
+            scanHtml += '<p>Updated: ' + new Date(scan.updated_at).toLocaleString() + '</p>';
+            if (scan.completed_at) {
+                scanHtml += '<p>Completed: ' + new Date(scan.completed_at).toLocaleString() + '</p>';
+            }
+            scanHtml += '</div>';
+            scanHtml += '</div>';
+            scanHtml += '<div class="flex flex-col space-y-2 ml-4">';
+            scanHtml += '<button onclick="viewScanDetails(' + scan.id + ')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">View Details</button>';
+            scanHtml += '<button onclick="updateScanStatus(' + scan.id + ')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Update</button>';
+            scanHtml += '</div>';
+            scanHtml += '</div>';
+            scanHtml += '</div>';
+        });
+        
+        scanHtml += '</div>';
+        container.innerHTML = scanHtml;
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'fresh': return 'bg-blue-100 text-blue-800';
+            case 'running': return 'bg-yellow-100 text-yellow-800';
+            case 'completed': return 'bg-green-100 text-green-800';
+            case 'failed': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    function viewScanDetails(scanId) {
+        fetch('http://localhost:8000/api/scans/' + scanId)
+            .then(response => response.json())
+            .then(scan => {
+                let detailsHtml = '<div class="space-y-4">';
+                detailsHtml += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                detailsHtml += '<div><strong>Scan ID:</strong> ' + scan.id + '</div>';
+                detailsHtml += '<div><strong>File ID:</strong> ' + scan.file_id + '</div>';
+                detailsHtml += '<div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.status) + '">' + scan.status + '</span></div>';
+                detailsHtml += '<div><strong>VM Template:</strong> ' + (scan.vm_template || 'Not set') + '</div>';
+                detailsHtml += '<div><strong>EDR Template:</strong> ' + (scan.edr_template || 'Not set') + '</div>';
+                detailsHtml += '<div><strong>VM Instance:</strong> ' + (scan.vm_instance_name || 'Not set') + '</div>';
+                detailsHtml += '<div><strong>VM IP:</strong> ' + (scan.vm_ip_address || 'Not set') + '</div>';
+                detailsHtml += '<div><strong>Result:</strong> ' + (scan.result || 'No result yet') + '</div>';
+                detailsHtml += '</div>';
+                
+                if (scan.detonator_srv_logs) {
+                    detailsHtml += '<div><strong>Detonator Server Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.detonator_srv_logs + '</pre></div>';
+                }
+                if (scan.agent_logs) {
+                    detailsHtml += '<div><strong>Agent Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.agent_logs + '</pre></div>';
+                }
+                if (scan.execution_logs) {
+                    detailsHtml += '<div><strong>Execution Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.execution_logs + '</pre></div>';
+                }
+                if (scan.edr_logs) {
+                    detailsHtml += '<div><strong>EDR Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.edr_logs + '</pre></div>';
+                }
+                
+                detailsHtml += '<div class="text-sm text-gray-500">';
+                detailsHtml += '<p>Created: ' + new Date(scan.created_at).toLocaleString() + '</p>';
+                detailsHtml += '<p>Updated: ' + new Date(scan.updated_at).toLocaleString() + '</p>';
+                if (scan.completed_at) {
+                    detailsHtml += '<p>Completed: ' + new Date(scan.completed_at).toLocaleString() + '</p>';
+                }
+                detailsHtml += '</div>';
+                detailsHtml += '</div>';
+                
+                document.getElementById('scan-modal-content').innerHTML = detailsHtml;
+                document.getElementById('scan-modal').classList.remove('hidden');
+            })
+            .catch(error => {
+                alert('Error loading scan details: ' + error.message);
+            });
+    }
+
+    function updateScanStatus(scanId) {
+        const newStatus = prompt('Enter new status (fresh, running, completed, failed):');
+        if (newStatus && ['fresh', 'running', 'completed', 'failed'].includes(newStatus)) {
+            const updateData = { status: newStatus };
+            if (newStatus === 'completed') {
+                updateData.completed_at = new Date().toISOString();
+            }
+            
+            fetch('http://localhost:8000/api/scans/' + scanId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                location.reload(); // Refresh the page
+            })
+            .catch(error => {
+                alert('Error updating scan: ' + error.message);
+            });
+        }
+    }
+
+    function closeScanModal() {
+        document.getElementById('scan-modal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('scan-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeScanModal();
+        }
+    });
+</script>
+{% endblock %}

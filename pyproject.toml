@@ -12,7 +12,9 @@ dependencies = [
     "fastapi[standard] (>=0.115.14,<0.116.0)",
     "flask>=3.0.0",
     "uvicorn>=0.30.0",
-    "requests>=2.31.0"
+    "requests>=2.31.0",
+    "sqlalchemy>=2.0.0",
+    "python-multipart>=0.0.6"
 ]
 
 
