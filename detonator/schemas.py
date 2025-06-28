@@ -38,6 +38,7 @@ class ScanCreate(ScanBase):
     file_id: int
 
 class ScanUpdate(BaseModel):
+    comment: Optional[str] = None
     vm_template: Optional[str] = None
     edr_template: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
@@ -55,6 +56,7 @@ class ScanUpdate(BaseModel):
 class ScanResponse(ScanBase):
     id: int
     file_id: int
+    comment: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
     agent_logs: Optional[str] = None
     execution_logs: Optional[str] = None
@@ -68,6 +70,7 @@ class ScanResponse(ScanBase):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+    file: Optional[FileResponse] = None
     
     class Config:
         from_attributes = True

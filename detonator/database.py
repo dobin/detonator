@@ -36,8 +36,10 @@ class Scan(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
+    comment = Column(Text, nullable=True)
     vm_template = Column(String(100), nullable=True)
     edr_template = Column(String(100), nullable=True)
+
     detonator_srv_logs = Column(Text, nullable=True)
     agent_logs = Column(Text, nullable=True)
     execution_logs = Column(Text, nullable=True)

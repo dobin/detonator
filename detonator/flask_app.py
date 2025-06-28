@@ -10,6 +10,9 @@ app.secret_key = "detonator-secret-key"  # Change this in production
 # Reduce Flask/Werkzeug HTTP request logging verbosity
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
+# Setup logger for this module
+logger = logging.getLogger(__name__)
+
 # Helper function for Jinja2 templates
 def get_status_color(status):
     """Get CSS classes for status badges"""
@@ -206,8 +209,11 @@ def upload_file_and_scan():
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']
         
-        if 'comment' in request.form:
-            data['comment'] = request.form['comment']
+        if 'file_comment' in request.form:
+            data['file_comment'] = request.form['file_comment']
+            
+        if 'scan_comment' in request.form:
+            data['scan_comment'] = request.form['scan_comment']
             
         if 'vm_template' in request.form:
             data['vm_template'] = request.form['vm_template']

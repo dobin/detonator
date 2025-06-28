@@ -18,6 +18,12 @@
                 <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 rounded">
                     <div class="col-span-3">
                         <p class="text-gray-600 text-sm">File ID: {{ scan.file_id }}</p>
+                        {% if scan.file and scan.file.comment %}
+                        <p class="text-gray-600 text-sm">File Comment: {{ scan.file.comment }}</p>
+                        {% endif %}
+                        {% if scan.comment %}
+                        <p class="text-gray-600 text-sm">Scan Comment: {{ scan.comment }}</p>
+                        {% endif %}
                         {% if scan.vm_template %}
                         <p class="text-gray-600 text-sm">VM Template: {{ scan.vm_template }}</p>
                         {% endif %}

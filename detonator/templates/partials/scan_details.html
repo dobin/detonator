@@ -3,6 +3,12 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div><strong>Scan ID:</strong> {{ scan.id }}</div>
         <div><strong>File ID:</strong> {{ scan.file_id }}</div>
+        {% if scan.file and scan.file.comment %}
+        <div><strong>File Comment:</strong> {{ scan.file.comment }}</div>
+        {% endif %}
+        {% if scan.comment %}
+        <div><strong>Scan Comment:</strong> {{ scan.comment }}</div>
+        {% endif %}
         <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.status) }}">{{ scan.status }}</span></div>
         <div><strong>VM Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.vm_status) }}">{{ scan.vm_status or 'Not set' }}</span></div>
         <div><strong>Azure Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.azure_status) }}">{{ scan.azure_status or 'Not set' }}</span></div>

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
 import logging
@@ -120,7 +120,8 @@ async def upload_file_and_scan(
     background_tasks: BackgroundTasks,
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
-    comment: Optional[str] = Form(None),
+    file_comment: Optional[str] = Form(None),
+    scan_comment: Optional[str] = Form(None),
     vm_template: Optional[str] = Form("Windows 11 Pro"),
     edr_template: Optional[str] = Form(None),
     db: Session = Depends(get_db),
@@ -138,7 +139,7 @@ async def upload_file_and_scan(
         filename=file.filename,
         file_hash=file_hash,
         source_url=source_url,
-        comment=comment
+        comment=file_comment
     )
     db.add(db_file)
     db.commit()
@@ -152,6 +153,7 @@ async def upload_file_and_scan(
         vm_status="none",
         vm_template=vm_template or "Windows 11 Pro",
         edr_template=edr_template,
+        comment=scan_comment,
         detonator_srv_logs=mylog("DB: Scan created"),
     )
     db.add(db_scan)
@@ -197,14 +199,14 @@ async def delete_file(file_id: int, db: Session = Depends(get_db)):
 # Scan endpoints
 @app.get("/api/scans", response_model=List[ScanResponse])
 async def get_scans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Get all scans"""
-    scans = db.query(Scan).offset(skip).limit(limit).all()
+    """Get all scans with file information"""
+    scans = db.query(Scan).options(joinedload(Scan.file)).offset(skip).limit(limit).all()
     return scans
 
 @app.get("/api/scans/{scan_id}", response_model=ScanResponse)
 async def get_scan(scan_id: int, db: Session = Depends(get_db)):
-    """Get a specific scan"""
-    db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    """Get a specific scan with file information"""
+    db_scan = db.query(Scan).options(joinedload(Scan.file)).filter(Scan.id == scan_id).first()
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return db_scan
