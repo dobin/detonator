@@ -71,13 +71,28 @@
                     <label for="edr_template" class="block text-sm font-medium text-gray-700 mb-1">
                         EDR Template (optional)
                     </label>
-                    <input 
-                        type="text" 
+                    <select 
                         id="edr_template" 
-                        name="edr_template" 
-                        placeholder="e.g., crowdstrike, sentinel-one"
+                        name="edr_template"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                        <option value="">-- None --</option>
+                        {% for template in edr_templates %}
+                        <option value="{{ template.id }}" title="{{ template.description }}">
+                            {{ template.name }}
+                            {% if template.category %} ({{ template.category }}){% endif %}
+                            {% if template.ports %} - Ports: {{ template.ports|join(', ') }}{% endif %}
+                        </option>
+                        {% endfor %}
+                        {% if not edr_templates %}
+                        <option value="" disabled>No EDR templates available</option>
+                        {% endif %}
+                    </select>
+                    {% if edr_templates %}
+                    <p class="mt-1 text-xs text-gray-500">
+                        Available templates: {{ edr_templates|length }}
+                    </p>
+                    {% endif %}
                 </div>
             </div>
             <div class="flex space-x-4">
@@ -153,6 +168,40 @@
                     </div>
                 `;
             }
+        }
+    });
+    
+    // EDR Template selection handler
+    document.getElementById('edr_template').addEventListener('change', function(e) {
+        const templateSelect = e.target;
+        const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+        const description = selectedOption.getAttribute('title');
+        
+        // Remove any existing template info
+        const existingInfo = document.getElementById('edr_template_info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        
+        // Add template description if a template is selected
+        if (templateSelect.value && description) {
+            const infoDiv = document.createElement('div');
+            infoDiv.id = 'edr_template_info';
+            infoDiv.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md';
+            infoDiv.innerHTML = `
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-medium text-blue-800">${selectedOption.text}</h4>
+                        <p class="mt-1 text-sm text-blue-700">${description}</p>
+                    </div>
+                </div>
+            `;
+            templateSelect.parentNode.appendChild(infoDiv);
         }
     });
 </script>

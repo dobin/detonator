@@ -8,9 +8,26 @@ app.secret_key = "detonator-secret-key"  # Change this in production
 # FastAPI service URL
 API_BASE_URL = "http://localhost:8000"
 
+# static
+@app.route("/static/<path:filename>")
+def static_files(filename):
+    """Serve static files from the static directory"""
+    return app.send_static_file(filename)
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Fetch EDR templates from FastAPI
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        if response.status_code == 200:
+            edr_data = response.json()
+            edr_templates = edr_data.get("templates", [])
+        else:
+            edr_templates = []
+    except requests.RequestException:
+        edr_templates = []
+    
+    return render_template("index.html", edr_templates=edr_templates)
 
 @app.route("/files")
 def files_page():
@@ -22,7 +39,18 @@ def scans_page():
 
 @app.route("/upload")
 def upload_page():
-    return render_template("upload.html")
+    # Fetch EDR templates from FastAPI
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        if response.status_code == 200:
+            edr_data = response.json()
+            edr_templates = edr_data.get("templates", [])
+        else:
+            edr_templates = []
+    except requests.RequestException:
+        edr_templates = []
+    
+    return render_template("upload.html", edr_templates=edr_templates)
 
 # API proxy endpoints
 @app.route("/api/files")
@@ -117,6 +145,15 @@ def update_scan(scan_id):
         return response.json()
     except requests.RequestException:
         return {"error": "Could not update scan"}, 500
+
+@app.route("/api/edr-templates")
+def get_edr_templates():
+    """Proxy endpoint to fetch EDR templates from FastAPI"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        return response.json()
+    except requests.RequestException:
+        return {"error": "Could not fetch EDR templates", "templates": [], "all_templates": []}, 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

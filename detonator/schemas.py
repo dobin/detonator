@@ -2,6 +2,18 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+class EDRTemplate(BaseModel):
+    id: str
+    name: str
+    description: str
+    category: str
+    ports: List[int]
+    available: bool
+
+class EDRTemplateResponse(BaseModel):
+    templates: List[EDRTemplate]
+    all_templates: List[EDRTemplate]
+
 class FileBase(BaseModel):
     filename: str
     source_url: Optional[str] = None

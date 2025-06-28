@@ -11,6 +11,7 @@ from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate
 from .vm_manager import initialize_vm_manager, get_vm_manager
 from .vm_monitor import start_vm_monitoring, add_scan_to_monitoring
+from .edr_templates import get_edr_manager
 
 load_dotenv()
 
@@ -60,6 +61,15 @@ async def shutdown_event():
         logger.info("VM monitoring stopped")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
+
+@app.get("/api/edr-templates")
+async def get_edr_templates():
+    """Get available EDR templates"""
+    edr_manager = get_edr_manager()
+    return {
+        "templates": edr_manager.get_available_templates(),
+        "all_templates": edr_manager.get_all_templates()
+    }
 
 @app.get("/")
 async def root():
@@ -147,8 +157,16 @@ async def upload_file_and_scan(
     try:
         vm_manager = get_vm_manager()
         
-        # Create Windows 11 VM
-        vm_info = await vm_manager.create_windows11_vm(db_scan.id)
+        # Validate EDR template if provided
+        edr_template_id = db_scan.edr_template
+        if edr_template_id:
+            edr_manager = get_edr_manager()
+            if not edr_manager.validate_template(edr_template_id):
+                logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
+                edr_template_id = None
+        
+        # Create Windows 11 VM with EDR template
+        vm_info = await vm_manager.create_windows11_vm(db_scan.id, edr_template_id)
         
         # Update scan with VM information
         db_scan.vm_instance_name = vm_info["vm_name"]
@@ -159,6 +177,13 @@ async def upload_file_and_scan(
         creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
         creation_log += f"VM Name: {vm_info['vm_name']}\n"
         creation_log += f"Public IP: {vm_info['public_ip']}\n"
+        creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
+        
+        if vm_info.get("edr_template_info"):
+            template_info = vm_info["edr_template_info"]
+            creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
+            creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
+        
         creation_log += f"Status: {vm_info['status']}\n"
         
         db_scan.detonator_srv_logs = creation_log
@@ -262,8 +287,15 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
     try:
         vm_manager = get_vm_manager()
         
-        # Create Windows 11 VM
-        vm_info = await vm_manager.create_windows11_vm(db_scan.id)
+        # Create Windows 11 VM with EDR template
+        edr_template_id = db_scan.edr_template
+        if edr_template_id:
+            edr_manager = get_edr_manager()
+            if not edr_manager.validate_template(edr_template_id):
+                logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
+                edr_template_id = None
+        
+        vm_info = await vm_manager.create_windows11_vm(db_scan.id, edr_template_id)
         
         # Update scan with VM information
         db_scan.vm_instance_name = vm_info["vm_name"]
@@ -274,6 +306,13 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
         creation_log += f"VM Name: {vm_info['vm_name']}\n"
         creation_log += f"Public IP: {vm_info['public_ip']}\n"
+        creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
+        
+        if vm_info.get("edr_template_info"):
+            template_info = vm_info["edr_template_info"]
+            creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
+            creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
+        
         creation_log += f"Status: {vm_info['status']}\n"
         
         db_scan.detonator_srv_logs = creation_log

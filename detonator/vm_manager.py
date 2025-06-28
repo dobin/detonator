@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+import base64
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from azure.identity import DefaultAzureCredential
@@ -9,6 +10,8 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 import uuid
+
+from .edr_templates import get_edr_manager
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +29,26 @@ class AzureVMManager:
         self.network_client = NetworkManagementClient(self.credential, self.subscription_id)
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
-    async def create_windows11_vm(self, scan_id: int) -> Dict[str, Any]:
-        """Create a Windows 11 VM for malware analysis"""
+    async def create_windows11_vm(self, scan_id: int, edr_template: str = None) -> Dict[str, Any]:
+        """Create a Windows 11 VM for malware analysis with optional EDR template"""
         vm_name = f"detonator-{scan_id}"
         
         try:
-            # Create network security group
+            # Get EDR template configuration
+            edr_manager = get_edr_manager()
+            template_info = None
+            deployment_script = None
+            additional_ports = []
+            
+            if edr_template and edr_manager.validate_template(edr_template):
+                template_info = edr_manager.get_template(edr_template)
+                deployment_script = edr_manager.get_deployment_script(edr_template)
+                additional_ports = template_info.get("ports", [])
+                logger.info(f"Using EDR template: {edr_template} with ports: {additional_ports}")
+            
+            # Create network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
-            await self._create_network_security_group(nsg_name)
+            await self._create_network_security_group(nsg_name, edr_template)
             
             # Create virtual network and subnet
             vnet_name = f"{vm_name}-vnet"
@@ -48,8 +63,8 @@ class AzureVMManager:
             nic_name = f"{vm_name}-nic"
             nic = await self._create_network_interface(nic_name, vnet_name, subnet_name, public_ip_name, nsg_name)
             
-            # Create the VM
-            vm_result = await self._create_vm(vm_name, nic.id)
+            # Create the VM with deployment script
+            vm_result = await self._create_vm(vm_name, nic.id, deployment_script)
             
             # Get public IP address
             public_ip_info = self.network_client.public_ip_addresses.get(
@@ -61,30 +76,42 @@ class AzureVMManager:
                 "vm_id": vm_result.id,
                 "public_ip": public_ip_info.ip_address,
                 "status": "creating",
-                "created_at": datetime.utcnow()
+                "created_at": datetime.utcnow(),
+                "edr_template": edr_template,
+                "edr_template_info": template_info
             }
             
         except Exception as e:
             logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
             raise
     
-    async def _create_network_security_group(self, nsg_name: str):
-        """Create network security group with basic rules"""
+    async def _create_network_security_group(self, nsg_name: str, edr_template: str = None):
+        """Create network security group with basic rules and EDR-specific rules"""
+        # Base security rules
+        security_rules = [
+            {
+                'name': 'AllowRDP',
+                'protocol': 'Tcp',
+                'source_port_range': '*',
+                'destination_port_range': '3389',
+                'source_address_prefix': '*',
+                'destination_address_prefix': '*',
+                'access': 'Allow',
+                'priority': 1000,
+                'direction': 'Inbound'
+            }
+        ]
+        
+        # Add EDR-specific rules if template is specified
+        if edr_template:
+            edr_manager = get_edr_manager()
+            additional_rules = edr_manager.get_network_security_rules(edr_template)
+            security_rules.extend(additional_rules)
+            logger.info(f"Added {len(additional_rules)} EDR-specific security rules for template: {edr_template}")
+        
         nsg_params = {
             'location': self.location,
-            'security_rules': [
-                {
-                    'name': 'AllowRDP',
-                    'protocol': 'Tcp',
-                    'source_port_range': '*',
-                    'destination_port_range': '3389',
-                    'source_address_prefix': '*',
-                    'destination_address_prefix': '*',
-                    'access': 'Allow',
-                    'priority': 1000,
-                    'direction': 'Inbound'
-                }
-            ]
+            'security_rules': security_rules
         }
         
         operation = self.network_client.network_security_groups.begin_create_or_update(
@@ -149,8 +176,8 @@ class AzureVMManager:
         )
         return operation.result()
     
-    async def _create_vm(self, vm_name: str, nic_id: str):
-        """Create Windows 11 virtual machine"""
+    async def _create_vm(self, vm_name: str, nic_id: str, deployment_script: str = None):
+        """Create Windows 11 virtual machine with optional deployment script"""
         vm_params = {
             'location': self.location,
             'os_profile': {
@@ -187,6 +214,36 @@ class AzureVMManager:
                 ]
             }
         }
+        
+        # Add custom script extension if deployment script is provided
+        if deployment_script:
+            # Encode the script in base64 for transmission
+            script_b64 = base64.b64encode(deployment_script.encode('utf-8')).decode('utf-8')
+            
+            # Create a PowerShell command that decodes and executes the script
+            powershell_command = f"""
+            $scriptContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("{script_b64}"))
+            $scriptContent | Out-File -FilePath "C:\\DetonatorDeployment.ps1" -Encoding UTF8
+            PowerShell.exe -ExecutionPolicy Bypass -File "C:\\DetonatorDeployment.ps1"
+            """
+            
+            vm_params['os_profile']['windows_configuration']['additional_unattend_content'] = [
+                {
+                    'pass_name': 'OobeSystem',
+                    'component_name': 'Microsoft-Windows-Shell-Setup',
+                    'setting_name': 'FirstLogonCommands',
+                    'content': f"""
+                    <FirstLogonCommands>
+                        <SynchronousCommand>
+                            <CommandLine>powershell.exe -EncodedCommand {base64.b64encode(powershell_command.encode('utf-16le')).decode('ascii')}</CommandLine>
+                            <Order>1</Order>
+                        </SynchronousCommand>
+                    </FirstLogonCommands>
+                    """
+                }
+            ]
+            
+            logger.info(f"Added deployment script to VM {vm_name}")
         
         operation = self.compute_client.virtual_machines.begin_create_or_update(
             self.resource_group, vm_name, vm_params
