@@ -7,6 +7,12 @@ import sys
 import subprocess
 import threading
 import time
+import os
+from dotenv import load_dotenv
+
+from .logging_config import setup_logging
+
+load_dotenv()
 
 def run_fastapi():
     """Run the FastAPI server"""
@@ -14,10 +20,12 @@ def run_fastapi():
     from .fastapi_app import app
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
+
 def run_flask():
     """Run the Flask server"""
     from .flask_app import app
     app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
+
 
 def run_both():
     """Run both servers concurrently"""
@@ -31,7 +39,7 @@ def run_both():
     fastapi_thread.start()
     
     # Give FastAPI a moment to start
-    time.sleep(2)
+    #time.sleep(2)
     
     # Start Flask in the main thread
     try:
@@ -40,7 +48,9 @@ def run_both():
         print("\nShutting down servers...")
         sys.exit(0)
 
+
 def main():
+    setup_logging()
     if len(sys.argv) < 2:
         print("Usage:")
         print("  python -m detonator both     # Run both FastAPI and Flask servers")
@@ -49,6 +59,10 @@ def main():
         sys.exit(1)
     
     command = sys.argv[1].lower()
+
+    if not os.getenv("AZURE_SUBSCRIPTION_ID"):
+        print("Error: AZURE_SUBSCRIPTION_ID environment variable is not set.")
+        sys.exit(1)
     
     if command == "both":
         run_both()

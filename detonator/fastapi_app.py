@@ -13,10 +13,10 @@ from .vm_manager import initialize_vm_manager, get_vm_manager
 from .vm_monitor import start_vm_monitoring, add_scan_to_monitoring
 from .edr_templates import get_edr_manager
 
-load_dotenv()
+#load_dotenv()
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Detonator API", version="0.1.0")
@@ -124,11 +124,14 @@ async def upload_file_and_scan(
     # Read file content
     content = await file.read()
     file_hash = File.calculate_hash(content)
-    
+
+    logger.info(f"Uploading file: {file.filename}, hash: {file_hash}")
+    logger.info("Creating scan with Azure VM...")
+
     # Check if file already exists
-    existing_file = db.query(File).filter(File.file_hash == file_hash).first()
-    if existing_file:
-        raise HTTPException(status_code=400, detail="File with this hash already exists")
+    #existing_file = db.query(File).filter(File.file_hash == file_hash).first()
+    #if existing_file:
+    #    raise HTTPException(status_code=400, detail="File with this hash already exists")
     
     # Create file record
     db_file = File(
