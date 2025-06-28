@@ -42,18 +42,17 @@ class VMMonitorTask:
         logger.info("VM monitoring task stopped")
     
 
-    def _monitor_loop(self):
+    async def _monitor_loop(self):
         """Main monitoring loop - runs every 3 seconds"""
         while self.running:
             try:
                 self._check_all_scans()
-                time.sleep(3)
-                #await asyncio.sleep(3)  # Check every 3 seconds as requested
+                await asyncio.sleep(3)  # Check every 3 seconds as requested
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error in VM monitoring loop: {str(e)}")
-                #await asyncio.sleep(3)
+                await asyncio.sleep(3)
     
 
     def _get_active_scans(self) -> List[Scan]:
@@ -112,6 +111,9 @@ class VMMonitorTask:
         time_elapsed = current_time - db_scan.created_at
         
         # Get current VM status from Azure
+        if not vm_name:
+            return
+            
         vm_status = vm_manager.get_vm_status(vm_name)
         
         # Update scan status based on VM status

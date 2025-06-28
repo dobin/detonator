@@ -46,7 +46,7 @@ async def startup_event():
             logger.info("VM Manager initialized successfully")
         
         # Start VM monitoring
-        await start_vm_monitoring()
+        start_vm_monitoring()
         logger.info("VM monitoring started")
         
     except Exception as e:
