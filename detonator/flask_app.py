@@ -112,6 +112,8 @@ def scans_template():
         response = requests.get(f"{API_BASE_URL}/api/scans")
         if response.status_code == 200:
             scans = response.json()
+            # Sort scans by ID in descending order (newest first)
+            scans = sorted(scans, key=lambda scan: scan['id'], reverse=True)
         else:
             scans = []
     except requests.RequestException:
