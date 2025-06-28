@@ -72,7 +72,9 @@ poetry run python -m detonator web   # Flask only
 
 ### Malware Analysis
 - **Automated VM Provisioning**: Creates fresh Azure Windows 11 VMs for each scan
+- **EDR Template Support**: Choose from pre-configured deployment scripts (OpenSSH, Sysmon, Windows Defender, etc.)
 - **VM Lifecycle Management**: Automatically shuts down VMs after 1 minute
+- **Database-driven Monitoring**: VM monitoring uses database as source of truth, no manual tracking required
 - **Resource Cleanup**: Removes all Azure resources after analysis
 - **Status Monitoring**: Real-time VM status updates every 3 seconds
 
@@ -91,10 +93,26 @@ poetry run python -m detonator web   # Flask only
 ## VM Analysis Workflow
 
 1. **Upload File**: Upload a file through the web interface or API
-2. **VM Creation**: System automatically creates an Azure Windows 11 VM
-3. **Analysis**: VM runs for exactly 1 minute for analysis
-4. **Shutdown**: VM is automatically shut down after 1 minute
-5. **Cleanup**: All Azure resources are cleaned up after 2 minutes total
+2. **Select EDR Template**: Choose deployment script (OpenSSH, Sysmon, Windows Defender, etc.)
+3. **VM Creation**: System automatically creates an Azure Windows 11 VM with selected tools
+4. **Analysis**: VM runs for exactly 1 minute for analysis
+5. **Monitoring**: System automatically monitors VM status via database queries
+6. **Shutdown**: VM is automatically shut down after 1 minute
+7. **Cleanup**: All Azure resources are cleaned up after 2 minutes total
+
+## EDR Templates
+
+Available deployment templates:
+- **OpenSSH**: Installs SSH server for remote access (Port 22)
+- **Sysmon**: Installs Sysmon for detailed system monitoring
+- **Windows Defender**: Configures enhanced Windows Defender monitoring
+- **Wireshark**: Network traffic analysis tools
+- **Process Monitor**: File and registry monitoring
+
+Each template automatically configures:
+- Network security rules for required ports
+- PowerShell deployment scripts
+- Logging and monitoring setup
 
 ## API Endpoints
 
