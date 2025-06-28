@@ -46,7 +46,7 @@ class Scan(Base):
 
     status = Column(String(20), default="fresh", nullable=False)
     vm_status = Column(String(20), default="none", nullable=False)
-    azure_status = Column(String(50), default="", nullable=False)
+    azure_status = Column(String(50), default="none", nullable=False)
 
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
