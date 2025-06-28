@@ -11,9 +11,15 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 import uuid
 
+from .database import get_background_db, Scan
 from .edr_templates import get_edr_manager
 
+# Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
+logging.getLogger("azure.identity").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
+
 
 class AzureVMManager:
     """Manages Azure VM lifecycle for malware analysis"""
@@ -23,15 +29,37 @@ class AzureVMManager:
         self.resource_group = resource_group
         self.location = location
         self.credential = DefaultAzureCredential()
+        self.db = get_background_db()
         
         # Initialize Azure clients
         self.compute_client = ComputeManagementClient(self.credential, self.subscription_id)
         self.network_client = NetworkManagementClient(self.credential, self.subscription_id)
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
-    async def create_windows11_vm(self, scan_id: int, edr_template: str = None) -> Dict[str, Any]:
+
+    async def create_windows11_vm(self, scan_id: int):
         """Create a Windows 11 VM for malware analysis with optional EDR template"""
         vm_name = f"detonator-{scan_id}"
+
+        db_scan = self.db.query(Scan).filter(Scan.id == scan_id).first()
+        if not db_scan:
+            logger.error(f"Scan with ID {scan_id} not found in database")
+            # No DB to update
+            return
+        
+        # DB: Indicate we creating the VM currently
+        db_scan.status = "vm_creating"
+        db_scan.detonator_srv_logs += f"[{datetime.utcnow().isoformat()}] To status: {db_scan.status}\n"
+        self.db.commit()
+        
+        # Validate EDR template if provided
+        #edr_template_id = db_scan.edr_template
+        #if edr_template_id:
+        #    edr_manager = get_edr_manager()
+        #    if not edr_manager.validate_template(edr_template_id):
+        #        logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
+        #        edr_template_id = None
+        edr_template = None
         
         try:
             # Get EDR template configuration
@@ -40,11 +68,13 @@ class AzureVMManager:
             deployment_script = None
             additional_ports = []
             
-            if edr_template and edr_manager.validate_template(edr_template):
-                template_info = edr_manager.get_template(edr_template)
-                deployment_script = edr_manager.get_deployment_script(edr_template)
-                additional_ports = template_info.get("ports", [])
-                logger.info(f"Using EDR template: {edr_template} with ports: {additional_ports}")
+            #if edr_template and edr_manager.validate_template(edr_template):
+            #    template_info = edr_manager.get_template(edr_template)
+            #    deployment_script = edr_manager.get_deployment_script(edr_template)
+            #    additional_ports = template_info.get("ports", [])
+            #    logger.info(f"Using EDR template: {edr_template} with ports: {additional_ports}")
+            
+            logger.info(f"Creating VM: {vm_name} with EDR template: {edr_template}")
             
             # Create network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
@@ -65,25 +95,43 @@ class AzureVMManager:
             
             # Create the VM with deployment script
             vm_result = await self._create_vm(vm_name, nic.id, deployment_script)
+            if not vm_result:
+                # DB: Failed indicator
+                db_scan.status = "failed"
+                db_scan.detonator_srv_logs += "Failed: _create_vm()\n"
+                self.db.commit()
             
             # Get public IP address
             public_ip_info = self.network_client.public_ip_addresses.get(
                 self.resource_group, public_ip_name
             )
-            
-            return {
-                "vm_name": vm_name,
-                "vm_id": vm_result.id,
-                "public_ip": public_ip_info.ip_address,
-                "status": "creating",
-                "created_at": datetime.utcnow(),
-                "edr_template": edr_template,
-                "edr_template_info": template_info
-            }
+
+            logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
+
+            # Update scan record with VM details
+            db_scan.vm_instance_name = vm_name
+            db_scan.vm_ip_address = public_ip_info.ip_address
+            db_scan.status = "vm_created"
+            db_scan.created_at = datetime.utcnow()
+
+            creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
+            #creation_log += f"VM Name: {vm_info['vm_name']}\n"
+            #creation_log += f"Public IP: {vm_info['public_ip']}\n"
+            #creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
+            #if vm_info.get("edr_template_info"):
+            #    template_info = vm_info["edr_template_info"]
+            #    creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
+            #    creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
+            self.db.commit()
             
         except Exception as e:
             logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
+            # DB: Failed indicator
+            db_scan.status = "failed"
+            db_scan.detonator_srv_logs += "Failed: _create_vm(): {}\n".format(str(e))
+            self.db.commit()
             raise
+    
     
     async def _create_network_security_group(self, nsg_name: str, edr_template: str = None):
         """Create network security group with basic rules and EDR-specific rules"""
@@ -119,6 +167,7 @@ class AzureVMManager:
         )
         return operation.result()
     
+
     async def _create_virtual_network(self, vnet_name: str, subnet_name: str):
         """Create virtual network and subnet"""
         vnet_params = {
@@ -139,6 +188,7 @@ class AzureVMManager:
         )
         return operation.result()
     
+
     async def _create_public_ip(self, public_ip_name: str):
         """Create public IP address"""
         public_ip_params = {
@@ -152,6 +202,7 @@ class AzureVMManager:
         )
         return operation.result()
     
+
     async def _create_network_interface(self, nic_name: str, vnet_name: str, subnet_name: str, 
                                        public_ip_name: str, nsg_name: str):
         """Create network interface"""
@@ -176,6 +227,7 @@ class AzureVMManager:
         )
         return operation.result()
     
+
     async def _create_vm(self, vm_name: str, nic_id: str, deployment_script: str = None):
         """Create Windows 11 virtual machine with optional deployment script"""
         vm_params = {
@@ -250,6 +302,7 @@ class AzureVMManager:
         )
         return operation.result()
     
+
     async def get_vm_status(self, vm_name: str) -> str:
         """Get the current status of a VM"""
         try:
@@ -270,6 +323,7 @@ class AzureVMManager:
             logger.error(f"Error getting VM status for {vm_name}: {str(e)}")
             return "error"
     
+
     async def shutdown_vm(self, vm_name: str) -> bool:
         """Shutdown and deallocate a VM"""
         try:
@@ -290,6 +344,7 @@ class AzureVMManager:
         except Exception as e:
             logger.error(f"Error shutting down VM {vm_name}: {str(e)}")
             return False
+        
     
     async def delete_vm_resources(self, vm_name: str) -> bool:
         """Delete VM and all associated resources"""
@@ -338,11 +393,13 @@ class AzureVMManager:
 # Global VM manager instance (will be initialized in main app)
 vm_manager: Optional[AzureVMManager] = None
 
+
 def initialize_vm_manager(subscription_id: str, resource_group: str, location: str = "East US"):
     """Initialize the global VM manager instance"""
     global vm_manager
     vm_manager = AzureVMManager(subscription_id, resource_group, location)
     return vm_manager
+
 
 def get_vm_manager() -> AzureVMManager:
     """Get the global VM manager instance"""

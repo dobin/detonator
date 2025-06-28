@@ -126,7 +126,6 @@ async def upload_file_and_scan(
     file_hash = File.calculate_hash(content)
 
     logger.info(f"Uploading file: {file.filename}, hash: {file_hash}")
-    logger.info("Creating scan with Azure VM...")
 
     # Check if file already exists
     #existing_file = db.query(File).filter(File.file_hash == file_hash).first()
@@ -144,8 +143,9 @@ async def upload_file_and_scan(
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
-    
-    # Automatically create a scan with Azure VM
+    logger.info(f"  Created file with id {db_file.id}")
+
+    # Create scan record (auto-scan)
     db_scan = Scan(
         file_id=db_file.id,
         status="initializing",
@@ -157,54 +157,21 @@ async def upload_file_and_scan(
     db.refresh(db_scan)
     
     # Create Azure VM for the scan
-    try:
-        vm_manager = get_vm_manager()
-        
-        # Validate EDR template if provided
-        edr_template_id = db_scan.edr_template
-        if edr_template_id:
-            edr_manager = get_edr_manager()
-            if not edr_manager.validate_template(edr_template_id):
-                logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
-                edr_template_id = None
-        
-        # Create Windows 11 VM with EDR template
-        vm_info = await vm_manager.create_windows11_vm(db_scan.id, edr_template_id)
-        
-        # Update scan with VM information
-        db_scan.vm_instance_name = vm_info["vm_name"]
-        db_scan.vm_ip_address = vm_info["public_ip"]
-        db_scan.status = "vm_creating"
-        
-        # Log VM creation
-        creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
-        creation_log += f"VM Name: {vm_info['vm_name']}\n"
-        creation_log += f"Public IP: {vm_info['public_ip']}\n"
-        creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
-        
-        if vm_info.get("edr_template_info"):
-            template_info = vm_info["edr_template_info"]
-            creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
-            creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
-        
-        creation_log += f"Status: {vm_info['status']}\n"
-        
-        db_scan.detonator_srv_logs = creation_log
-        
-        db.commit()
-        
-        logger.info(f"Created file {db_file.id} and scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
-        
-    except Exception as e:
-        logger.error(f"Failed to create VM for scan {db_scan.id}: {str(e)}")
-        
-        # Update scan status to reflect error
-        db_scan.status = "vm_creation_failed"
-        error_log = f"[{datetime.utcnow().isoformat()}] VM creation failed: {str(e)}\n"
-        db_scan.detonator_srv_logs = error_log
-        db.commit()
+    db_scan.status = "vm_creating"
+    logs = [
+        f"API: Creating VM initiated for scan {db_scan.id}",
+        f"[{datetime.utcnow().isoformat()}] To status: {db_scan.status}",
+    ]
+    db_scan.detonator_srv_logs = "\n".join(logs) + "\n" # first log entry
+    db.commit()
+
+    vm_manager = get_vm_manager()
+    await vm_manager.create_windows11_vm(db_scan.id)
+    
+    logger.info(f"Created file {db_file.id} and initiated scan for {db_scan.id}")
     
     return db_file
+
 
 @app.get("/api/files", response_model=List[FileResponse])
 async def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -319,6 +286,9 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         
         db.commit()
         db.refresh(db_scan)
+        
+        # Add to monitoring
+        add_scan_to_monitoring(db_scan.id, vm_info["vm_name"])
         
         logger.info(f"Created scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
         
