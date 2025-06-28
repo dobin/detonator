@@ -16,8 +16,10 @@ from .utils import mylog
 
 #load_dotenv()
 
-# Setup logging
+# Setup logging - reduce verbosity for HTTP requests
 #logging.basicConfig(level=logging.INFO)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Detonator API", version="0.1.0")

@@ -1,10 +1,14 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import requests
 import os
+import logging
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "detonator-secret-key"  # Change this in production
+
+# Reduce Flask/Werkzeug HTTP request logging verbosity
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 # Helper function for Jinja2 templates
 def get_status_color(status):
