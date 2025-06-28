@@ -12,25 +12,19 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1 class="text-xl font-bold">Detonator</h1>
-                <div>
-                    <a href="/" style="color: white; text-decoration: none; margin-right: 20px;">Home</a>
-                    <a href="/files" style="color: white; text-decoration: none; margin-right: 20px;">Files</a>
-                    <a href="/scans" style="color: white; text-decoration: none; margin-right: 20px;">Scans</a>
-                    <a href="/upload" style="color: white; text-decoration: none;">Upload</a>
-                </div>
-            </div>
+    <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold">Detonator</h1>
+        <div class="flex space-x-6">
+            <a href="/" class="hover:underline px-2 py-1">Home</a>
+            <a href="/files" class="hover:underline px-2 py-1">Files</a>
+            <a href="/scans" class="hover:underline px-2 py-1">Scans</a>
         </div>
+    </div>
     </nav>
 
     <main class="container mx-auto mt-8 p-4">
         {% block content %}{% endblock %}
     </main>
 
-    <div id="loading" class="htmx-indicator fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded">
-        Loading...
-    </div>
 </body>
 </html>

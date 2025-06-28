@@ -7,38 +7,6 @@
     <h2 class="text-2xl font-bold mb-4">Welcome to Detonator</h2>
     <p class="text-gray-600 mb-6">A modern web application for file analysis with FastAPI backend and Flask + HTMX frontend.</p>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-blue-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold mb-2">FastAPI Backend</h3>
-            <p class="text-gray-600 mb-4">RESTful API services running on port 8000</p>
-            <button 
-                hx-get="/api/files" 
-                hx-target="#api-status"
-                hx-indicator="#loading"
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-                Test API Connection
-            </button>
-            <div id="api-status" class="mt-4"></div>
-        </div>
-        
-        <div class="bg-green-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold mb-2">File Management</h3>
-            <p class="text-gray-600 mb-4">Upload and manage files for analysis</p>
-            <a href="/files" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-block">
-                View Files
-            </a>
-        </div>
-        
-        <div class="bg-purple-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold mb-2">Scan Results</h3>
-            <p class="text-gray-600 mb-4">Monitor analysis progress and results</p>
-            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
-                View Scans
-            </a>
-        </div>
-    </div>
-    
     <div class="mt-8 bg-gray-50 p-4 rounded-lg">
         <h3 class="text-lg font-semibold mb-4">Quick Upload & Analysis</h3>
         <form 
