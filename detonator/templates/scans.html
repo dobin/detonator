@@ -50,51 +50,13 @@
 
 <script>
     function viewScanDetails(scanId) {
-        fetch('http://localhost:8000/api/scans/' + scanId)
-            .then(response => response.json())
-            .then(scan => {
-                let detailsHtml = '<div class="space-y-4">';
-                detailsHtml += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-                detailsHtml += '<div><strong>Scan ID:</strong> ' + scan.id + '</div>';
-                detailsHtml += '<div><strong>File ID:</strong> ' + scan.file_id + '</div>';
-                detailsHtml += '<div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.status) + '">' + scan.status + '</span></div>';
-                detailsHtml += '<div><strong>VM Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.vm_status) + '">' + scan.vm_status + '</span></div>';
-                detailsHtml += '<div><strong>Azure Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.azure_status) + '">' + scan.azure_status + '</span></div>';
-                detailsHtml += '<div><strong>VM Template:</strong> ' + (scan.vm_template || 'Not set') + '</div>';
-                detailsHtml += '<div><strong>EDR Template:</strong> ' + (scan.edr_template || 'Not set') + '</div>';
-                detailsHtml += '<div><strong>VM Instance:</strong> ' + (scan.vm_instance_name || 'Not set') + '</div>';
-                detailsHtml += '<div><strong>VM IP:</strong> ' + (scan.vm_ip_address || 'Not set') + '</div>';
-                detailsHtml += '<div><strong>Result:</strong> ' + (scan.result || 'No result yet') + '</div>';
-                detailsHtml += '</div>';
-                
-                if (scan.detonator_srv_logs) {
-                    detailsHtml += '<div><strong>Detonator Server Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.detonator_srv_logs + '</pre></div>';
-                }
-                if (scan.agent_logs) {
-                    detailsHtml += '<div><strong>Agent Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.agent_logs + '</pre></div>';
-                }
-                if (scan.execution_logs) {
-                    detailsHtml += '<div><strong>Execution Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.execution_logs + '</pre></div>';
-                }
-                if (scan.edr_logs) {
-                    detailsHtml += '<div><strong>EDR Logs:</strong><pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto">' + scan.edr_logs + '</pre></div>';
-                }
-                
-                detailsHtml += '<div class="text-sm text-gray-500">';
-                detailsHtml += '<p>Created: ' + new Date(scan.created_at).toLocaleString() + '</p>';
-                detailsHtml += '<p>Updated: ' + new Date(scan.updated_at).toLocaleString() + '</p>';
-                if (scan.completed_at) {
-                    detailsHtml += '<p>Completed: ' + new Date(scan.completed_at).toLocaleString() + '</p>';
-                }
-                detailsHtml += '</div>';
-                detailsHtml += '</div>';
-                
-                document.getElementById('scan-modal-content').innerHTML = detailsHtml;
-                document.getElementById('scan-modal').classList.remove('hidden');
-            })
-            .catch(error => {
-                alert('Error loading scan details: ' + error.message);
-            });
+        // Use HTMX to load scan details into the modal
+        htmx.ajax('GET', '/templates/scan-details/' + scanId, {
+            target: '#scan-modal-content',
+            swap: 'innerHTML'
+        }).then(() => {
+            document.getElementById('scan-modal').classList.remove('hidden');
+        });
     }
 
     function updateScanStatus(scanId) {
@@ -120,20 +82,6 @@
             .catch(error => {
                 alert('Error updating scan: ' + error.message);
             });
-        }
-    }
-
-    function getStatusColor(status) {
-        switch(status) {
-            case 'fresh': return 'bg-blue-100 text-blue-800';
-            case 'started': return 'bg-yellow-100 text-yellow-800';
-            case 'running': return 'bg-yellow-100 text-yellow-800';
-            case 'completed': return 'bg-green-100 text-green-800';
-            case 'failed': return 'bg-red-100 text-red-800';
-            case 'none': return 'bg-gray-100 text-gray-800';
-            case 'creating': return 'bg-blue-100 text-blue-800';
-            case 'stopped': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
         }
     }
 
