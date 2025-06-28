@@ -101,6 +101,8 @@ def files_template():
         response = requests.get(f"{API_BASE_URL}/api/files")
         if response.status_code == 200:
             files = response.json()
+            # Sort scans by ID in descending order (newest first)
+            files = sorted(files, key=lambda file: file['id'], reverse=True)
         else:
             files = []
     except requests.RequestException:
@@ -204,7 +206,9 @@ def upload_file_and_scan():
         data = {}
         
         if 'file' in request.files:
-            files['file'] = request.files['file']
+            # fix filename handling
+            uploaded_file = request.files['file']
+            files['file'] = (uploaded_file.filename, uploaded_file.stream, uploaded_file.content_type)
         
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']

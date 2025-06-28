@@ -127,16 +127,19 @@ async def upload_file_and_scan(
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
+    # Debug file upload information
+    actual_filename = file.filename
+
     # Read file content
     content = await file.read()
     file_hash = File.calculate_hash(content)
 
-    logger.info(f"Uploading file: {file.filename}, hash: {file_hash}")
+    logger.info(f"Uploading file: {actual_filename}, hash: {file_hash}")
 
     # DB: Create file record
     db_file = File(
         content=content,
-        filename=file.filename,
+        filename=actual_filename,
         file_hash=file_hash,
         source_url=source_url,
         comment=file_comment
@@ -144,7 +147,7 @@ async def upload_file_and_scan(
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
-    logger.info(f"DB: Created file {db_file.id}")
+    logger.info(f"DB: Created file {db_file.id} with filename: {actual_filename}")
 
     # DB: Create scan record (auto-scan)
     db_scan = Scan(
@@ -154,7 +157,7 @@ async def upload_file_and_scan(
         vm_template=vm_template or "Windows 11 Pro",
         edr_template=edr_template,
         comment=scan_comment,
-        detonator_srv_logs=mylog("DB: Scan created"),
+        detonator_srv_logs=mylog(f"DB: Scan created for file {actual_filename} (ID: {db_file.id})"),
     )
     db.add(db_scan)
     db.commit()
