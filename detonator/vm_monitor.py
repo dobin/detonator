@@ -118,7 +118,7 @@ class VMMonitorTask:
         vm_status = vm_manager.get_vm_status(vm_name)
         if db_scan.azure_status != vm_status:
             db_scan.updated_at = current_time
-            db_scan.detonator_srv_logs += mylog("VM Monitor: Azure VM status changed: {db_scan.azure_status} -> {vm_status}")
+            db_scan.detonator_srv_logs += mylog(f"VM Monitor: Azure VM status changed: {db_scan.azure_status} -> {vm_status}")
             db_scan.azure_status = vm_status
             self.db.commit()
         
