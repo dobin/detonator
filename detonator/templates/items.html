@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Items{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Items Management</h2>
+        <button 
+            hx-get="/items-form"
+            hx-target="#modal"
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+            Add New Item
+        </button>
+    </div>
+
+    <!-- Items List -->
+    <div 
+        id="items-container" 
+        hx-get="/api/items" 
+        hx-trigger="load"
+        hx-indicator="#loading"
+    >
+        <div class="text-center text-gray-500">Loading items...</div>
+    </div>
+</div>
+
+<!-- Modal for forms -->
+<div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+</div>
+
+<script>
+    // HTMX response handler for items
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'items-container') {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (response.items) {
+                renderItems(response.items);
+            }
+        }
+    });
+
+    function renderItems(items) {
+        const container = document.getElementById('items-container');
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${items.map(item => `
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-lg">${item.name}</h3>
+                        <p class="text-gray-600 mt-2">${item.description}</p>
+                        <div class="mt-4 flex space-x-2">
+                            <button class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">
+                                Edit
+                            </button>
+                            <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

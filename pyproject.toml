@@ -1,0 +1,21 @@
+[project]
+name = "detonator"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Dobin",email = "dobin.rutishauser@gmail.com"}
+]
+license = {text = "GPL3"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard] (>=0.115.14,<0.116.0)",
+    "flask>=3.0.0",
+    "uvicorn>=0.30.0",
+    "requests>=2.31.0"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
