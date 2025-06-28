@@ -12,7 +12,7 @@
     <!-- Files List -->
     <div 
         id="files-container" 
-        hx-get="/api/files" 
+        hx-get="/templates/files" 
         hx-trigger="load"
         hx-indicator="#loading"
     >
@@ -21,60 +21,6 @@
 </div>
 
 <script>
-    // HTMX response handler for files
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.target.id === 'files-container') {
-            const response = JSON.parse(evt.detail.xhr.responseText);
-            if (Array.isArray(response)) {
-                renderFiles(response);
-            }
-        }
-    });
-
-    function renderFiles(files) {
-        const container = document.getElementById('files-container');
-        if (files.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500 py-8">No files uploaded yet. <a href="/upload" class="text-blue-500 hover:underline">Upload your first file</a>.</div>';
-            return;
-        }
-        
-        container.innerHTML = `
-            <div class="grid grid-cols-1 gap-4">
-                ${files.map(file => `
-                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-lg text-blue-600">${file.filename}</h3>
-                                <p class="text-gray-600 text-sm">Hash: ${file.file_hash}</p>
-                                ${file.source_url ? `<p class="text-gray-600 text-sm">Source: ${file.source_url}</p>` : ''}
-                                ${file.comment ? `<p class="text-gray-700 mt-2">${file.comment}</p>` : ''}
-                                <p class="text-gray-500 text-xs mt-2">Uploaded: ${new Date(file.created_at).toLocaleString()}</p>
-                            </div>
-                            <div class="flex flex-col space-y-2 ml-4">
-                                <button 
-                                    onclick="createScan(${file.id})"
-                                    class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                                >
-                                    Create Scan
-                                </button>
-                                <a href="/scans?file_id=${file.id}" class="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600 text-center">
-                                    Scans
-                                </a>
-                                <button 
-                                    onclick="deleteFile(${file.id})"
-                                    class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                        <div id="file-details-${file.id}" class="mt-4"></div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
     function deleteFile(fileId) {
         if (confirm('Are you sure you want to delete this file and all its scans?')) {
             fetch('http://localhost:8000/api/files/' + fileId, {
@@ -82,7 +28,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                location.reload(); // Refresh the page
+                // Refresh the files list using HTMX
+                htmx.trigger('#files-container', 'load');
             })
             .catch(error => {
                 alert('Error deleting file: ' + error.message);
@@ -105,63 +52,12 @@
             .then(response => response.json())
             .then(data => {
                 alert('Scan created successfully with ID: ' + data.id);
-                location.reload(); // Refresh the page
+                // Refresh the files list using HTMX
+                htmx.trigger('#files-container', 'load');
             })
             .catch(error => {
                 alert('Error creating scan: ' + error.message);
             });
-        }
-    }
-
-    // Handle file details response
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.target.id.startsWith('file-details-')) {
-            const response = JSON.parse(evt.detail.xhr.responseText);
-            if (response.scans) {
-                renderFileScans(response.scans, evt.detail.target.id);
-            }
-        }
-    });
-
-    function renderFileScans(scans, targetId) {
-        const container = document.getElementById(targetId);
-        if (scans.length === 0) {
-            container.innerHTML = '<div class="text-gray-500 text-sm">No scans for this file.</div>';
-            return;
-        }
-        
-        let scanHtml = '<div class="bg-gray-50 p-3 rounded">';
-        scanHtml += '<h4 class="font-semibold mb-2">Scans (' + scans.length + ')</h4>';
-        scanHtml += '<div class="space-y-2">';
-        
-        scans.forEach(scan => {
-            scanHtml += '<div class="bg-white p-2 rounded border border-gray-200">';
-            scanHtml += '<div class="flex justify-between items-center">';
-            scanHtml += '<span class="text-sm">';
-            scanHtml += '<span class="font-medium">Status:</span> ';
-            scanHtml += '<span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.status) + '">' + scan.status + '</span>';
-            scanHtml += '</span>';
-            scanHtml += '<span class="text-xs text-gray-500">' + new Date(scan.created_at).toLocaleString() + '</span>';
-            scanHtml += '</div>';
-            if (scan.result) {
-                scanHtml += '<div class="text-sm mt-1"><span class="font-medium">Result:</span> ' + scan.result + '</div>';
-            }
-            scanHtml += '</div>';
-        });
-        
-        scanHtml += '</div>';
-        scanHtml += '</div>';
-        
-        container.innerHTML = scanHtml;
-    }
-
-    function getStatusColor(status) {
-        switch(status) {
-            case 'fresh': return 'bg-blue-100 text-blue-800';
-            case 'running': return 'bg-yellow-100 text-yellow-800';
-            case 'completed': return 'bg-green-100 text-green-800';
-            case 'failed': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
         }
     }
 </script>

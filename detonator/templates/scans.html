@@ -8,7 +8,7 @@
         <h2 class="text-2xl font-bold">Scan Management</h2>
         <div class="space-x-2">
             <button 
-                hx-get="/api/scans" 
+                hx-get="/templates/scans" 
                 hx-target="#scans-container"
                 hx-indicator="#loading"
                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -21,7 +21,7 @@
     <!-- Scans List -->
     <div 
         id="scans-container" 
-        hx-get="/api/scans" 
+        hx-get="/templates/scans" 
         hx-trigger="load"
         hx-indicator="#loading"
     >
@@ -49,81 +49,6 @@
 </div>
 
 <script>
-    // HTMX response handler for scans
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.target.id === 'scans-container') {
-            const response = JSON.parse(evt.detail.xhr.responseText);
-            if (Array.isArray(response)) {
-                renderScans(response);
-            }
-        }
-    });
-
-    function renderScans(scans) {
-        const container = document.getElementById('scans-container');
-        if (scans.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500 py-8">No scans found. <a href="/upload" class="text-blue-500 hover:underline">Upload a file</a> to start analysis.</div>';
-            return;
-        }
-        
-        let scanHtml = '<div class="grid grid-cols-1 gap-4">';
-        
-        scans.forEach(scan => {
-            scanHtml += '<div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">';
-            scanHtml += '<div class="flex justify-between items-start">';
-            scanHtml += '<div class="flex-1">';
-            scanHtml += '<div class="flex items-center space-x-3 mb-2">';
-            scanHtml += '<h3 class="font-semibold text-lg">Scan #' + scan.id + '</h3>';
-            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.status) + '">' + scan.status + '</span>';
-            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.vm_status) + '">' + scan.vm_status + '</span>';
-            scanHtml += '<span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(scan.azure_status) + '">' + scan.azure_status + '</span>';
-            scanHtml += '</div>';
-            scanHtml += '<p class="text-gray-600 text-sm">File ID: ' + scan.file_id + '</p>';
-            if (scan.vm_template) {
-                scanHtml += '<p class="text-gray-600 text-sm">VM Template: ' + scan.vm_template + '</p>';
-            }
-            if (scan.edr_template) {
-                scanHtml += '<p class="text-gray-600 text-sm">EDR Template: ' + scan.edr_template + '</p>';
-            }
-            if (scan.vm_instance_name) {
-                scanHtml += '<p class="text-gray-600 text-sm">VM Instance: ' + scan.vm_instance_name + '</p>';
-            }
-            if (scan.vm_ip_address) {
-                scanHtml += '<p class="text-gray-600 text-sm">VM IP: ' + scan.vm_ip_address + '</p>';
-            }
-            if (scan.result) {
-                scanHtml += '<p class="text-gray-700 mt-2"><strong>Result:</strong> ' + scan.result + '</p>';
-            }
-            scanHtml += '<div class="text-gray-500 text-xs mt-2">';
-            scanHtml += '<p>Created: ' + new Date(scan.created_at).toLocaleString() + '</p>';
-            scanHtml += '<p>Updated: ' + new Date(scan.updated_at).toLocaleString() + '</p>';
-            if (scan.completed_at) {
-                scanHtml += '<p>Completed: ' + new Date(scan.completed_at).toLocaleString() + '</p>';
-            }
-            scanHtml += '</div>';
-            scanHtml += '</div>';
-            scanHtml += '<div class="flex flex-col space-y-2 ml-4">';
-            scanHtml += '<button onclick="viewScanDetails(' + scan.id + ')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">View Details</button>';
-            scanHtml += '<button onclick="updateScanStatus(' + scan.id + ')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Update</button>';
-            scanHtml += '</div>';
-            scanHtml += '</div>';
-            scanHtml += '</div>';
-        });
-        
-        scanHtml += '</div>';
-        container.innerHTML = scanHtml;
-    }
-
-    function getStatusColor(status) {
-        switch(status) {
-            case 'fresh': return 'bg-blue-100 text-blue-800';
-            case 'running': return 'bg-yellow-100 text-yellow-800';
-            case 'completed': return 'bg-green-100 text-green-800';
-            case 'failed': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    }
-
     function viewScanDetails(scanId) {
         fetch('http://localhost:8000/api/scans/' + scanId)
             .then(response => response.json())
@@ -133,6 +58,8 @@
                 detailsHtml += '<div><strong>Scan ID:</strong> ' + scan.id + '</div>';
                 detailsHtml += '<div><strong>File ID:</strong> ' + scan.file_id + '</div>';
                 detailsHtml += '<div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.status) + '">' + scan.status + '</span></div>';
+                detailsHtml += '<div><strong>VM Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.vm_status) + '">' + scan.vm_status + '</span></div>';
+                detailsHtml += '<div><strong>Azure Status:</strong> <span class="px-2 py-1 rounded text-xs ' + getStatusColor(scan.azure_status) + '">' + scan.azure_status + '</span></div>';
                 detailsHtml += '<div><strong>VM Template:</strong> ' + (scan.vm_template || 'Not set') + '</div>';
                 detailsHtml += '<div><strong>EDR Template:</strong> ' + (scan.edr_template || 'Not set') + '</div>';
                 detailsHtml += '<div><strong>VM Instance:</strong> ' + (scan.vm_instance_name || 'Not set') + '</div>';
@@ -187,11 +114,26 @@
             })
             .then(response => response.json())
             .then(data => {
-                location.reload(); // Refresh the page
+                // Refresh the scans list using HTMX
+                htmx.trigger('#scans-container', 'load');
             })
             .catch(error => {
                 alert('Error updating scan: ' + error.message);
             });
+        }
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'fresh': return 'bg-blue-100 text-blue-800';
+            case 'started': return 'bg-yellow-100 text-yellow-800';
+            case 'running': return 'bg-yellow-100 text-yellow-800';
+            case 'completed': return 'bg-green-100 text-green-800';
+            case 'failed': return 'bg-red-100 text-red-800';
+            case 'none': return 'bg-gray-100 text-gray-800';
+            case 'creating': return 'bg-blue-100 text-blue-800';
+            case 'stopped': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
     }
 
