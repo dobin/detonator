@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate
 from .vm_manager import initialize_vm_manager, get_vm_manager
-from .vm_monitor import start_vm_monitoring, add_scan_to_monitoring
+from .vm_monitor import start_vm_monitoring
 from .edr_templates import get_edr_manager
 
 load_dotenv()
@@ -190,9 +190,6 @@ async def upload_file_and_scan(
         
         db.commit()
         
-        # Add to monitoring
-        add_scan_to_monitoring(db_scan.id, vm_info["vm_name"])
-        
         logger.info(f"Created file {db_file.id} and scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
         
     except Exception as e:
@@ -319,9 +316,6 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         
         db.commit()
         db.refresh(db_scan)
-        
-        # Add to monitoring
-        add_scan_to_monitoring(db_scan.id, vm_info["vm_name"])
         
         logger.info(f"Created scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
         
