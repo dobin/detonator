@@ -116,7 +116,7 @@ class AzureVMManager:
             db_scan.vm_instance_name = vm_name
             db_scan.vm_ip_address = public_ip_info.ip_address
             db_scan.status = "processing"
-            db_scan.vm_status = "running"
+            db_scan.vm_status = "created"
             db_scan.created_at = datetime.utcnow()
 
             creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"

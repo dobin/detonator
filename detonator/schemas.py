@@ -46,6 +46,8 @@ class ScanUpdate(BaseModel):
     edr_logs: Optional[str] = None
     result: Optional[str] = None
     status: Optional[str] = None
+    vm_status: Optional[str] = None
+    azure_status: Optional[str] = None
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
     completed_at: Optional[datetime] = None
@@ -59,6 +61,8 @@ class ScanResponse(ScanBase):
     edr_logs: Optional[str] = None
     result: Optional[str] = None
     status: str
+    vm_status: str
+    azure_status: str
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
     created_at: datetime

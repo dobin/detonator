@@ -143,11 +143,11 @@ class VMMonitorTask:
             
             if shutdown_success:
                 db_scan.status = "finished"
-                db_scan.vm_status = "shutdown"
+                db_scan.vm_status = "removed"
                 shutdown_log = f"[{current_time.isoformat()}] VM shutdown initiated after 1 minute\n"
             else:
                 db_scan.status = "finished"
-                db_scan.vm_status = "shutdown_failed"
+                db_scan.vm_status = "remove_failed"
                 shutdown_log = f"[{current_time.isoformat()}] VM shutdown failed\n"
             
             if db_scan.detonator_srv_logs:
