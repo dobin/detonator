@@ -39,20 +39,6 @@ class EDRTemplateManager:
                 "ports": [],
                 "category": "monitoring"
             },
-            "wireshark": {
-                "name": "Wireshark",
-                "description": "Installs Wireshark for network traffic analysis",
-                "script_file": "wireshark_install.ps1",
-                "ports": [],
-                "category": "network_analysis"
-            },
-            "procmon": {
-                "name": "Process Monitor",
-                "description": "Installs Process Monitor for file/registry monitoring",
-                "script_file": "procmon_install.ps1",
-                "ports": [],
-                "category": "monitoring"
-            }
         }
         
         for template_id, config in template_configs.items():

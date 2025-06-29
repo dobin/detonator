@@ -49,11 +49,13 @@ app.jinja_env.filters['strftime'] = strftime_filter
 # FastAPI service URL
 API_BASE_URL = "http://localhost:8000"
 
+
 # static
 @app.route("/static/<path:filename>")
 def static_files(filename):
     """Serve static files from the static directory"""
     return app.send_static_file(filename)
+
 
 @app.route("/")
 def index():
@@ -248,5 +250,3 @@ def get_edr_templates():
     except requests.RequestException:
         return {"error": "Could not fetch EDR templates", "templates": [], "all_templates": []}, 500
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)

@@ -9,24 +9,24 @@ import threading
 import time
 import os
 from dotenv import load_dotenv
+import uvicorn
 
-from .logging_config import setup_logging
-from .vm_manager import initialize_vm_manager
+from detonatorapi.logging_config import setup_logging
+from detonatorapi.vm_manager import initialize_vm_manager
 
+from detonatorapi.fastapi_app import app as fastapi_app
+from detonatorui.flask_app import app as flask_app
 
 load_dotenv()
 
 def run_fastapi():
     """Run the FastAPI server"""
-    import uvicorn
-    from .fastapi_app import app
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000, log_level="warning")
 
 
 def run_flask():
     """Run the Flask server"""
-    from .flask_app import app
-    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
+    flask_app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
 
 
 def run_both():

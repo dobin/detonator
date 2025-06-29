@@ -14,10 +14,8 @@ from .vm_monitor import start_vm_monitoring
 from .edr_templates import get_edr_manager
 from .utils import mylog
 
-#load_dotenv()
 
 # Setup logging - reduce verbosity for HTTP requests
-#logging.basicConfig(level=logging.INFO)
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -32,6 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -55,6 +54,7 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
 
+
 @app.on_event("shutdown")
 async def shutdown_event():
     """Stop VM monitoring on shutdown"""
@@ -64,6 +64,7 @@ async def shutdown_event():
         logger.info("VM monitoring stopped")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
+
 
 @app.get("/api/edr-templates")
 async def get_edr_templates():
