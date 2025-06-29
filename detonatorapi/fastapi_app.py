@@ -167,7 +167,7 @@ async def upload_file_and_scan(
 
     # Azure: Create VM
     vm_manager = get_vm_manager()
-    background_tasks.add_task(vm_manager.create_windows11_vm, db_scan.id)
+    background_tasks.add_task(vm_manager.create_machine, db_scan.id)
     logger.info(f"Azure: Initiated VM creation for scan {db_scan.id}")
     
     return db_file
@@ -262,7 +262,7 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
                 logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
                 edr_template_id = None
         
-        vm_info = await vm_manager.create_windows11_vm(db_scan.id, edr_template_id)
+        vm_info = await vm_manager.create_machine(db_scan.id, edr_template_id)
         
         # Update scan with VM information
         db_scan.vm_instance_name = vm_info["vm_name"]

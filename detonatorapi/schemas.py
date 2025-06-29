@@ -2,6 +2,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+
+#################
+# EDR Template
+
 class EDRTemplate(BaseModel):
     id: str
     name: str
@@ -14,14 +18,23 @@ class EDRTemplateResponse(BaseModel):
     templates: List[EDRTemplate]
     all_templates: List[EDRTemplate]
 
+
+#################
+# File
+
+# Abstract
 class FileBase(BaseModel):
     filename: str
     source_url: Optional[str] = None
     comment: Optional[str] = None
 
+# Unused
 class FileCreate(FileBase):
     pass
 
+# upload_file() response
+# upload_file_and_scan() response
+# get_files() response
 class FileResponse(FileBase):
     id: int
     file_hash: str
@@ -30,13 +43,20 @@ class FileResponse(FileBase):
     class Config:
         from_attributes = True
 
+
+#################
+# Scan
+
+# Abstract
 class ScanBase(BaseModel):
     vm_template: Optional[str] = None
     edr_template: Optional[str] = None
 
+# create_scan() request
 class ScanCreate(ScanBase):
     file_id: int
 
+# update_scan() request
 class ScanUpdate(BaseModel):
     comment: Optional[str] = None
     vm_template: Optional[str] = None
@@ -53,6 +73,9 @@ class ScanUpdate(BaseModel):
     vm_ip_address: Optional[str] = None
     completed_at: Optional[datetime] = None
 
+# get_scans() response
+# get_scan() response
+# update_scan() response
 class ScanResponse(ScanBase):
     id: int
     file_id: int
@@ -75,5 +98,6 @@ class ScanResponse(ScanBase):
     class Config:
         from_attributes = True
 
+# get_file() request
 class FileWithScans(FileResponse):
     scans: List[ScanResponse] = []

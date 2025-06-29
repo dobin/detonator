@@ -38,10 +38,10 @@ class AzureVMManager:
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
 
-    def create_windows11_vm(self, scan_id: int):
-        """Create a Windows 11 VM for malware analysis with optional EDR template"""
+    def create_machine(self, scan_id: int):
         vm_name = f"detonator-{scan_id}"
 
+        # All required information is in the database entry
         db_scan = self.db.query(Scan).filter(Scan.id == scan_id).first()
         if not db_scan:
             logger.error(f"Scan with ID {scan_id} not found in database")
