@@ -57,22 +57,11 @@ class VMMonitorTask:
     
 
     def _get_active_scans(self) -> List[Scan]:
-        """Get all scans that need VM monitoring"""
-
-        if False:
-            # Get scans that have VMs that need monitoring
-            active_statuses = [
-                'vm_creating', 'vm_running', 'vm_deallocating', 
-                'vm_starting', 'vm_stopping', 'vm_provisioning'
-            ]
-            
-            return self.db.query(Scan).filter(
-                Scan.status.in_(active_statuses),
-                #Scan.vm_instance_name.isnot(None)
-            ).all()
-        else:
-            # return all
-            return self.db.query(Scan).all()
+        """Get all scans that need VM monitoring (Azure VM status)"""
+        active_statuses = [ 'not_found' ]
+        return self.db.query(Scan).filter(
+            Scan.azure_status.not_in_(active_statuses),
+        ).all()
     
 
     def _check_all_scans(self):
@@ -84,7 +73,7 @@ class VMMonitorTask:
             if not active_scans:
                 return
             
-            logger.info(f"Found {len(active_scans)} active scans to monitor")
+            #logger.info(f"Found {len(active_scans)} active scans to monitor")
                 
             vm_manager = get_vm_manager()
             current_time = datetime.utcnow()
@@ -129,45 +118,34 @@ class VMMonitorTask:
         )
         if should_shutdown:
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} has been running for 1 minute, scheduling shutdown")
-            
-            # Shutdown the VM
             shutdown_success = vm_manager.shutdown_vm(vm_name)
             if shutdown_success:
                 db_scan.status = "finished"
                 db_scan.vm_status = "removed"
-                db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown initiated successfully")
+                db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown successfully (deallocated)")
             else:
                 db_scan.status = "finished"
                 db_scan.vm_status = "remove_failed"
                 db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown failed")
-            self.db.commit()            
+            self.db.commit()       
         
-        # CHECK: if VM has been deallocated and schedule cleanup
+        # CHECK: if VM has been deallocated and should be removed (including disks n stuff)
         should_cleanup = (
-            vm_status in ['deallocated', 'not_found'] and 
-            time_elapsed >= timedelta(minutes=2) and  # Wait 2 minutes total before cleanup
-            db_scan.status != "completed" and
-            db_scan.status != "cleanup_failed"
+            db_scan.azure_status in ['deallocated' ] and 
+            time_elapsed >= timedelta(minutes=3)
         )
         if should_cleanup:
-            logger.info(f"VM {vm_name} is deallocated, scheduling resource cleanup")
-            
-            # Delete VM resources
+            db_scan.detonator_srv_logs += mylog(f"VM {vm_name} is deallocated, scheduling resource cleanup")
             cleanup_success = vm_manager.delete_vm_resources(vm_name)
-            
             if cleanup_success:
                 db_scan.status = "completed"
                 db_scan.completed_at = current_time
-                cleanup_log = f"[{current_time.isoformat()}] VM resources cleaned up successfully\n"
+                db_scan.detonator_srv_logs += mylog("VM resources cleaned up successfully\n")
             else:
                 db_scan.status = "cleanup_failed"
-                cleanup_log = f"[{current_time.isoformat()}] VM resource cleanup failed\n"
+                db_scan.detonator_srv_logs += mylog("VM resource cleanup failed\n")
+            self.db.commit()
             
-            if db_scan.detonator_srv_logs:
-                db_scan.detonator_srv_logs += cleanup_log
-            else:
-                db_scan.detonator_srv_logs = cleanup_log
-    
 
     def _mark_scan_error(self, db_scan: Scan, error_message: str, current_time: datetime):
         """Mark a scan as having an error"""

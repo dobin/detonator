@@ -255,6 +255,7 @@ class AzureVMManager:
                 },
                 'os_disk': {
                     'create_option': 'FromImage',
+                    'delete_option': 'Delete',  # Delete disk on VM deletion
                     'managed_disk': {
                         'storage_account_type': 'Premium_LRS'
                     }
@@ -349,20 +350,43 @@ class AzureVMManager:
         
     
     def delete_vm_resources(self, vm_name: str) -> bool:
-        """Delete VM and all associated resources"""
+        """Delete VM and all associated resources, including the OS disk"""
         try:
             logger.info(f"Deleting VM and resources: {vm_name}")
             
-            # Delete VM
+            os_disk_name = None
+
+            # Try to get VM to extract OS disk name
+            try:
+                vm = self.compute_client.virtual_machines.get(self.resource_group, vm_name)
+                os_disk_name = vm.storage_profile.os_disk.name
+                logger.info(f"Found OS disk: {os_disk_name}")
+            except ResourceNotFoundError:
+                logger.warning(f"VM {vm_name} not found. Skipping disk lookup.")
+
+            # Delete the VM
             try:
                 operation = self.compute_client.virtual_machines.begin_delete(
                     self.resource_group, vm_name
                 )
                 operation.result()
             except ResourceNotFoundError:
-                pass
-            
-            # Delete associated resources
+                logger.warning(f"VM {vm_name} not found during delete.")
+
+            # Delete OS disk if we found one
+            if os_disk_name:
+                try:
+                    operation = self.compute_client.disks.begin_delete(
+                        self.resource_group, os_disk_name
+                    )
+                    operation.result()
+                    logger.info(f"Deleted OS disk: {os_disk_name}")
+                except ResourceNotFoundError:
+                    logger.warning(f"OS disk {os_disk_name} not found.")
+                except Exception as e:
+                    logger.warning(f"Failed to delete OS disk {os_disk_name}: {e}")
+
+            # Delete associated network resources
             resources_to_delete = [
                 (self.network_client.network_interfaces, f"{vm_name}-nic"),
                 (self.network_client.public_ip_addresses, f"{vm_name}-ip"),
@@ -379,14 +403,15 @@ class AzureVMManager:
                         operation = client.delete(self.resource_group, resource_name)
                         if hasattr(operation, 'result'):
                             operation.result()
+                    logger.info(f"Deleted: {resource_name}")
                 except ResourceNotFoundError:
-                    pass
+                    logger.warning(f"{resource_name} not found.")
                 except Exception as e:
                     logger.warning(f"Failed to delete {resource_name}: {str(e)}")
             
             logger.info(f"Successfully deleted VM and resources: {vm_name}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error deleting VM resources for {vm_name}: {str(e)}")
             return False
