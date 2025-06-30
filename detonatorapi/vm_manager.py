@@ -13,7 +13,7 @@ from .utils import mylog
 import uuid
 
 from .database import get_background_db, Scan
-from .edr_templates import get_edr_manager
+from .edr_templates import get_edr_template_manager
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
@@ -31,6 +31,7 @@ class AzureVMManager:
         self.location = location
         self.credential = DefaultAzureCredential()
         self.db = get_background_db()
+        self.edr_template_manager = get_edr_template_manager()
         
         # Initialize Azure clients
         self.compute_client = ComputeManagementClient(self.credential, self.subscription_id)
@@ -56,33 +57,24 @@ class AzureVMManager:
         self.db.commit()
         
         # Validate EDR template if provided
-        #edr_template_id = db_scan.edr_template
-        #if edr_template_id:
-        #    edr_manager = get_edr_manager()
-        #    if not edr_manager.validate_template(edr_template_id):
-        #        logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
-        #        edr_template_id = None
-        edr_template = None
+        edr_template_id = db_scan.edr_template
+        if edr_template_id and not self.edr_template_manager.has_template(edr_template_id):
+            logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
+            edr_template_id = None
         
         try:
             # Get EDR template configuration
-            edr_manager = get_edr_manager()
-            template_info = None
             deployment_script = None
-            additional_ports = []
+            if edr_template_id:
+                deployment_script = self.edr_template_manager.get_template_deployment_script(edr_template_id)
+                logger.info(f"Using EDR template: {edr_template_id}")
             
-            #if edr_template and edr_manager.validate_template(edr_template):
-            #    template_info = edr_manager.get_template(edr_template)
-            #    deployment_script = edr_manager.get_deployment_script(edr_template)
-            #    additional_ports = template_info.get("ports", [])
-            #    logger.info(f"Using EDR template: {edr_template} with ports: {additional_ports}")
-            
-            logger.info(f"Azure: Creating VM: {vm_name} with EDR template: {edr_template}")
+            logger.info(f"Azure: Creating VM: {vm_name} with EDR template: {edr_template_id}")
             logger.info(f"Azure: This can take a few minutes")
             
             # Create network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
-            self._create_network_security_group(nsg_name, edr_template)
+            self._create_network_security_group(nsg_name, edr_template_id)
             
             # Create virtual network and subnet
             vnet_name = f"{vm_name}-vnet"
@@ -144,7 +136,7 @@ class AzureVMManager:
             raise
     
     
-    def _create_network_security_group(self, nsg_name: str, edr_template: str = None):
+    def _create_network_security_group(self, nsg_name: str, edr_template_id: str = None):
         """Create network security group with basic rules and EDR-specific rules"""
         # Base security rules
         security_rules = [
@@ -162,11 +154,10 @@ class AzureVMManager:
         ]
         
         # Add EDR-specific rules if template is specified
-        if edr_template:
-            edr_manager = get_edr_manager()
-            additional_rules = edr_manager.get_network_security_rules(edr_template)
+        if edr_template_id:
+            additional_rules = self.edr_template_manager.get_template_network_security_rules(edr_template_id)
             security_rules.extend(additional_rules)
-            logger.info(f"Added {len(additional_rules)} EDR-specific security rules for template: {edr_template}")
+            logger.info(f"Added {len(additional_rules)} EDR-specific security rules for template: {edr_template_id}")
         
         nsg_params = {
             'location': self.location,

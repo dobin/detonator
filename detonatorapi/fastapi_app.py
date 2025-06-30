@@ -11,7 +11,7 @@ from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate
 from .vm_manager import initialize_vm_manager, get_vm_manager
 from .vm_monitor import start_vm_monitoring
-from .edr_templates import get_edr_manager
+from .edr_templates import get_edr_template_manager
 from .utils import mylog
 
 
@@ -69,10 +69,10 @@ async def shutdown_event():
 @app.get("/api/edr-templates")
 async def get_edr_templates():
     """Get available EDR templates"""
-    edr_manager = get_edr_manager()
+    edr_template_manager = get_edr_template_manager()
     return {
-        "templates": edr_manager.get_available_templates(),
-        "all_templates": edr_manager.get_all_templates()
+        "templates": edr_template_manager.get_available_templates(),
+        "all_templates": edr_template_manager.get_all_templates()
     }
 
 @app.get("/")
@@ -254,14 +254,8 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
     try:
         vm_manager = get_vm_manager()
         
-        # Create Windows 11 VM with EDR template
+        # Create VM with EDR template
         edr_template_id = db_scan.edr_template
-        if edr_template_id:
-            edr_manager = get_edr_manager()
-            if not edr_manager.validate_template(edr_template_id):
-                logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
-                edr_template_id = None
-        
         vm_info = await vm_manager.create_machine(db_scan.id, edr_template_id)
         
         # Update scan with VM information
@@ -275,21 +269,15 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         creation_log += f"VM Name: {vm_info['vm_name']}\n"
         creation_log += f"Public IP: {vm_info['public_ip']}\n"
         creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
-        
         if vm_info.get("edr_template_info"):
             template_info = vm_info["edr_template_info"]
             creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
             creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
-        
         creation_log += f"Status: {vm_info['status']}\n"
-        
-        db_scan.detonator_srv_logs = creation_log
+        db_scan.detonator_srv_logs = creation_log  # first log entry
         
         db.commit()
         db.refresh(db_scan)
-        
-        # Add to monitoring
-        add_scan_to_monitoring(db_scan.id, vm_info["vm_name"])
         
         logger.info(f"Created scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
         
