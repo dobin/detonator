@@ -14,9 +14,7 @@ def index():
     try:
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
         if response.status_code == 200:
-            response_data = response.json()
-            # Extract templates from the response
-            edr_templates = response_data.get("templates", [])
+            edr_templates = response.json()
         else:
             edr_templates = []
     except requests.RequestException:
@@ -38,9 +36,7 @@ def upload_page():
     try:
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
         if response.status_code == 200:
-            response_data = response.json()
-            # Extract templates from the response
-            edr_templates = response_data.get("templates", [])
+            edr_templates = response.json()
         else:
             edr_templates = []
     except requests.RequestException:
@@ -152,5 +148,5 @@ def get_edr_templates():
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
         return response.json()
     except requests.RequestException:
-        return {"error": "Could not fetch EDR templates", "templates": []}, 500
+        return [], 500
 

@@ -71,9 +71,7 @@ async def get_edr_templates():
     """Get available EDR templates"""
     edr_template_manager = get_edr_template_manager()
     templates = edr_template_manager.get_templates()
-    return {
-        "templates": templates
-    }
+    return templates
 
 @app.get("/")
 async def root():
