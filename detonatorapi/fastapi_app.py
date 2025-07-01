@@ -308,12 +308,12 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         shutdown_success = await vm_manager.shutdown_vm(db_scan.vm_instance_name)
         
         if shutdown_success:
-            db_scan.status = "completed"
-            db_scan.vm_status = "removed"
+            db_scan.status = "completed"  # FIXME not here
+            #db_scan.vm_status = "removed"
             db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"
         else:
-            db_scan.status = "completed"
-            db_scan.vm_status = "remove_failed"
+            db_scan.status = "completed"  # FIXME not here
+            db_scan.vm_status = "error"
             db_scan.detonator_srv_logs += f"Manual VM shutdown failed\n"
         db.commit()
         

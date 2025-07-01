@@ -52,6 +52,7 @@ class AzureVMManager:
         # DB: Indicate we creating the VM currently
         db_scan.status = "vm_kickoff"
         db_scan.vm_status = "creating"
+        db_scan.vm_instance_name = vm_name
         db_scan.detonator_srv_logs += mylog(f"To status: {db_scan.status}")
         db_scan.detonator_srv_logs += mylog(f"VM: {db_scan.vm_status}")
         self.db.commit()
@@ -94,7 +95,7 @@ class AzureVMManager:
             if not vm_result:
                 # DB: Failed indicator
                 db_scan.status = "error"
-                db_scan.vm_status = "creating_failed"
+                db_scan.vm_status = "error"
                 db_scan.detonator_srv_logs += mylog(f"To status: {db_scan.status}")
                 db_scan.detonator_srv_logs += mylog(f"VM: {db_scan.vm_status}")
                 db_scan.detonator_srv_logs += mylog(f"Failed: _create_vm() {str(vm_result)}")
@@ -110,7 +111,6 @@ class AzureVMManager:
             logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
 
             # Update scan record with VM details
-            db_scan.vm_instance_name = vm_name
             db_scan.vm_ip_address = public_ip_info.ip_address
             db_scan.status = "vm_ready"
             db_scan.vm_status = "created"

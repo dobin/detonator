@@ -68,12 +68,13 @@ class VMMonitorTask:
         
         try:
             # Get all scans that need monitoring from database
-            active_scans = self._get_active_scans()
-            if not active_scans:
-                return
+            #active_scans = self._get_active_scans()
+            #if not active_scans:
+            #    return
+            active_scans = self.db.query(Scan).all()
             
             #logger.info(f"Found {len(active_scans)} active scans to monitor")
-                
+
             vm_manager = get_vm_manager()
             current_time = datetime.utcnow()
             
@@ -97,51 +98,54 @@ class VMMonitorTask:
     def _check_scan(self, db_scan: Scan, vm_manager, current_time: datetime):
         """Monitor a single scan's VM"""
         vm_name = db_scan.vm_instance_name
-        time_elapsed = current_time - db_scan.created_at
         
-        if not vm_name:
+        if not vm_name or db_scan.vm_status == "removed":
             return
-            
-        # UPDATE: scan azure_status based on Azure VM status
-        vm_status = vm_manager.get_vm_status(vm_name)
-        if db_scan.azure_status != vm_status:
-            db_scan.updated_at = current_time
-            db_scan.detonator_srv_logs += mylog(f"VM Monitor: Azure VM status changed: {db_scan.azure_status} -> {vm_status}")
-            db_scan.azure_status = vm_status
-            self.db.commit()
         
-        # CHECK: if VM should be shut down (after 1 minute)
+        logger.info(f"Scan {db_scan.id}  VM: {vm_name} status: {db_scan.status} {db_scan.vm_status} {db_scan.azure_status}")
+        
+        # UPDATE: azure_status until we finished/error
+        if db_scan.vm_status not in ["removed", "error"]:
+            vm_status = vm_manager.get_vm_status(vm_name)
+            if db_scan.azure_status != vm_status:
+                db_scan.updated_at = current_time
+                db_scan.detonator_srv_logs += mylog(f"VM Monitor: Azure VM status changed: {db_scan.azure_status} -> {vm_status}")
+                db_scan.azure_status = vm_status
+                self.db.commit()
+        
+        # CHECK azure running: if VM should be shut down (after 1 minute)
+        time_elapsed = current_time - db_scan.created_at
         should_shutdown = (
             time_elapsed >= timedelta(minutes=1) and 
-            db_scan.azure_status in ['running', 'starting']
+            db_scan.azure_status in ['running']
         )
         if should_shutdown:
+            # FIXME this just makes it look like we finished scanning
+            db_scan.status = "completed"
+            self.db.commit()
+
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} has been running for 1 minute, scheduling shutdown")
             shutdown_success = vm_manager.shutdown_vm(vm_name)
             if shutdown_success:
-                db_scan.status = "finished"
-                db_scan.vm_status = "removed"
                 db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown successfully (deallocated)")
             else:
-                db_scan.status = "finished"
-                db_scan.vm_status = "remove_failed"
+                db_scan.vm_status = "error"
                 db_scan.detonator_srv_logs += mylog(f"VM {vm_name} shutdown failed")
-            self.db.commit()       
+            self.db.commit()
         
-        # CHECK: if VM has been deallocated and should be removed (including disks n stuff)
+        # CHECK azure deallocated: VM remove
         should_cleanup = (
-            db_scan.azure_status in ['deallocated' ] and 
-            time_elapsed >= timedelta(minutes=3)
+            db_scan.azure_status in ['deallocated' ]
         )
         if should_cleanup:
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} is deallocated, scheduling resource cleanup")
             cleanup_success = vm_manager.delete_vm_resources(vm_name)
             if cleanup_success:
-                db_scan.status = "completed"
+                db_scan.vm_status = "removed"
                 db_scan.completed_at = current_time
                 db_scan.detonator_srv_logs += mylog("VM resources cleaned up successfully\n")
             else:
-                db_scan.status = "cleanup_failed"
+                db_scan.vm_status = "error"
                 db_scan.detonator_srv_logs += mylog("VM resource cleanup failed\n")
             self.db.commit()
             
