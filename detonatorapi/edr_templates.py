@@ -37,7 +37,7 @@ class EDRTemplateManager:
     
     def __init__(self):
         self.scripts_dir = Path(__file__).parent / "deployment_scripts"
-        self._templates = template_configs
+        self._templates = template_configs.copy()
         for template_id, template_info in self._templates.items():
             template_info["id"] = template_id
     
@@ -48,11 +48,11 @@ class EDRTemplateManager:
         return False
     
 
-    def get_templates(self) -> List[Dict[str, any]]:
-        return self._templates
+    def get_templates(self):
+        return list(self._templates.values())
     
     
-    def get_template(self, template_id: str) -> Optional[Dict[str, any]]:
+    def get_template(self, template_id: str):
         if template_id in self._templates:
             return self._templates[template_id]
         return None
@@ -63,7 +63,7 @@ class EDRTemplateManager:
     def get_template_deployment_script(self, template_id: str) -> Optional[str]:
         """Get the deployment script content for a template"""
         template = self.get_template(template_id)
-        if not template or not template.get("available"):
+        if not template:
             return None
         
         try:
@@ -75,7 +75,7 @@ class EDRTemplateManager:
         
         return None
     
-    def get_template_network_security_rules(self, template_id: str) -> List[Dict[str, any]]:
+    def get_template_network_security_rules(self, template_id: str):
         """Get additional network security rules required for a template"""
         template = self.get_template(template_id)
         if not template:

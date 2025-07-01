@@ -70,9 +70,9 @@ async def shutdown_event():
 async def get_edr_templates():
     """Get available EDR templates"""
     edr_template_manager = get_edr_template_manager()
+    templates = edr_template_manager.get_templates()
     return {
-        "templates": edr_template_manager.get_available_templates(),
-        "all_templates": edr_template_manager.get_all_templates()
+        "templates": templates
     }
 
 @app.get("/")
