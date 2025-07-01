@@ -58,9 +58,8 @@ class VMMonitorTask:
 
     def _get_active_scans(self) -> List[Scan]:
         """Get all scans that need VM monitoring (Azure VM status)"""
-        active_statuses = [ 'not_found' ]
         return self.db.query(Scan).filter(
-            Scan.azure_status.not_in_(active_statuses),
+            Scan.azure_status.not_like('not_found'),
         ).all()
     
 
