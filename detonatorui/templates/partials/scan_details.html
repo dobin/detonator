@@ -10,8 +10,6 @@
         <div><strong>Scan Comment:</strong> {{ scan.comment }}</div>
         {% endif %}
         <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.status) }}">{{ scan.status }}</span></div>
-        <div><strong>VM Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.vm_status) }}">{{ scan.vm_status or 'Not set' }}</span></div>
-        <div><strong>Azure Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.azure_status) }}">{{ scan.azure_status or 'Not set' }}</span></div>
         <div><strong>VM Template:</strong> {{ scan.vm_template or 'Not set' }}</div>
         <div><strong>EDR Template:</strong> {{ scan.edr_template or 'Not set' }}</div>
         <div><strong>VM Instance:</strong> {{ scan.vm_instance_name or 'Not set' }}</div>

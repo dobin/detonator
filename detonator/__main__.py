@@ -12,10 +12,12 @@ from dotenv import load_dotenv
 import uvicorn
 
 from detonatorapi.logging_config import setup_logging
-from detonatorapi.vm_manager import initialize_vm_manager
+from detonatorapi.azure_manager import initialize_azure_manager
+from detonatorapi.db_interface import db_create_file, db_create_scan
 
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorui.flask_app import app as flask_app
+from detonatorapi.vm_monitor import VMMonitorTask
 
 load_dotenv()
 
@@ -75,6 +77,17 @@ def main():
     elif command == "web":
         print("Starting Flask server on http://localhost:5000")
         run_flask()
+
+    elif command == "monitor_once":
+        print("Running VM monitor once...")
+        monitor_task = VMMonitorTask()
+        monitor_task.check_all_scans()
+    elif command == "add_test_scan":
+        print("Adding a new scan for testing...")
+        file_id = db_create_file("test.txt", b"Test")
+        scan_id = db_create_scan(file_id, edr_template="new_defender")
+        print(f"Created test scan with ID: {scan_id}")
+
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)

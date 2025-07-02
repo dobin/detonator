@@ -6,28 +6,21 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-# Define available templates
 template_configs = {
-    "openssh": {
-        "name": "OpenSSH Server",
-        "description": "Installs and configures OpenSSH server for remote access",
-        "script_file": "openssh_install.ps1",
-        "ports": [22],
-        "category": "remote_access"
+    "new_defender": {
+        "type": "new",
+        "comment": "",
+        "edr_template": "defender",
     },
-    "defender": {
-        "name": "Windows Defender",
-        "description": "Configures Windows Defender with enhanced monitoring",
-        "script_file": "defender_config.ps1",
-        "ports": [],
-        "category": "edr"
+    "clone_rededr": {
+        "type": "clone",
+        "comment": "",
+        "vm_name": "test-vm",
     },
-    "sysmon": {
-        "name": "Sysmon",
-        "description": "Installs Sysmon for detailed system monitoring",
-        "script_file": "sysmon_install.ps1",
-        "ports": [],
-        "category": "monitoring"
+    "running_rededr": {
+        "type": "running",
+        "comment": "",
+        "url": "https://example.com:8000/",
     },
 }
 
@@ -71,7 +64,9 @@ class EDRTemplateManager:
             if script_path.exists():
                 return script_path.read_text(encoding='utf-8')
         except Exception as e:
-            logger.error(f"Error reading script for template {template_id}: {str(e)}")
+            #logger.error(f"Error reading script for template {template_id}: {str(e)}")
+            # Broken currently anyway
+            pass
         
         return None
     

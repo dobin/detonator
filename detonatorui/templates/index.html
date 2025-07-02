@@ -83,17 +83,16 @@
                 </div>
                 <div>
                     <label for="edr_template" class="block text-sm font-medium text-gray-700 mb-1">
-                        EDR Template (optional)
+                        EDR Template
                     </label>
                     <select 
                         id="edr_template" 
                         name="edr_template"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">-- None --</option>
                         {% for template in edr_templates %}
                         <option value="{{ template.id }}" title="{{ template.description }}">
-                            {{ template.name }}
+                            {{ template.id }}
                             {% if template.category %} ({{ template.category }}){% endif %}
                             {% if template.ports %} - Ports: {{ template.ports|join(', ') }}{% endif %}
                         </option>
@@ -102,11 +101,6 @@
                         <option value="" disabled>No EDR templates available</option>
                         {% endif %}
                     </select>
-                    {% if edr_templates %}
-                    <p class="mt-1 text-xs text-gray-500">
-                        Available templates: {{ edr_templates|length }}
-                    </p>
-                    {% endif %}
                 </div>
             </div>
             <div class="flex space-x-4">
@@ -142,9 +136,8 @@
                             <div class="ml-3">
                                 <h3 class="text-sm font-medium text-green-800">File uploaded and analysis started!</h3>
                                 <div class="mt-2 text-sm text-green-700">
-                                    <p><strong>Filename:</strong> ${response.filename}</p>
-                                    <p><strong>Hash:</strong> ${response.file_hash}</p>
-                                    <p>Analysis has been automatically started with status "fresh".</p>
+                                    <p><strong>Scan ID:</strong> ${response.scan_id}</p>
+                                    <p>Analysis has been automatically started with status</p>
                                 </div>
                                 <div class="mt-4">
                                     <div class="flex space-x-2">

@@ -11,8 +11,6 @@
                 <div class="flex items-center space-x-3 mb-2">
                     <h3 class="font-semibold text-lg">Scan #{{ scan.id }}</h3>
                     <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}"> Scan: {{ scan.status }}</span>
-                    <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.vm_status) }}"> VM: {{ scan.vm_status }}</span>
-                    <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.azure_status) }}"> Azure VM: {{ scan.azure_status }}</span>
                 </div>
 
                 <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 rounded">

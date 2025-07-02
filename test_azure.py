@@ -12,7 +12,7 @@ from datetime import datetime
 # Add the detonator package to path
 sys.path.insert(0, os.path.dirname(__file__))
 
-from detonator.vm_manager import initialize_vm_manager, get_vm_manager
+from detonator.vm_manager import initialize_azure_manager, get_azure_manager
 from detonator.vm_monitor import VMMonitorTask
 
 async def test_azure_integration():
@@ -38,8 +38,8 @@ async def test_azure_integration():
     try:
         # Initialize VM manager
         print("Initializing VM Manager...")
-        initialize_vm_manager(subscription_id, resource_group, location)
-        vm_manager = get_vm_manager()
+        initialize_azure_manager(subscription_id, resource_group, location)
+        vm_manager = get_azure_manager()
         print("✅ VM Manager initialized successfully")
         
         # Test VM creation (but don't actually create - just test connection)

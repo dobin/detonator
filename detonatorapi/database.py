@@ -36,22 +36,22 @@ class Scan(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
-    comment = Column(Text, nullable=True)
-    vm_template = Column(String(100), nullable=True)
-    edr_template = Column(String(100), nullable=True)
+    comment = Column(Text, nullable=False)
 
-    detonator_srv_logs = Column(Text, nullable=True)
-    agent_logs = Column(Text, nullable=True)
-    execution_logs = Column(Text, nullable=True)
-    edr_logs = Column(Text, nullable=True)
-    result = Column(String(50), nullable=True)
+    vm_template = Column(String(100), nullable=False)
+    edr_template = Column(String(100), nullable=False)
+
+    detonator_srv_logs = Column(Text, nullable=False)
+    agent_logs = Column(Text, default="", nullable=False)
+    execution_logs = Column(Text, default="", nullable=False)
+    edr_logs = Column(Text, default="", nullable=False)
+    result = Column(String(50), default="", nullable=False)
 
     status = Column(String(20), default="fresh", nullable=False)
-    vm_status = Column(String(20), default="none", nullable=False)
-    azure_status = Column(String(50), default="none", nullable=False)
 
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)

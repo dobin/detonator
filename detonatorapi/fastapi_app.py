@@ -8,11 +8,12 @@ import os
 from dotenv import load_dotenv
 
 from .database import get_db, File, Scan
-from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate
-from .vm_manager import initialize_vm_manager, get_vm_manager
+from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate, NewScanResponse
+from .azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring
 from .edr_templates import get_edr_template_manager
 from .utils import mylog
+from .db_interface import db_create_file, db_create_scan
 
 
 # Setup logging - reduce verbosity for HTTP requests
@@ -44,7 +45,7 @@ async def startup_event():
         if not subscription_id:
             logger.warning("AZURE_SUBSCRIPTION_ID not set - VM creation will not work")
         else:
-            initialize_vm_manager(subscription_id, resource_group, location)
+            initialize_azure_manager(subscription_id, resource_group, location)
             logger.info("VM Manager initialized successfully")
         
         # Start VM monitoring
@@ -114,9 +115,8 @@ async def upload_file(
     return db_file
 
 
-@app.post("/api/files/upload-and-scan", response_model=FileResponse)
+@app.post("/api/files/upload-and-scan", response_model=NewScanResponse)
 async def upload_file_and_scan(
-    background_tasks: BackgroundTasks,
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
     file_comment: Optional[str] = Form(None),
@@ -126,49 +126,24 @@ async def upload_file_and_scan(
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
-    # Debug file upload information
+    
+    # DB: Create File
     actual_filename = file.filename
-
-    # Read file content
+    if not actual_filename:
+        raise HTTPException(status_code=400, detail="Filename cannot be empty")
+    logger.info(f"Uploading file: {actual_filename}")
     content = await file.read()
-    file_hash = File.calculate_hash(content)
-
-    logger.info(f"Uploading file: {actual_filename}, hash: {file_hash}")
-
-    # DB: Create file record
-    db_file = File(
-        content=content,
-        filename=actual_filename,
-        file_hash=file_hash,
-        source_url=source_url,
-        comment=file_comment
-    )
-    db.add(db_file)
-    db.commit()
-    db.refresh(db_file)
-    logger.info(f"DB: Created file {db_file.id} with filename: {actual_filename}")
+    file_id = db_create_file(actual_filename, content, source_url, file_comment)
 
     # DB: Create scan record (auto-scan)
-    db_scan = Scan(
-        file_id=db_file.id,
-        status="fresh",
-        vm_status="none",
-        vm_template=vm_template or "Windows 11 Pro",
-        edr_template=edr_template,
-        comment=scan_comment,
-        detonator_srv_logs=mylog(f"DB: Scan created for file {actual_filename} (ID: {db_file.id})"),
-    )
-    db.add(db_scan)
-    db.commit()
-    db.refresh(db_scan)
-    logger.info(f"DB: Created scan {db_scan.id}")
+    scan_id = db_create_scan(file_id, edr_template, scan_comment)
 
-    # Azure: Create VM
-    vm_manager = get_vm_manager()
-    background_tasks.add_task(vm_manager.create_machine, db_scan.id)
-    logger.info(f"Azure: Initiated VM creation for scan {db_scan.id}")
-    
-    return db_file
+    data = { 
+        "file_id": file_id,
+        "scan_id": scan_id,
+    }
+
+    return data
 
 
 @app.get("/api/files", response_model=List[FileResponse])
@@ -250,7 +225,7 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
     
     # Create Azure VM for the scan
     try:
-        vm_manager = get_vm_manager()
+        vm_manager = get_azure_manager()
         
         # Create VM with EDR template
         edr_template_id = db_scan.edr_template
@@ -259,8 +234,6 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         # Update scan with VM information
         db_scan.vm_instance_name = vm_info["vm_name"]
         db_scan.vm_ip_address = vm_info["public_ip"]
-        db_scan.status = "started"
-        db_scan.vm_status = "creating"
         
         # Log VM creation
         creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
@@ -283,7 +256,7 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         logger.error(f"Failed to create VM for scan {db_scan.id}: {str(e)}")
         
         # Update scan status to reflect error
-        db_scan.status = "vm_creation_failed"
+        db_scan.status = "error"
         error_log = f"[{datetime.utcnow().isoformat()}] VM creation failed: {str(e)}\n"
         db_scan.detonator_srv_logs = error_log
         db.commit()
@@ -304,16 +277,12 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No VM associated with this scan")
     
     try:
-        vm_manager = get_vm_manager()
+        vm_manager = get_azure_manager()
         shutdown_success = await vm_manager.shutdown_vm(db_scan.vm_instance_name)
         
         if shutdown_success:
-            db_scan.status = "completed"  # FIXME not here
-            #db_scan.vm_status = "removed"
             db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"
         else:
-            db_scan.status = "completed"  # FIXME not here
-            db_scan.vm_status = "error"
             db_scan.detonator_srv_logs += f"Manual VM shutdown failed\n"
         db.commit()
         
