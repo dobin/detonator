@@ -84,7 +84,17 @@ def main():
         monitor_task.check_all_scans()
     elif command == "add_test_scan":
         print("Adding a new scan for testing...")
-        file_id = db_create_file("test.exe", b"PETest")
+
+        filename = sys.argv[2] if len(sys.argv) > 2 else "test_file.exe"
+        if not os.path.exists(filename):
+            print(f"File {filename} does not exist. Creating a dummy file.")
+            with open(filename, "wb") as f:
+                f.write(b"Dummy content for testing")
+
+        with open(filename, "rb") as f:
+            file_content = f.read()
+
+        file_id = db_create_file(filename, file_content)
         #scan_id = db_create_scan(file_id, edr_template="running_rededr")
         scan_id = db_create_scan(file_id, edr_template="running_rededr")
         print(f"Created test scan with ID: {scan_id}")

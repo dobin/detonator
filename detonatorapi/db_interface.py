@@ -24,7 +24,8 @@ def db_change_status(scan_id: int, status: str, log_message: str = ""):
 
     if log_message != "":
         log = f"[{datetime.utcnow().isoformat()}] {log_message}\n"
-        db_scan.detonator_srv_logs += mylog(log)
+        logger.info(log)
+        db_scan.detonator_srv_logs += log
 
     #db_scan.updated_at = datetime.utcnow()
     db.commit()
@@ -39,8 +40,11 @@ def db_scan_add_log(scan_id: int, log_messages: List[str]):
         return None
 
     for log_message in log_messages:
-        log = f"[{datetime.utcnow().isoformat()}] {log_message}\n"
-        db_scan.detonator_srv_logs += mylog(log)
+        if log_message is None or log_message == "":
+            continue
+        log = f"[{datetime.utcnow().isoformat()}] {log_message}"
+        logger.info(log)
+        db_scan.detonator_srv_logs += log + "\n"
 
     db.commit()
 

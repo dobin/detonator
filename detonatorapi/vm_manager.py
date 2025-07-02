@@ -4,7 +4,7 @@ import time
 
 from .database import get_background_db, Scan
 from .utils import mylog
-from .db_interface import db_change_status
+from .db_interface import db_change_status, db_scan_add_log, db_mark_scan_error
 from .azure_manager import initialize_azure_manager, get_azure_manager
 from .agent_interface import connect_to_agent
 from .rededr_api import RedEdrApi
@@ -90,7 +90,7 @@ class VmManagerRunning(VmManager):
         if connect_to_agent(scan_id):
             db_change_status(scan_id, "connected")
         else:
-            db_change_status(scan_id, "error", "Could not connect to agent at ")
+            db_change_status(scan_id, "error", "Could not connect")
 
 
     def scan(self, scan_id: int):
@@ -114,24 +114,23 @@ class VmManagerRunning(VmManager):
             return
         
         filename = db_scan.file.filename
-        #filename = "der_1.exe"
         db_change_status(scan_id, "scanning")
         rededrApi = RedEdrApi(rededr_ip)
 
         rededrApi.StartTrace(filename)
-        logger.info(f"Started trace for file {db_scan.file.filename} on RedEdr at {rededr_ip}")
-        time.sleep(10.0)
+        db_scan_add_log(scan_id, [f"Started trace for file {filename} on RedEdr at {rededr_ip}"])
+        time.sleep(1.0)
 
         rededrApi.ExecFile(filename, db_scan.file.content)
-        logger.info(f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}")
-
+        db_scan_add_log(scan_id, [f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}"])
         time.sleep(10.0)
 
+        db_scan_add_log(scan_id, ["Retrieving results from RedEdr"])
         res = rededrApi.GetJsonResult()
         log = rededrApi.GetLog()
 
-        print("RES: ", res)
-        print("LOG: ", log)
+        if log is None:
+            log = "No logs available"
 
         db_scan = db.query(Scan).get(scan_id)
         if not db_scan:

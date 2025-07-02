@@ -24,15 +24,10 @@ def get_status_color(status):
     if not status:
         return 'bg-gray-100 text-gray-800'
     status_colors = {
-        'fresh': 'bg-blue-100 text-blue-800',
-        'started': 'bg-yellow-100 text-yellow-800', 
-        'running': 'bg-yellow-100 text-yellow-800',
-        'completed': 'bg-green-100 text-green-800',
-        'failed': 'bg-red-100 text-red-800',
-        'none': 'bg-gray-100 text-gray-800',
-        'creating': 'bg-blue-100 text-blue-800',
-        'running': 'bg-green-100 text-green-800',
-        'stopped': 'bg-red-100 text-red-800',
+        'error': 'bg-red-100 text-red-800',
+        'instantiating': 'bg-blue-100 text-blue-800',
+        'scanning': 'bg-blue-100 text-blue-800',
+        'finished': 'bg-green-100 text-green-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
