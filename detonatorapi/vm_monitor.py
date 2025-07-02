@@ -84,7 +84,7 @@ class VMMonitorTask:
             server_type = edr_template["type"]
 
             # Handle based on status
-            logger.info(f"Scan:{scan.id} State: {status}   type:{edr_template_id}  type:{server_type}")
+            #logger.info(f"Scan:{scan.id} State: {status}   type:{edr_template_id}  type:{server_type}")
             vmManager: VmManager = vmManagers[server_type]
             match status:
                 case "fresh":

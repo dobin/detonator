@@ -5,7 +5,7 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
-            "format": "%(levelname)-8s [ %(threadName)-14s %(filename)-16s ] %(message)s",
+            "format": "%(levelname)-8s [ %(threadName)-22s %(filename)-18s ] %(message)s",
         },
     },
     "handlers": {

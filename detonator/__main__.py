@@ -84,8 +84,9 @@ def main():
         monitor_task.check_all_scans()
     elif command == "add_test_scan":
         print("Adding a new scan for testing...")
-        file_id = db_create_file("test.txt", b"Test")
-        scan_id = db_create_scan(file_id, edr_template="new_defender")
+        file_id = db_create_file("test.exe", b"PETest")
+        #scan_id = db_create_scan(file_id, edr_template="running_rededr")
+        scan_id = db_create_scan(file_id, edr_template="running_rededr")
         print(f"Created test scan with ID: {scan_id}")
 
     else:

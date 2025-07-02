@@ -1,11 +1,14 @@
 from datetime import datetime
 import logging
+import time
 
 from .database import get_background_db, Scan
 from .utils import mylog
 from .db_interface import db_change_status
 from .azure_manager import initialize_azure_manager, get_azure_manager
-
+from .agent_interface import connect_to_agent
+from .rededr_api import RedEdrApi
+from .edr_templates import get_edr_template_manager
 
 logger = logging.getLogger(__name__)
 
@@ -15,19 +18,19 @@ class VmManager:
         pass
 
     def instantiate(self, scan_id: int):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
     def connect(self, scan_id: int):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
     def scan(self, scan_id: int):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
     def stop(self, scan_id: int):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
     def remove(self, scan_id: int):
-        pass
+        raise NotImplementedError("This method should be overridden by subclasses")
 
 
 class VmManagerNew(VmManager):
@@ -75,5 +78,75 @@ class VmManagerNew(VmManager):
 class VmManagerClone(VmManager):
     pass
 
+
 class VmManagerRunning(VmManager):
-    pass
+    def instantiate(self, scan_id: int):
+        db_change_status(scan_id, "instantiated")
+
+
+    def connect(self, scan_id: int):
+        logger.info("VmManagerRunning: Connecting to running VM for scan %s", scan_id)
+        db_change_status(scan_id, "connecting")
+        if connect_to_agent(scan_id):
+            db_change_status(scan_id, "connected")
+        else:
+            db_change_status(scan_id, "error", "Could not connect to agent at ")
+
+
+    def scan(self, scan_id: int):
+        db = get_background_db()
+
+        db_scan = db.query(Scan).get(scan_id)
+        if not db_scan:
+            logger.error(f"Scan with ID {scan_id} not found in database")
+            return
+        edr_template_id = db_scan.edr_template
+        if not edr_template_id:
+            logger.error(f"Scan {scan_id} has no EDR template defined")
+            return
+        edr_template = get_edr_template_manager().get_template(edr_template_id)
+        if not edr_template:
+            logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
+            return
+        rededr_ip = edr_template.get("ip", None)
+        if not rededr_ip:
+            logger.error(f"EDR template {edr_template_id} has no IP defined")
+            return
+        
+        filename = db_scan.file.filename
+        #filename = "der_1.exe"
+        db_change_status(scan_id, "scanning")
+        rededrApi = RedEdrApi(rededr_ip)
+
+        rededrApi.StartTrace(filename)
+        logger.info(f"Started trace for file {db_scan.file.filename} on RedEdr at {rededr_ip}")
+        time.sleep(10.0)
+
+        rededrApi.ExecFile(filename, db_scan.file.content)
+        logger.info(f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}")
+
+        time.sleep(10.0)
+
+        res = rededrApi.GetJsonResult()
+        log = rededrApi.GetLog()
+
+        print("RES: ", res)
+        print("LOG: ", log)
+
+        db_scan = db.query(Scan).get(scan_id)
+        if not db_scan:
+            logger.error(f"Scan with ID {scan_id} not found in database")
+            return
+        db_scan.result = res
+        db_scan.edr_logs = log 
+        db.commit()
+        
+        db_change_status(scan_id, "scanned")
+
+
+    def stop(self, scan_id: int):
+        db_change_status(scan_id, "stopped")
+
+
+    def remove(self, scan_id: int):
+        db_change_status(scan_id, "removed")

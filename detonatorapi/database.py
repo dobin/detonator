@@ -44,8 +44,8 @@ class Scan(Base):
     detonator_srv_logs = Column(Text, nullable=False)
     agent_logs = Column(Text, default="", nullable=False)
     execution_logs = Column(Text, default="", nullable=False)
-    edr_logs = Column(Text, default="", nullable=False)
-    result = Column(String(50), default="", nullable=False)
+    edr_logs = Column(Text, default="", nullable=False)  # ATM rededr log
+    result = Column(Text, default="", nullable=False)    # ATM rededr result
 
     status = Column(String(20), default="fresh", nullable=False)
 

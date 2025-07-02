@@ -20,7 +20,7 @@ template_configs = {
     "running_rededr": {
         "type": "running",
         "comment": "",
-        "url": "https://example.com:8000/",
+        "ip": "192.168.1.1",
     },
 }
 
