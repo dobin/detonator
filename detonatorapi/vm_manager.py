@@ -137,7 +137,8 @@ class VmManagerRunning(VmManager):
             logger.error(f"Scan with ID {scan_id} not found in database")
             return
         db_scan.result = res
-        db_scan.edr_logs = log 
+        db_scan.edr_logs = log
+        db_scan.completed_at = datetime.utcnow()
         db.commit()
         
         db_change_status(scan_id, "scanned")

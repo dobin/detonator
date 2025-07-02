@@ -15,7 +15,12 @@
 
                 <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 rounded">
                     <div class="col-span-3">
-                        <p class="text-gray-600 text-sm">File ID: {{ scan.file_id }}</p>
+                        <p class="text-gray-600 text-sm">
+                            File: {{ scan.file.filename }} 
+                            <a href="/files/{{ scan.file_id }}" class="text-blue-500 hover:underline">
+                                ({{ scan.file_id }})
+                            </a>
+                        </p>
                         {% if scan.file and scan.file.comment %}
                         <p class="text-gray-600 text-sm">File Comment: {{ scan.file.comment }}</p>
                         {% endif %}
@@ -26,7 +31,7 @@
                         <p class="text-gray-600 text-sm">VM Name: {{ scan.vm_instance_name }}</p>
                         {% endif %}
                         {% if scan.edr_template %}
-                        <p class="text-gray-600 text-sm">EDR Template: {{ scan.edr_template }}</p>
+                        <p class="text-gray-600 text-sm">Template: {{ scan.edr_template }}</p>
                         {% endif %}
                         {% if scan.vm_instance_name %}
                         <p class="text-gray-600 text-sm">VM Instance: {{ scan.vm_instance_name }}</p>
