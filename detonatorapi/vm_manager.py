@@ -123,27 +123,29 @@ class VmManagerRunning(VmManager):
         db_scan_add_log(scan_id, [f"Started trace for file {filename} on RedEdr at {rededr_ip}"])
         time.sleep(1.0)
 
-        if not rededrApi.StartTrace(filename):
-           rededrApi.ExecFile(filename, db_scan.file.content)
+        if not rededrApi.ExecFile(filename, db_scan.file.content):
+           db_change_status(scan_id, "error", f"Could not exec file on RedEdr")
            return
         db_scan_add_log(scan_id, [f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}"])
         time.sleep(10.0)
 
-        if not db_scan_add_log(scan_id, ["Retrieving results from RedEdr"]):
-            db_change_status(scan_id, "error", "Could not retrieve results from RedEdr")
-            return
         res = rededrApi.GetJsonResult()
         log = rededrApi.GetLog()
 
         if log is None:
             log = "No logs available"
+            db_scan_add_log(scan_id, ["could not get logs from RedEdr"])
+        if res is None:
+            res = "No results available"
+            db_scan_add_log(scan_id, ["could not get results from RedEdr"])
 
         db_scan = db.query(Scan).get(scan_id)
         if not db_scan:
             logger.error(f"Scan with ID {scan_id} not found in database")
             return
-        db_scan.result = res
-        db_scan.edr_logs = log
+        db_scan.edr_logs = res
+        db_scan.execution_logs = log
+        db_scan.result = "<tbd>"
         db_scan.completed_at = datetime.utcnow()
         db.commit()
         
