@@ -117,15 +117,21 @@ class VmManagerRunning(VmManager):
         db_change_status(scan_id, "scanning")
         rededrApi = RedEdrApi(rededr_ip)
 
-        rededrApi.StartTrace(filename)
+        if not rededrApi.StartTrace(filename):
+            db_change_status(scan_id, "error", f"Could not start trace on RedEdr")
+            return
         db_scan_add_log(scan_id, [f"Started trace for file {filename} on RedEdr at {rededr_ip}"])
         time.sleep(1.0)
 
-        rededrApi.ExecFile(filename, db_scan.file.content)
+        if not rededrApi.StartTrace(filename):
+           rededrApi.ExecFile(filename, db_scan.file.content)
+           return
         db_scan_add_log(scan_id, [f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}"])
         time.sleep(10.0)
 
-        db_scan_add_log(scan_id, ["Retrieving results from RedEdr"])
+        if not db_scan_add_log(scan_id, ["Retrieving results from RedEdr"]):
+            db_change_status(scan_id, "error", "Could not retrieve results from RedEdr")
+            return
         res = rededrApi.GetJsonResult()
         log = rededrApi.GetLog()
 
