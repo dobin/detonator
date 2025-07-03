@@ -1,7 +1,9 @@
 from flask import Blueprint,  render_template, request, jsonify, redirect, url_for, flash
+from typing import Optional, Dict
 import requests
 import logging
 from .config import API_BASE_URL
+import json
 
 get_bp = Blueprint('get', __name__)
 
@@ -82,6 +84,7 @@ def scans_template():
 @get_bp.route("/templates/scan-details/<int:scan_id>")
 def scan_details_template(scan_id):
     """Template endpoint to render scan details via HTMX"""
+    scan: Optional[Dict] = {}
     try:
         response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}")
         if response.status_code == 200:
@@ -90,8 +93,24 @@ def scan_details_template(scan_id):
             scan = None
     except requests.RequestException:
         scan = None
-    
-    return render_template("partials/scan_details.html", scan=scan)
+
+    # Convert execution logs
+    # {
+    #    "execution_logs": {
+    #        "log": ["log line 1", "log line 2"],
+    #        "output": "command output here"
+    #    }
+    # }
+    log = ""
+    output = ""
+    if scan:
+        l = scan.get("execution_logs", "")
+        execution_logs: Dict = json.loads(l) if l else {}
+        log = "\n".join(execution_logs.get("log", []))
+        output = execution_logs.get("output", "")
+
+    return render_template("partials/scan_details.html", 
+                           scan=scan, log=log, output=output)
 
 
 # API endpoints (return JSON)

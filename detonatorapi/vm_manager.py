@@ -81,7 +81,7 @@ class VmManagerClone(VmManager):
 
 class VmManagerRunning(VmManager):
     def instantiate(self, scan_id: int):
-        db_change_status(scan_id, "instantiated")
+        db_change_status(scan_id, "connect")
 
 
     def connect(self, scan_id: int):
@@ -149,12 +149,13 @@ class VmManagerRunning(VmManager):
         db_scan.completed_at = datetime.utcnow()
         db.commit()
         
-        db_change_status(scan_id, "scanned")
+        # nothing more todo
+        db_change_status(scan_id, "finished")
 
 
     def stop(self, scan_id: int):
-        db_change_status(scan_id, "stopped")
+        db_change_status(scan_id, "finished")
 
 
     def remove(self, scan_id: int):
-        db_change_status(scan_id, "removed")
+        db_change_status(scan_id, "finished")

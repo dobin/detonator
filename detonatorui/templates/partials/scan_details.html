@@ -34,14 +34,16 @@
     {% if scan.execution_logs %}
     <div>
         <strong>Execution Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ scan.execution_logs }}</pre>
+        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ log }}
+{{ output }}
+        </pre>
     </div>
     {% endif %}
     
     {% if scan.edr_logs %}
     <div>
         <strong>EDR Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ scan.edr_logs }}</pre>
+        <div class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>TODO</div>
     </div>
     {% endif %}
     
