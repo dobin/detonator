@@ -19,7 +19,7 @@ template_configs = {
     },
     "running_rededr": {
         "type": "running",
-        "comment": "",
+        "comment": "win10 defender rededr",
         "ip": "192.168.88.102",
     },
 }

@@ -11,6 +11,7 @@
                     <span class="font-medium text-gray-500 w-20">Type:</span>
                     <span class="text-gray-900">{{ template.type }}</span>
                 </div>
+
             <!-- Type-specific information -->
             {% if template.type == 'new' %}
                 <div class="flex items-center text-sm">
@@ -29,19 +30,20 @@
                 </div>
             {% endif %}
 
-            <!-- Comment if available -->
-            {% if template.comment %}
-                <div class="text-sm">
-                    <span class="font-medium text-gray-500">Comment:</span>
-                    <p class="text-gray-700 mt-1">{{ template.comment }}</p>
-                </div>
-            {% endif %}
-
             <!-- Template ID -->
             <div class="text-sm">
                 <span class="font-medium text-gray-500">Template ID:</span>
                 <code class="bg-gray-100 px-2 py-1 rounded text-xs ml-2">{{ template.id }}</code>
             </div>
+
+            <!-- Comment if available -->
+            {% if template.comment %}
+                <div class="text-sm">
+                    <span class="font-medium text-gray-500">Comment:</span>
+                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.comment }}</code>
+                </div>
+            {% endif %}
+
         </div>
 
         <!-- Actions section -->
