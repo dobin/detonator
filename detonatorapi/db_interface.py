@@ -84,14 +84,14 @@ def db_create_file(filename: str, content: bytes, source_url: str = "", comment:
     return db_file.id
 
 
-def db_create_scan(file_id: int, edr_template: str, comment: str = "") -> int:
+def db_create_scan(file_id: int, edr_template: str, comment: str = "", project: str = "") -> int:
     db = get_background_db()
 
     db_scan = Scan(
         file_id=file_id,
         comment=comment,
         edr_template=edr_template,
-        vm_template="",
+        project=project,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
     )

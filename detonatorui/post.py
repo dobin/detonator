@@ -50,8 +50,8 @@ def upload_file_and_scan():
         if 'scan_comment' in request.form:
             data['scan_comment'] = request.form['scan_comment']
             
-        if 'vm_template' in request.form:
-            data['vm_template'] = request.form['vm_template']
+        if 'project' in request.form:
+            data['project'] = request.form['project']
             
         if 'edr_template' in request.form:
             data['edr_template'] = request.form['edr_template']

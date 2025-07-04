@@ -58,7 +58,7 @@ class FileResponse(FileBase):
 
 # Abstract
 class ScanBase(BaseModel):
-    vm_template: Optional[str] = None
+    project: Optional[str] = None
     edr_template: Optional[str] = None
 
 # create_scan() request
@@ -68,7 +68,7 @@ class ScanCreate(ScanBase):
 # update_scan() request
 class ScanUpdate(BaseModel):
     comment: Optional[str] = None
-    vm_template: Optional[str] = None
+    project: Optional[str] = None
     edr_template: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
     agent_logs: Optional[str] = None

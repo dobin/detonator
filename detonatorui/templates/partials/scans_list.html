@@ -24,18 +24,24 @@
                         {% if scan.file and scan.file.comment %}
                         <p class="text-gray-600 text-sm">File Comment: {{ scan.file.comment }}</p>
                         {% endif %}
+
+                        {% if scan.project %}
+                        <p class="text-gray-600 text-sm">Scan project: {{ scan.project }}</p>
+                        {% endif %}
                         {% if scan.comment %}
                         <p class="text-gray-600 text-sm">Scan Comment: {{ scan.comment }}</p>
                         {% endif %}
                         {% if scan.edr_template %}
                         <p class="text-gray-600 text-sm">Template: {{ scan.edr_template }}</p>
                         {% endif %}
+
                         {% if scan.vm_ip_address %}
                         <p class="text-gray-600 text-sm">VM IP: {{ scan.vm_ip_address }}</p>
                         {% endif %}
                         {% if scan.result %}
                         <p class="text-gray-700 mt-2"><strong>Result:</strong> {{ scan.result }}</p>
                         {% endif %}
+                        
                         <div class="text-gray-500 text-xs mt-2">
                             <p>Created: {{ scan.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                             <p>Updated: {{ scan.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>

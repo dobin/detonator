@@ -108,7 +108,7 @@ async def upload_file_and_scan(
     source_url: Optional[str] = Form(None),
     file_comment: Optional[str] = Form(None),
     scan_comment: Optional[str] = Form(None),
-    vm_template: Optional[str] = Form("Windows 11 Pro"),
+    project: Optional[str] = Form(None),
     edr_template: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
@@ -119,11 +119,12 @@ async def upload_file_and_scan(
     if not actual_filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     logger.info(f"Uploading file: {actual_filename}")
+
     content = await file.read()
     file_id = db_create_file(actual_filename, content, source_url, file_comment)
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(file_id, edr_template, scan_comment)
+    scan_id = db_create_scan(file_id, edr_template=edr_template, comment=scan_comment, project=project)
 
     data = { 
         "file_id": file_id,
@@ -204,7 +205,7 @@ async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends
         file_id=file_id, 
         **scan_data.dict(),
         status="initializing",
-        vm_template="Windows 11 Pro"  # Set default template
+        project=""
     )
     db.add(db_scan)
     db.commit()
