@@ -9,10 +9,10 @@ import threading
 from .database import get_background_db, Scan
 from .db_interface import db_change_status
 from .vm_manager import *
-from .azure_manager import get_azure_manager
+from .azure_manager import get_azure_manager, AzureManager
 from .utils import mylog
 from .edr_templates import get_edr_template_manager
-
+from .settings import *
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +31,13 @@ class VMMonitorTask:
         self.running = False
         self.task = None
         self.db = None
-        self.vm_manager = None
+        self.azure_manager: AzureManager = None
 
 
     def init(self):
         """Initialize the VM monitor task"""
         self.db = get_background_db()
-        self.vm_manager = get_azure_manager()
+        self.azure_manager = get_azure_manager()
     
 
     def start_monitoring(self):
@@ -79,19 +79,33 @@ class VMMonitorTask:
             edr_template_id: str = scan.edr_template
 
             # Skip finished (nothing todo)
-            if status in ["error", "finished"]:
+            if status in ["finished"]:
                 continue
-
             # Check for validity
             edr_template = get_edr_template_manager().get_template(edr_template_id)
             if not edr_template:
                 logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
                 continue
             server_type = edr_template["type"]
+            vmManager: VmManager = vmManagers[server_type]
+
+            # Try cleanup old:
+            #   error
+            #   non-finished older than 5 minutes
+            if status in [ "error" ] or (status not in [ "finished" ] and (datetime.utcnow() - scan.created_at) > timedelta(minutes=VM_DESTROY_AFTER)):
+                vm_name = scan.vm_instance_name
+                if vm_name and vm_name != "":
+                    azure_vm_status = self.azure_manager.get_vm_status(vm_name)
+                    if azure_vm_status in [ "running" ]:
+                        logger.info(f"Scan {scan_id} is in error state but VM {vm_name} running: stopping VM")
+                        thread = threading.Thread(target=vmManager.stop, args=(scan_id,))
+                        thread.start()
+                    elif azure_vm_status in [ "stopped" ]:
+                        logger.info(f"Scan {scan_id} is in error state but VM {vm_name} exist: removing VM")
+                        thread = threading.Thread(target=vmManager.remove, args=(scan_id,))
+                        thread.start()
 
             # Handle based on status
-            #logger.info(f"Scan:{scan.id} State: {status}   type:{edr_template_id}  type:{server_type}")
-            vmManager: VmManager = vmManagers[server_type]
             match status:
                 case "fresh":
                     # Start the process with instantiating the VM

@@ -27,14 +27,8 @@
                         {% if scan.comment %}
                         <p class="text-gray-600 text-sm">Scan Comment: {{ scan.comment }}</p>
                         {% endif %}
-                        {% if scan.vm_instance_name %}
-                        <p class="text-gray-600 text-sm">VM Name: {{ scan.vm_instance_name }}</p>
-                        {% endif %}
                         {% if scan.edr_template %}
                         <p class="text-gray-600 text-sm">Template: {{ scan.edr_template }}</p>
-                        {% endif %}
-                        {% if scan.vm_instance_name %}
-                        <p class="text-gray-600 text-sm">VM Instance: {{ scan.vm_instance_name }}</p>
                         {% endif %}
                         {% if scan.vm_ip_address %}
                         <p class="text-gray-600 text-sm">VM IP: {{ scan.vm_ip_address }}</p>
