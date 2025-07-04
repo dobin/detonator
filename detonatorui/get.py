@@ -4,8 +4,10 @@ import requests
 import logging
 from .config import API_BASE_URL
 import json
+import logging
 
 get_bp = Blueprint('get', __name__)
+logger = logging.getLogger(__name__)
 
 
 # MAIN Pages
@@ -148,6 +150,44 @@ def edr_templates_template():
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
         if response.status_code == 200:
             templates = response.json()
+            
+            # Check status for each template
+            for template in templates:
+                if template['type'] == 'clone':
+                    template['available'] = "Not exist"
+
+                    # Check if VM exists in Azure
+                    vm_name = template.get('vm_name')
+                    if vm_name:
+                        try:
+                            vm_check_response = requests.get(f"{API_BASE_URL}/api/vms")
+                            if vm_check_response.status_code == 200:
+                                vms = vm_check_response.json()
+                                vm_exists = any(vm['name'] == vm_name for vm in vms)
+                                if vm_exists:
+                                    template['available'] = "true"
+                        except:
+                            template['available'] = "Error"
+                    else:
+                        template['available'] = 'Error'
+                        
+                elif template['type'] == 'running':
+                    template['available'] = "Not running"
+
+                    # Check HTTP connectivity
+                    ip = template.get('ip')
+                    if ip:
+                        try:
+                            url = f"http://{ip}:8080"
+                            test_response = requests.get(url, timeout=1)
+                            template['available'] = "true"
+                        except:
+                            template['available'] = 'Error'
+                    else:
+                        template['connectivity_status'] = 'Error'
+
+                elif template['type'] == 'new':
+                    template["available"] = "true"
         else:
             templates = []
     except requests.RequestException:
