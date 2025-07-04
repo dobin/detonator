@@ -8,12 +8,44 @@
         <h2 class="text-2xl font-bold">Scan Management</h2>
         <div class="space-x-2">
             <button 
-                hx-get="/templates/scans" 
-                hx-target="#scans-container"
-                hx-indicator="#loading"
+                onclick="refreshScans()"
                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
                 Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="mb-6">
+        <div class="flex space-x-2">
+            <button 
+                onclick="filterScans('all')"
+                id="filter-all"
+                class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+                All
+            </button>
+            <button 
+                onclick="filterScans('running')"
+                id="filter-running"
+                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+            >
+                Running
+            </button>
+            <button 
+                onclick="filterScans('finished')"
+                id="filter-finished"
+                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+            >
+                Finished
+            </button>
+            <button 
+                onclick="filterScans('error')"
+                id="filter-error"
+                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+            >
+                Error
             </button>
         </div>
     </div>
@@ -22,7 +54,7 @@
     <div 
         id="scans-container" 
         hx-get="/templates/scans" 
-        hx-trigger="load, every 3s"
+        hx-trigger="load"
         hx-indicator="#loading"
     >
         <div class="text-center text-gray-500">Loading scans...</div>
@@ -49,6 +81,59 @@
 </div>
 
 <script>
+    let currentFilter = 'all';
+    let autoRefreshInterval;
+
+    function startAutoRefresh() {
+        // Clear any existing interval
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        
+        // Start new interval that respects current filter
+        autoRefreshInterval = setInterval(function() {
+            const url = currentFilter === 'all' ? '/templates/scans' : '/templates/scans?filter=' + currentFilter;
+            htmx.ajax('GET', url, {
+                target: '#scans-container',
+                swap: 'innerHTML'
+            });
+        }, 3000); // Refresh every 3 seconds
+    }
+
+    function filterScans(status) {
+        currentFilter = status;
+        
+        // Update filter button appearance
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+        
+        const activeBtn = document.getElementById('filter-' + status);
+        activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+        activeBtn.classList.add('bg-blue-500', 'text-white');
+        
+        // Load filtered scans
+        const url = status === 'all' ? '/templates/scans' : '/templates/scans?filter=' + status;
+        htmx.ajax('GET', url, {
+            target: '#scans-container',
+            swap: 'innerHTML'
+        });
+        
+        // Restart auto-refresh with new filter
+        startAutoRefresh();
+    }
+
+
+    function refreshScans() {
+        // Load filtered scans using current filter
+        const url = currentFilter === 'all' ? '/templates/scans' : '/templates/scans?filter=' + currentFilter;
+        htmx.ajax('GET', url, {
+            target: '#scans-container',
+            swap: 'innerHTML'
+        });
+    }
+
     function viewScanDetails(scanId) {
         // Use HTMX to load scan details into the modal
         htmx.ajax('GET', '/templates/scan-details/' + scanId, {
@@ -76,8 +161,12 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Refresh the scans list using HTMX
-                htmx.trigger('#scans-container', 'load');
+                // Refresh the scans list using current filter
+                const url = currentFilter === 'all' ? '/templates/scans' : '/templates/scans?filter=' + currentFilter;
+                htmx.ajax('GET', url, {
+                    target: '#scans-container',
+                    swap: 'innerHTML'
+                });
             })
             .catch(error => {
                 alert('Error updating scan: ' + error.message);
@@ -94,6 +183,11 @@
         if (e.target === this) {
             closeScanModal();
         }
+    });
+
+    // Start auto-refresh when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        startAutoRefresh();
     });
 </script>
 {% endblock %}

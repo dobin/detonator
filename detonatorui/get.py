@@ -78,6 +78,12 @@ def scans_template():
             scans = response.json()
             # Sort scans by ID in descending order (newest first)
             scans = sorted(scans, key=lambda scan: scan['id'], reverse=True)
+            
+            # Apply filter if specified
+            filter_status = request.args.get('filter')
+            if filter_status and filter_status != 'all':
+                scans = [scan for scan in scans if scan.get('status') == filter_status]
+                
         else:
             scans = []
     except requests.RequestException:
