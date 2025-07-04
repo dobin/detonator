@@ -50,6 +50,10 @@ def upload_page():
 def vms_page():
     return render_template("vms.html")
 
+@get_bp.route("/edr-templates")
+def edr_templates_page():
+    return render_template("edr_templates.html")
+
 
 # Template endpoints for HTMX (return HTML)
 
@@ -136,6 +140,20 @@ def vms_template():
         vms = []
     
     return render_template("partials/vms_list.html", vms=vms)
+
+@get_bp.route("/templates/edr-templates")
+def edr_templates_template():
+    """Template endpoint to render EDR templates list via HTMX"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        if response.status_code == 200:
+            templates = response.json()
+        else:
+            templates = []
+    except requests.RequestException:
+        templates = []
+    
+    return render_template("partials/edr_templates_list.html", templates=templates)
 
 # API endpoints (return JSON)
 

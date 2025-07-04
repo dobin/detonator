@@ -10,7 +10,7 @@ template_configs = {
     "new_defender": {
         "type": "new",
         "comment": "",
-        "edr_template": "defender",
+        "software": "defender",
     },
     "clone_rededr": {
         "type": "clone",
@@ -20,7 +20,7 @@ template_configs = {
     "running_rededr": {
         "type": "running",
         "comment": "",
-        "ip": "192.168.1.1",
+        "ip": "192.168.88.102",
     },
 }
 
