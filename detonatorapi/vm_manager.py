@@ -3,7 +3,7 @@ import logging
 import time
 
 from .database import get_background_db, Scan
-from .utils import mylog
+from .utils import mylog, scanid_to_vmname
 from .db_interface import db_change_status, db_scan_add_log, db_mark_scan_error
 from .azure_manager import initialize_azure_manager, get_azure_manager
 from .agent_interface import connect_to_agent
@@ -60,7 +60,8 @@ class VmManagerNew(VmManager):
         logger.info("VmManagerNew: Stopping VM for scan %s", scan_id)
         db_change_status(scan_id, "stopping")
         azure_manager = get_azure_manager()
-        if azure_manager.shutdown_vm(scan_id):
+        vm_name = scanid_to_vmname(scan_id)
+        if azure_manager.shutdown_vm(vm_name):
             db_change_status(scan_id, "stopped")
         else: 
             db_change_status(scan_id, "error")
@@ -69,7 +70,8 @@ class VmManagerNew(VmManager):
         logger.info("VmManagerNew: Removing VM for scan %s", scan_id)
         db_change_status(scan_id, "removing")
         azure_manager = get_azure_manager()
-        if azure_manager.delete_vm_resources(scan_id):
+        vm_name = scanid_to_vmname(scan_id)
+        if azure_manager.delete_vm_resources(vm_name):
             db_change_status(scan_id, "removed")
         else:
             db_change_status(scan_id, "error")

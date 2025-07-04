@@ -60,3 +60,12 @@ def upload_file_and_scan():
         return response.json()
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
+
+@post_bp.route("/api/vms/<vm_name>", methods=["DELETE"])
+def delete_vm(vm_name):
+    """Proxy endpoint to delete VM via FastAPI"""
+    try:
+        response = requests.delete(f"{API_BASE_URL}/api/vms/{vm_name}")
+        return response.json()
+    except requests.RequestException as e:
+        return {"error": f"Could not delete VM: {str(e)}"}, 500

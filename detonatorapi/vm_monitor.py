@@ -30,6 +30,12 @@ class VMMonitorTask:
     def __init__(self):
         self.running = False
         self.task = None
+        self.db = None
+        self.vm_manager = None
+
+
+    def init(self):
+        """Initialize the VM monitor task"""
         self.db = get_background_db()
         self.vm_manager = get_azure_manager()
     

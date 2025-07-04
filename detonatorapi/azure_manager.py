@@ -9,7 +9,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
-from .utils import mylog
+from .utils import mylog, scanid_to_vmname
 import uuid
 
 from .database import get_background_db, Scan
@@ -40,7 +40,7 @@ class AzureManager:
         
 
     def create_machine(self, scan_id: int):
-        vm_name = f"detonator-{scan_id}"
+        vm_name = scanid_to_vmname(scan_id)
 
         # All required information is in the database entry
         db_scan = self.db.query(Scan).get(scan_id)
@@ -305,10 +305,8 @@ class AzureManager:
             return "error"
     
 
-    def shutdown_vm(self, scan_id: int) -> bool:
+    def shutdown_vm(self, vm_name: str) -> bool:
         """Shutdown and deallocate a VM"""
-        vm_name = f"detonator-{scan_id}"
-
         try:
             logger.info(f"Shutting down VM: {vm_name}")
             
@@ -329,10 +327,8 @@ class AzureManager:
             return False
         
     
-    def delete_vm_resources(self, scan_id: int) -> bool:
+    def delete_vm_resources(self, vm_name: str) -> bool:
         """Delete VM and all associated resources, including the OS disk"""
-        vm_name = f"detonator-{scan_id}"
-
         try:
             logger.info(f"Deleting VM and resources: {vm_name}")
             
@@ -397,7 +393,85 @@ class AzureManager:
         except Exception as e:
             logger.error(f"Error deleting VM resources for {vm_name}: {str(e)}")
             return False
+    
 
+    def list_all_vms(self) -> list:
+        """List all VMs in the resource group with their status and details"""
+        try:
+            vms = []
+            vm_list = self.compute_client.virtual_machines.list(self.resource_group)
+            
+            for vm in vm_list:
+                if not vm.name:
+                    continue
+                    
+                # Get instance view for power state
+                try:
+                    instance_view = self.compute_client.virtual_machines.get(
+                        self.resource_group, vm.name, expand='instanceView'
+                    ).instance_view
+                except Exception:
+                    instance_view = None
+                
+                # Extract power state
+                power_state = "unknown"
+                if instance_view and hasattr(instance_view, 'statuses') and instance_view.statuses:
+                    for status in instance_view.statuses:  # type: ignore
+                        if hasattr(status, 'code') and status.code and status.code.startswith('PowerState/'):
+                            power_state = status.code.replace('PowerState/', '')
+                            break
+                
+                # Get public IP if available
+                public_ip = None
+                if vm.network_profile and vm.network_profile.network_interfaces:
+                    for nic_ref in vm.network_profile.network_interfaces:
+                        if nic_ref.id:
+                            nic_name = nic_ref.id.split('/')[-1]
+                            try:
+                                nic = self.network_client.network_interfaces.get(self.resource_group, nic_name)
+                                if nic.ip_configurations:
+                                    for ip_config in nic.ip_configurations:
+                                        if ip_config.public_ip_address and ip_config.public_ip_address.id:
+                                            pip_name = ip_config.public_ip_address.id.split('/')[-1]
+                                            public_ip_resource = self.network_client.public_ip_addresses.get(
+                                                self.resource_group, pip_name
+                                            )
+                                            public_ip = public_ip_resource.ip_address
+                                            break
+                            except Exception:
+                                pass  # Ignore errors getting public IP
+                
+                # Extract scan ID from VM name if it follows detonator-{scan_id} pattern
+                scan_id = None
+                if vm.name and vm.name.startswith('detonator-'):
+                    try:
+                        scan_id = int(vm.name.split('-')[1])
+                    except (IndexError, ValueError):
+                        pass
+                
+                vm_info = {
+                    'name': vm.name,
+                    'power_state': power_state,
+                    'location': vm.location,
+                    'vm_size': vm.hardware_profile.vm_size if vm.hardware_profile else None,
+                    'public_ip': public_ip,
+                    'scan_id': scan_id,
+                    'created_time': None  # Azure SDK doesn't always provide creation time
+                }
+                vms.append(vm_info)
+            
+            return vms
+            
+        except Exception as e:
+            logger.error(f"Error listing VMs: {str(e)}")
+            return []
+
+    def stop_and_delete_vm(self, vm_name: str) -> bool:
+        """Stop and delete a VM and all its resources"""
+        logger.info(f"Stopping and deleting VM: {vm_name}")
+        self.shutdown_vm(vm_name)
+        self.delete_vm_resources(vm_name)
+          
 
 # Global VM manager instance (will be initialized in main app)
 azure_manager: Optional[AzureManager] = None
@@ -412,6 +486,6 @@ def initialize_azure_manager(subscription_id: str, resource_group: str, location
 
 def get_azure_manager() -> AzureManager:
     """Get the global VM manager instance"""
-    #if vm_manager is None:
-    #    raise RuntimeError("VM Manager not initialized. Call initialize_azure_manager() first.")
+    if azure_manager is None:
+        raise RuntimeError("Azure Manager not initialized. Call initialize_azure_manager() first.")
     return azure_manager

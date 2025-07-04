@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate, NewScanResponse
 from .azure_manager import initialize_azure_manager, get_azure_manager
-from .vm_monitor import start_vm_monitoring
+from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .edr_templates import get_edr_template_manager
 from .utils import mylog
 from .db_interface import db_create_file, db_create_scan
@@ -37,21 +37,9 @@ app.add_middleware(
 async def startup_event():
     """Initialize VM manager and start monitoring on startup"""
     try:
-        # Initialize VM manager with environment variables
-        subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
-        resource_group = os.getenv("AZURE_RESOURCE_GROUP", "detonator-rg")
-        location = os.getenv("AZURE_LOCATION", "East US")
-        
-        if not subscription_id:
-            logger.warning("AZURE_SUBSCRIPTION_ID not set - VM creation will not work")
-        else:
-            initialize_azure_manager(subscription_id, resource_group, location)
-            logger.info("VM Manager initialized successfully")
-        
         # Start VM monitoring
         start_vm_monitoring()
         logger.info("VM monitoring started")
-        
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
 
@@ -60,8 +48,7 @@ async def startup_event():
 async def shutdown_event():
     """Stop VM monitoring on shutdown"""
     try:
-        from .vm_monitor import stop_vm_monitoring
-        await stop_vm_monitoring()
+        stop_vm_monitoring()
         logger.info("VM monitoring stopped")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
@@ -291,6 +278,33 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error shutting down VM for scan {scan_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to shutdown VM: {str(e)}")
+
+
+# VM management endpoints
+@app.get("/api/vms")
+async def get_vms():
+    """Get all VMs in the resource group"""
+    try:
+        azure_manager = get_azure_manager()
+        vms = azure_manager.list_all_vms()
+        return vms
+    except Exception as e:
+        logger.error(f"Error getting VMs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get VMs: {str(e)}")
+
+
+@app.delete("/api/vms/{vm_name}")
+async def delete_vm(vm_name: str, background_tasks: BackgroundTasks):
+    """Stop and delete a VM and all its resources"""
+    try:
+        azure_manager = get_azure_manager()
+        # Run deletion in background to avoid blocking
+        background_tasks.add_task(azure_manager.stop_and_delete_vm, vm_name)
+        return {"message": f"VM {vm_name} deletion initiated"}
+    except Exception as e:
+        logger.error(f"Error deleting VM {vm_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete VM: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn

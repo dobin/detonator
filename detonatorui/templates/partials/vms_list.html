@@ -1,0 +1,114 @@
+{% if vms %}
+<div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    VM Name
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Size
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Public IP
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Scan ID
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for vm in vms %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {{ vm.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        {% if vm.power_state == 'running' %}
+                            bg-green-100 text-green-800
+                        {% elif vm.power_state == 'stopped' or vm.power_state == 'deallocated' %}
+                            bg-red-100 text-red-800
+                        {% elif vm.power_state == 'starting' %}
+                            bg-yellow-100 text-yellow-800
+                        {% else %}
+                            bg-gray-100 text-gray-800
+                        {% endif %}">
+                        {{ vm.power_state | title }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ vm.location or 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ vm.vm_size or 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if vm.public_ip %}
+                        <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ vm.public_ip }}</code>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if vm.scan_id %}
+                        <a href="/scans" class="text-blue-600 hover:text-blue-800">{{ vm.scan_id }}</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                        onclick="deleteVM('{{ vm.name }}')"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-8">
+    <div class="text-gray-400 text-6xl mb-4">🖥️</div>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">No VMs Found</h3>
+    <p class="text-gray-500">No virtual machines are currently running in this resource group.</p>
+</div>
+{% endif %}
+
+<script>
+function deleteVM(vmName) {
+    if (confirm(`Are you sure you want to delete VM "${vmName}"? This action cannot be undone.`)) {
+        fetch(`/api/vms/${vmName}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                // Refresh the VM list
+                htmx.trigger("#vms-list", "load");
+            } else if (data.error) {
+                alert(`Error: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the VM');
+        });
+    }
+}
+</script>

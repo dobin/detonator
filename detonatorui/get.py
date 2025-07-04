@@ -46,6 +46,10 @@ def upload_page():
     
     return render_template("upload.html", edr_templates=edr_templates)
 
+@get_bp.route("/vms")
+def vms_page():
+    return render_template("vms.html")
+
 
 # Template endpoints for HTMX (return HTML)
 
@@ -112,6 +116,20 @@ def scan_details_template(scan_id):
     return render_template("partials/scan_details.html", 
                            scan=scan, log=log, output=output)
 
+@get_bp.route("/templates/vms")
+def vms_template():
+    """Template endpoint to render VMs list via HTMX"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/vms")
+        if response.status_code == 200:
+            vms = response.json()
+            vms = sorted(vms, key=lambda vm: vm['name'])
+        else:
+            vms = []
+    except requests.RequestException:
+        vms = []
+    
+    return render_template("partials/vms_list.html", vms=vms)
 
 # API endpoints (return JSON)
 
@@ -168,4 +186,13 @@ def get_edr_templates():
         return response.json()
     except requests.RequestException:
         return [], 500
+
+@get_bp.route("/api/vms")
+def get_vms():
+    """Proxy endpoint to fetch VMs from FastAPI"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/vms")
+        return response.json()
+    except requests.RequestException:
+        return {"error": "Could not fetch VMs"}, 500
 
