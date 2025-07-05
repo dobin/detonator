@@ -26,8 +26,8 @@ def get_status_color(status):
     status_colors = {
         'error': 'bg-red-100 text-red-800',
         'instantiating': 'bg-blue-100 text-blue-800',
-        'scanning': 'bg-blue-100 text-blue-800',
-        'finished': 'bg-green-100 text-green-800',
+        'finished': 'bg-blue-100 text-blue-800',
+        'scanning': 'bg-green-100 text-green-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
