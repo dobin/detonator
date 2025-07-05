@@ -24,6 +24,9 @@ def parse_windows_event(event):
 
 
 def get_xmlevent_data(xml_string):
+    if not xml_string or xml_string.strip() == "":
+        return []
+
     root = ET.fromstring(strip_ns(xml_string))
     events = []
 
