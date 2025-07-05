@@ -19,6 +19,8 @@ from detonatorapi.db_interface import db_create_file, db_create_scan
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorui.flask_app import app as flask_app
 from detonatorapi.vm_monitor import vm_monitor, VMMonitorTask
+from detonatorapi.database import get_db, get_db_for_thread
+
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -65,6 +67,7 @@ def main():
         sys.exit(1)
     
     command = sys.argv[1].lower()
+    db = get_db_for_thread()
 
     # Azure: Init
     subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
@@ -104,13 +107,15 @@ def main():
         with open(filename, "rb") as f:
             file_content = f.read()
 
-        file_id = db_create_file(filename, file_content)
-        scan_id = db_create_scan(file_id, edr_template=edr_template_id)
+        file_id = db_create_file(db, filename, file_content)
+        scan_id = db_create_scan(db, file_id, edr_template=edr_template_id)
         print(f"Created test scan with ID: {scan_id}")
 
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
+
+    db.close()
 
 if __name__ == "__main__":
     main()

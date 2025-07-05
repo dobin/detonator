@@ -73,7 +73,5 @@ def get_db():
         db.close()
 
 
-# Function to get a new DB session for background tasks
-def get_background_db():
-    """Get a new database session for background tasks"""
+def get_db_for_thread():
     return SessionLocal()

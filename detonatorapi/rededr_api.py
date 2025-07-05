@@ -17,7 +17,7 @@ class RedEdrApi:
         try:
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 200:
-                print("Response:", response.json())
+                #print("Response:", response.json())
                 return True
             else:
                 print("Error:", response.status_code, response.json())
@@ -39,7 +39,7 @@ class RedEdrApi:
         # multipart form-data
         response = requests.post(url, files=files)
         if response.status_code == 200:
-            print("Response:", response.json())
+            #print("Response:", response.json())
             return True
         else:
             print("Error:", response.status_code, response.text)

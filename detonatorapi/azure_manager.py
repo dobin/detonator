@@ -12,7 +12,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from .utils import mylog, scanid_to_vmname
 import uuid
 
-from .database import get_background_db, Scan
+from .database import Scan
 from .edr_templates import get_edr_template_manager
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
@@ -30,7 +30,6 @@ class AzureManager:
         self.resource_group = resource_group
         self.location = location
         self.credential = DefaultAzureCredential()
-        self.db = get_background_db()
         self.edr_template_manager = get_edr_template_manager()
         
         # Initialize Azure clients
@@ -39,11 +38,12 @@ class AzureManager:
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
 
-    def create_machine(self, scan_id: int):
+    def create_machine(self, db, db_scan: Scan):
+        scan_id = db_scan.id
         vm_name = scanid_to_vmname(scan_id)
 
         # All required information is in the database entry
-        db_scan = self.db.query(Scan).get(scan_id)
+        db_scan = db.query(Scan).get(scan_id)
         if not db_scan:
             logger.error(f"Scan with ID {scan_id} not found in database")
             # No DB to update
@@ -51,7 +51,7 @@ class AzureManager:
         
         # DB UPDATE: Indicate we creating the VM currently
         db_scan.vm_instance_name = vm_name
-        self.db.commit()
+        db.commit()
         
         # Validate EDR template if provided
         edr_template_id = db_scan.edr_template
@@ -99,13 +99,9 @@ class AzureManager:
             logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
 
             # DB UPDATE: VM details
-            db_scan: Optional[Scan] = self.db.query(Scan).get(scan_id)
-            if not db_scan:
-                logger.error(f"Scan with ID {scan_id} not found in database after VM creation")
-                return False
             db_scan.vm_ip_address = public_ip_info.ip_address
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
-            self.db.commit()
+            db.commit()
             
         except Exception as e:
             logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
@@ -214,8 +210,8 @@ class AzureManager:
             'location': self.location,
             'os_profile': {
                 'computer_name': vm_name,
-                'admin_username': 'detonator',
-                'admin_password': 'DetonatorAnalysis123!',  # Use Azure Key Vault in production
+                'admin_username': 'dobin',
+                'admin_password': '',
                 'windows_configuration': {
                     'enable_automatic_updates': False,
                     'provision_vm_agent': True
@@ -226,10 +222,7 @@ class AzureManager:
             },
             'storage_profile': {
                 'image_reference': {
-                    'publisher': 'MicrosoftWindowsDesktop',
-                    'offer': 'Windows-11',
-                    'sku': 'win11-24h2-pro',
-                    'version': 'latest'
+                    'id': '/subscriptions/1a7ea32c-9e7a-43c1-b0ca-e4927197c053/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def',
                 },
                 'os_disk': {
                     'create_option': 'FromImage',
@@ -245,6 +238,15 @@ class AzureManager:
                         'id': nic_id
                     }
                 ]
+            },
+
+            # ATM
+            'security_profile': {
+                'security_type': 'TrustedLaunch',
+                'uefi_settings': {
+                    'secure_boot_enabled': True,
+                    'v_tpm_enabled': True
+                }
             }
         }
         
