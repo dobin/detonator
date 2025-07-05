@@ -6,6 +6,8 @@ from .config import API_BASE_URL
 import json
 import logging
 
+from .windowseventxml_parser import get_xmlevent_data
+
 get_bp = Blueprint('get', __name__)
 logger = logging.getLogger(__name__)
 
@@ -112,21 +114,32 @@ def scan_details_template(scan_id):
 
     # Convert execution logs
     # {
-    #    "execution_logs": {
+    #    "rededr_events": {
     #        "log": ["log line 1", "log line 2"],
     #        "output": "command output here"
     #    }
     # }
     log = ""
     output = ""
+    xml_parsed = []
     if scan:
-        l = scan.get("execution_logs", "")
-        execution_logs: Dict = json.loads(l) if l else {}
-        log = "\n".join(execution_logs.get("log", []))
-        output = execution_logs.get("output", "")
+        l = scan.get("agent_logs", "")
+        agent_logs: Dict = json.loads(l) if l else {}
+        log = "\n".join(agent_logs.get("log", []))
+        output = agent_logs.get("output", "")
+
+        l = scan.get("edr_logs", "" )
+        edr_logs: Dict = json.loads(l) if l else {}
+        xml_events = edr_logs.get("xml_events", "")
+        #logger.info(f"XML events: {xml_events}")
+        xml_parsed = get_xmlevent_data(xml_events)
+        #print("xml_parsed: ", xml_parsed)
 
     return render_template("partials/scan_details.html", 
-                           scan=scan, log=log, output=output)
+                           scan=scan, 
+                           log=log, 
+                           xml_parsed=xml_parsed,
+                           output=output)
 
 @get_bp.route("/templates/vms")
 def vms_template():

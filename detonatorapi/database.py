@@ -41,11 +41,11 @@ class Scan(Base):
     project = Column(String(100), nullable=False)
     edr_template = Column(String(100), nullable=False)
 
-    detonator_srv_logs = Column(Text, nullable=False)
-    agent_logs = Column(Text, default="", nullable=False)
-    execution_logs = Column(Text, default="", nullable=False)
-    edr_logs = Column(Text, default="", nullable=False)  # ATM rededr log
-    result = Column(Text, default="", nullable=False)    # ATM rededr result
+    detonator_srv_logs = Column(Text, nullable=False)          # Detonator API logs
+    agent_logs = Column(Text, default="", nullable=False)      # RedEdr result (log, output)
+    rededr_events = Column(Text, default="", nullable=False)   # RedEdr logs, exec output
+    edr_logs = Column(Text, default="", nullable=False)        # AV/EDR logs (Event Viewer)
+    result = Column(Text, default="", nullable=False)          # Detected or not (based on agent_logs)
 
     status = Column(String(20), default="fresh", nullable=False)
 

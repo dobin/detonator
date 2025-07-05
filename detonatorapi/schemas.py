@@ -72,7 +72,7 @@ class ScanUpdate(BaseModel):
     edr_template: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
     agent_logs: Optional[str] = None
-    execution_logs: Optional[str] = None
+    rededr_events: Optional[str] = None
     edr_logs: Optional[str] = None
     result: Optional[str] = None
     status: Optional[str] = None
@@ -89,7 +89,7 @@ class ScanResponse(ScanBase):
     comment: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
     agent_logs: Optional[str] = None
-    execution_logs: Optional[str] = None
+    rededr_events: Optional[str] = None
     edr_logs: Optional[str] = None
     result: Optional[str] = None
     status: str

@@ -131,22 +131,28 @@ class VmManagerRunning(VmManager):
         db_scan_add_log(scan_id, [f"Executed file {db_scan.file.filename} on RedEdr at {rededr_ip}"])
         time.sleep(10.0)
 
-        res = rededrApi.GetJsonResult()
-        log = rededrApi.GetLog()
+        rededr_events = rededrApi.GetJsonResult()
+        agent_logs = rededrApi.GetLog()  # { 'log': [ 'logline', ],  'output': '...' }
+        edr_logs = rededrApi.GetEdrLogs()
 
-        if log is None:
-            log = "No logs available"
+        if agent_logs is None:
+            agent_logs = "No logs available"
             db_scan_add_log(scan_id, ["could not get logs from RedEdr"])
-        if res is None:
-            res = "No results available"
+        if rededr_events is None:
+            rededr_events = "No results available"
             db_scan_add_log(scan_id, ["could not get results from RedEdr"])
+        if edr_logs is None:
+            edr_logs = "No EDR logs available"
+            db_scan_add_log(scan_id, ["could not get EDR logs from RedEdr"])
 
         db_scan = db.query(Scan).get(scan_id)
         if not db_scan:
             logger.error(f"Scan with ID {scan_id} not found in database")
             return
-        db_scan.edr_logs = res
-        db_scan.execution_logs = log
+        
+        db_scan.edr_logs = edr_logs
+        db_scan.agent_logs = agent_logs
+        db_scan.rededr_events = rededr_events
         db_scan.result = "<tbd>"
         db_scan.completed_at = datetime.utcnow()
         db.commit()

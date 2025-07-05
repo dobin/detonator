@@ -2,3 +2,4 @@
 *.db
 service-account-key.json
 .env
+tools/

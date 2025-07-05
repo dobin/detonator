@@ -24,14 +24,7 @@
     </div>
     {% endif %}
     
-    {% if scan.agent_logs %}
-    <div>
-        <strong>Agent Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ scan.agent_logs }}</pre>
-    </div>
-    {% endif %}
-    
-    {% if scan.execution_logs %}
+    {% if log %}
     <div>
         <strong>Execution Logs:</strong>
         <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ log }}
@@ -43,7 +36,13 @@
     {% if scan.edr_logs %}
     <div>
         <strong>EDR Logs:</strong>
-        <div class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>TODO</div>
+        <div class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>
+            {% for event in xml_parsed %}
+              Threat: {{ event.threat_name }}
+              ({{ event.severity_name }}) <br>
+
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
     
