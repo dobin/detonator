@@ -34,6 +34,19 @@ def get_status_color(status):
 app.jinja_env.globals.update(get_status_color=get_status_color)
 
 
+def get_scan_status_color(status):
+    if not status:
+        return 'bg-gray-100 text-gray-800'
+    status_colors = {
+        'detected': 'bg-red-100 text-red-800',
+        'clean': 'bg-green-100 text-green-800',
+    }
+    return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
+# Register the function for use in templates
+app.jinja_env.globals.update(get_scan_status_color=get_scan_status_color)
+
+
+
 # Add datetime formatting filter
 def strftime_filter(value, format='%Y-%m-%d %H:%M:%S'):
     """Format datetime objects in templates"""

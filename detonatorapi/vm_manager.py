@@ -172,14 +172,14 @@ class VmManagerRunning(VmManager):
                 is_detected = "N/A"
                 edr_logs = "No EDR logs available"
                 db_scan_add_log(thread_db, db_scan, ["could not get EDR logs from RedEdr"])
-
-            # Super Simple heuristics for now (Defender)
-            if 'Suspicious' in edr_logs:
-                is_detected = "detected"
-                db_scan_add_log(thread_db, db_scan, ["EDR logs indicate suspicious activity detected"])
             else:
-                is_detected = "not detected"
-                db_scan_add_log(thread_db, db_scan, ["EDR logs indicate clean"])
+                # Super Simple heuristics for now (Defender)
+                if 'Suspicious' in edr_logs:
+                    is_detected = "detected"
+                    db_scan_add_log(thread_db, db_scan, ["EDR logs indicate suspicious activity detected"])
+                else:
+                    is_detected = "clean"
+                    db_scan_add_log(thread_db, db_scan, ["EDR logs indicate clean"])
             
             db_scan.edr_logs = edr_logs
             db_scan.agent_logs = agent_logs
