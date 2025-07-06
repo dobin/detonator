@@ -3,7 +3,7 @@ import requests
 from typing import Optional
 
 from .database import Scan
-from .edr_templates import get_edr_template_manager
+from .edr_templates import edr_template_manager
 from .db_interface import db_change_status, db_scan_add_log
 
 
@@ -14,7 +14,7 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
     if not edr_template_id:
         logger.error(f"Scan {db_scan.id} has no EDR template defined")
         return False
-    edr_template = get_edr_template_manager().get_template(edr_template_id)
+    edr_template = edr_template_manager.get_template(edr_template_id)
     if not edr_template:
         logger.error(f"EDR template {edr_template_id} not found for scan {db_scan.id}")
         return False

@@ -1,0 +1,18 @@
+new_defender:
+  type: new
+  comment: 
+  software: defender
+  image_reference: /subscriptions/1a7ea32c-9e7a-43c1-b0ca-e4927197c053/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
+  admin_username: admin 
+  admin_password: password
+
+clone_rededr:
+  type: clone
+  comment: 
+  vm_name: test-vm
+  snapshot_name: snapshot_current
+
+running_rededr:
+  type: running
+  comment: win10 defender rededr
+  ip: 192.168.1.1

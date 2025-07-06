@@ -9,7 +9,7 @@ from .db_interface import db_change_status, db_scan_add_log
 from .azure_manager import initialize_azure_manager, get_azure_manager
 from .agent_interface import connect_to_agent
 from .rededr_api import RedEdrApi
-from .edr_templates import get_edr_template_manager
+from .edr_templates import edr_template_manager
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class VmManagerRunning(VmManager):
             if not edr_template_id:
                 logger.error(f"Scan {scan_id} has no EDR template defined")
                 return
-            edr_template = get_edr_template_manager().get_template(edr_template_id)
+            edr_template = edr_template_manager.get_template(edr_template_id)
             if not edr_template:
                 logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
                 return

@@ -11,7 +11,7 @@ from .db_interface import db_change_status
 from .vm_manager import *
 from .azure_manager import get_azure_manager, AzureManager
 from .utils import mylog
-from .edr_templates import get_edr_template_manager
+from .edr_templates import edr_template_manager
 from .settings import *
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class VMMonitorTask:
             if status in ["finished"]:
                 continue
             # Check for validity
-            edr_template = get_edr_template_manager().get_template(edr_template_id)
+            edr_template = edr_template_manager.get_template(edr_template_id)
             if not edr_template:
                 logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
                 continue

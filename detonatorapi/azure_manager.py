@@ -13,7 +13,7 @@ from .utils import mylog, scanid_to_vmname
 import uuid
 
 from .database import Scan
-from .edr_templates import get_edr_template_manager
+from .edr_templates import edr_template_manager
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
@@ -30,7 +30,7 @@ class AzureManager:
         self.resource_group = resource_group
         self.location = location
         self.credential = DefaultAzureCredential()
-        self.edr_template_manager = get_edr_template_manager()
+        self.edr_template_manager = edr_template_manager
         
         # Initialize Azure clients
         self.compute_client = ComputeManagementClient(self.credential, self.subscription_id)
@@ -55,39 +55,56 @@ class AzureManager:
         
         # Validate EDR template if provided
         edr_template_id = db_scan.edr_template
+        edr_template: Dict = {}
         if edr_template_id and not self.edr_template_manager.has_template(edr_template_id):
-            logger.warning(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
-            edr_template_id = None
+            logger.error(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
+            return False
+        edr_template = self.edr_template_manager.get_template(edr_template_id)
         
         try:
-            # Get EDR template configuration
-            deployment_script = None
-            if edr_template_id:
-                deployment_script = self.edr_template_manager.get_template_deployment_script(edr_template_id)
-                logger.info(f"Using EDR template: {edr_template_id}")
-            
             logger.info(f"Azure: Creating VM: {vm_name} with EDR template: {edr_template_id}")
             logger.info(f"Azure: This can take a few minutes")
+
+            # General VM creation data (check first)
+            if 'image_reference' not in edr_template:
+                logger.error("No base image given, abort")
+                return False
+            image_reference = edr_template["image_reference"]
+            if 'admin_username' not in edr_template or 'admin_password' not in edr_template:
+                logger.error("No admin credentials given, abort")
+                return False
+            admin_username = edr_template["admin_username"]
+            admin_password = edr_template["admin_password"]
+            deployment_script = None
+            #if edr_template_id:
+            #    deployment_script = self.edr_template_manager.get_template_deployment_script(edr_template_id)
+            #    logger.info(f"Using EDR template: {edr_template_id}")
             
-            # Create network security group with EDR-specific rules
+            # Create: network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
             self._create_network_security_group(nsg_name, edr_template_id)
             
-            # Create virtual network and subnet
+            # Create: virtual network and subnet
             vnet_name = f"{vm_name}-vnet"
             subnet_name = f"{vm_name}-subnet"
             self._create_virtual_network(vnet_name, subnet_name)
             
-            # Create public IP
+            # Create: public IP
             public_ip_name = f"{vm_name}-ip"
             public_ip = self._create_public_ip(public_ip_name)
             
-            # Create network interface
+            # Create: network interface
             nic_name = f"{vm_name}-nic"
             nic = self._create_network_interface(nic_name, vnet_name, subnet_name, public_ip_name, nsg_name)
             
-            # Create the VM with deployment script
-            vm_result = self._create_vm(vm_name, nic.id, deployment_script)
+            # Create: the VM with deployment script
+            vm_result = self._create_vm(
+                vm_name, 
+                nic.id, 
+                image_reference=image_reference, 
+                admin_username=admin_username,
+                admin_password=admin_password,
+                deployment_script=deployment_script)
             if not vm_result:
                 logger.error(f"Failed to create VM for scan {scan_id}")
                 return False
@@ -204,14 +221,14 @@ class AzureManager:
         return operation.result()
     
 
-    def _create_vm(self, vm_name: str, nic_id: str, deployment_script: str = None):
+    def _create_vm(self, vm_name: str, nic_id: str, image_reference: str, admin_username: str, admin_password: str, deployment_script: str = None):
         """Create Windows 11 virtual machine with optional deployment script"""
         vm_params = {
             'location': self.location,
             'os_profile': {
                 'computer_name': vm_name,
-                'admin_username': 'dobin',
-                'admin_password': '',
+                'admin_username': admin_username,
+                'admin_password': admin_password,
                 'windows_configuration': {
                     'enable_automatic_updates': False,
                     'provision_vm_agent': True
@@ -222,7 +239,7 @@ class AzureManager:
             },
             'storage_profile': {
                 'image_reference': {
-                    'id': '/subscriptions/1a7ea32c-9e7a-43c1-b0ca-e4927197c053/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def',
+                    'id': image_reference,
                 },
                 'os_disk': {
                     'create_option': 'FromImage',

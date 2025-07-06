@@ -11,7 +11,7 @@ from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse
 from .azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
-from .edr_templates import get_edr_template_manager
+from .edr_templates import edr_template_manager
 from .utils import mylog
 from .db_interface import db_create_file, db_create_scan
 
@@ -57,7 +57,6 @@ async def shutdown_event():
 @app.get("/api/edr-templates")
 async def get_edr_templates():
     """Get available EDR templates"""
-    edr_template_manager = get_edr_template_manager()
     templates = edr_template_manager.get_templates()
     return templates
 

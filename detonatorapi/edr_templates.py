@@ -2,37 +2,32 @@ import os
 import logging
 from typing import Dict, List, Optional
 from pathlib import Path
+import yaml
 
 logger = logging.getLogger(__name__)
-
-
-template_configs = {
-    "new_defender": {
-        "type": "new",
-        "comment": "",
-        "software": "defender",
-    },
-    "clone_rededr": {
-        "type": "clone",
-        "comment": "",
-        "vm_name": "test-vm",
-    },
-    "running_rededr": {
-        "type": "running",
-        "comment": "win10 defender rededr",
-        "ip": "192.168.88.102",
-    },
-}
 
 
 class EDRTemplateManager:
     """Manages EDR templates and deployment scripts"""
     
     def __init__(self):
-        self.scripts_dir = Path(__file__).parent / "deployment_scripts"
-        self._templates = template_configs.copy()
+        self._templates: Dict[str, Dict] = {}
+
+
+    def load_templates(self) -> bool:
+        templates_file = "edr_templates.yaml"
+        try:
+            with open(templates_file, 'r', encoding='utf-8') as f:
+                self._templates = yaml.safe_load(f) or {}
+        except Exception as e:
+            logger.error(f"Error loading EDR templates from {templates_file}: {str(e)}")
+            return False
+
         for template_id, template_info in self._templates.items():
             template_info["id"] = template_id
+
+        logger.info(f"Loaded {len(self._templates)} EDR templates from {templates_file}")
+        return True
     
 
     def has_template(self, template_id: str) -> bool:
@@ -98,6 +93,3 @@ class EDRTemplateManager:
 # Global EDR template manager instance
 edr_template_manager = EDRTemplateManager()
 
-def get_edr_template_manager() -> EDRTemplateManager:
-    """Get the global EDR template manager instance"""
-    return edr_template_manager

@@ -12,10 +12,10 @@ from dotenv import load_dotenv
 import uvicorn
 import logging
 
+from detonatorapi.edr_templates import edr_template_manager
 from detonatorapi.logging_config import setup_logging
 from detonatorapi.azure_manager import initialize_azure_manager
 from detonatorapi.db_interface import db_create_file, db_create_scan
-
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorui.flask_app import app as flask_app
 from detonatorapi.vm_monitor import vm_monitor, VMMonitorTask
@@ -68,6 +68,11 @@ def main():
     
     command = sys.argv[1].lower()
     db = get_db_for_thread()
+
+    # Templates: Init
+    if not edr_template_manager.load_templates():
+        logger.error("Failed to load EDR templates. Please check edr_templates.yaml file.")
+        sys.exit(1)
 
     # Azure: Init
     subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
