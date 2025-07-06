@@ -23,7 +23,7 @@ class RedEdrApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("RedEdr HTTP response error: ", response.status_code, response.json())
+                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
             logging.warning("RedEdr HTTP response error: ", e)
@@ -46,7 +46,7 @@ class RedEdrApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("RedEdr HTTP response error: ", response.status_code, response.text)
+                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
             logging.warning("RedEdr HTTP response error: ", e)
@@ -61,7 +61,7 @@ class RedEdrApi:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: ", response.status_code, response.text)
+                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
             logging.warning("RedEdr HTTP response error: ", e)
@@ -76,7 +76,7 @@ class RedEdrApi:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: ", response.status_code, response.text)
+                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
             logging.warning("RedEdr HTTP response error: ", e)
@@ -91,7 +91,7 @@ class RedEdrApi:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: ", response.status_code, response.text)
+                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
             logging.warning("RedEdr HTTP response error: ", e)

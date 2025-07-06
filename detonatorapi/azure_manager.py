@@ -43,7 +43,7 @@ class AzureManager:
         vm_name = scanid_to_vmname(scan_id)
 
         # All required information is in the database entry
-        db_scan = db.query(Scan).get(scan_id)
+        db_scan = db.get(Scan, scan_id)
         if not db_scan:
             logger.error(f"Scan with ID {scan_id} not found in database")
             # No DB to update

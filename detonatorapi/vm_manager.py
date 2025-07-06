@@ -42,7 +42,7 @@ class VmManagerNew(VmManager):
         def instantiate_thread(scan_id: int): 
             logger.info("VmManagerNew: Instantiating VM for scan %s (Thread)", scan_id)
             thread_db = get_db_for_thread()
-            db_scan = self.db.query(Scan).get(scan_id)
+            db_scan = self.db.get(Scan, scan_id)
             azure_manager = get_azure_manager()
             if azure_manager.create_machine(self.db, db_scan):
                 db_change_status(thread_db, db_scan, "instantiated")
@@ -81,7 +81,7 @@ class VmManagerNew(VmManager):
     def remove(self, db_scan: Scan):
         def remove_thread(scan_id: int):
             thread_db = get_db_for_thread()
-            db_scan = self.db.query(Scan).get(scan_id)
+            db_scan = self.db.get(Scan, scan_id)
             logger.info("VmManagerNew: Removing VM for scan %s", scan_id)
             azure_manager = get_azure_manager()
             vm_name = scanid_to_vmname(scan_id)
@@ -110,7 +110,7 @@ class VmManagerRunning(VmManager):
     def connect(self, db_scan: Scan):
         def connect_thread(scan_id: int):
             thread_db = get_db_for_thread()
-            db_scan = thread_db.query(Scan).get(scan_id)
+            db_scan = thread_db.get(Scan, scan_id)
             logger.info("VmManagerRunning: Connecting to running VM for scan %s", scan_id)
             if connect_to_agent(thread_db, db_scan):
                 db_change_status(thread_db, db_scan, "connected")
@@ -124,7 +124,7 @@ class VmManagerRunning(VmManager):
     def scan(self, db_scan: Scan):
         def scan_thread(scan_id: int):
             thread_db = get_db_for_thread()
-            db_scan = thread_db.query(Scan).get(scan_id)
+            db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:
                 logger.error(f"Scan with ID {scan_id} not found in database")
                 return

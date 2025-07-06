@@ -85,12 +85,16 @@ class VMMonitorTask:
             edr_template_id: str = scan.edr_template
 
             # Skip finished (nothing todo)
-            if status in ["finished"]:
+            if status in [ 'finished' ]:
                 continue
+            if status in [ 'error' ]:
+                continue
+
             # Check for validity
             edr_template = edr_template_manager.get_template(edr_template_id)
             if not edr_template:
-                logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
+                logger.error(f"EDR2 template {edr_template_id} not found for scan {scan_id}")
+                db_change_status(self.db, scan, "error")
                 continue
             server_type = edr_template["type"]
             vmManager: VmManager = self.vmManagers[server_type]
