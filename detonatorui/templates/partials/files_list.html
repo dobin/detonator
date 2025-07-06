@@ -9,7 +9,6 @@
         <div class="flex justify-between items-start">
             <div class="flex-1">
                 <h3 class="font-semibold text-lg text-blue-600">{{ file.filename }}</h3>
-                <p class="text-gray-600 text-sm">Hash: {{ file.file_hash }}</p>
                 {% if file.source_url %}
                 <p class="text-gray-600 text-sm">Source: {{ file.source_url }}</p>
                 {% endif %}
@@ -17,6 +16,37 @@
                 <p class="text-gray-700 mt-2">{{ file.comment }}</p>
                 {% endif %}
                 <p class="text-gray-500 text-xs mt-2">Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                
+                <!-- Associated Scans -->
+                {% if file.scans and file.scans|length > 0 %}
+                <div class="mt-4 p-3 bg-gray-50 rounded">
+                    <div class="space-y-2">
+                        {% for scan in file.scans %}
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-600">Scan #{{ scan.id }}: </span>
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}">{{ scan.status }}</span>
+                                {% if scan.edr_template %}
+                                <span class="text-gray-500">@{{ scan.edr_template }}</span>
+                                {% endif %}
+
+                                {% if scan.result %}
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_scan_status_color(scan.result) }}"> {{ scan.result }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex space-x-1">
+                                <button onclick="viewScanDetails({{ scan.id }})" class="text-blue-500 hover:text-blue-700 text-xs">View</button>
+                                <a href="/scans?scan_id={{ scan.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="mt-4 p-3 bg-gray-50 rounded">
+                    <p class="text-gray-500 text-sm">No scans yet</p>
+                </div>
+                {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
                 <button 

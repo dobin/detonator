@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 
 @get_bp.route("/")
 def index():
+    return render_template("index.html")
+
+@get_bp.route("/files")
+def files_page():
+    return render_template("files.html")
+
+@get_bp.route("/scans")
+def scans_page():
+    return render_template("scans.html")
+
+@get_bp.route("/newscan")
+def scan_page():
     # Fetch EDR templates from FastAPI
     try:
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
@@ -26,15 +38,7 @@ def index():
     except requests.RequestException:
         edr_templates = []
     
-    return render_template("index.html", edr_templates=edr_templates)
-
-@get_bp.route("/files")
-def files_page():
-    return render_template("files.html")
-
-@get_bp.route("/scans")
-def scans_page():
-    return render_template("scans.html")
+    return render_template("newscan.html", edr_templates=edr_templates)
 
 @get_bp.route("/upload")
 def upload_page():

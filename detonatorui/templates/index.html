@@ -7,209 +7,55 @@
     <h2 class="text-2xl font-bold mb-4">Welcome to Detonator</h2>
     <p class="text-gray-600 mb-6">A modern web application for file analysis with FastAPI backend and Flask + HTMX frontend.</p>
     
-    <div class="mt-8 bg-gray-50 p-4 rounded-lg">
-        <h3 class="text-lg font-semibold mb-4">Quick Upload & Analysis</h3>
-        <form 
-            hx-post="/api/upload-and-scan" 
-            hx-encoding="multipart/form-data"
-            hx-target="#upload-result"
-            hx-indicator="#loading"
-            class="space-y-4"
-        >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="file" class="block text-sm font-medium text-gray-700 mb-1">
-                        Select File for Analysis *
-                    </label>
-                    <input 
-                        type="file" 
-                        id="file" 
-                        name="file" 
-                        required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                </div>
-                <div>
-                    <label for="source_url" class="block text-sm font-medium text-gray-700 mb-1">
-                        File Source URL (optional)
-                    </label>
-                    <input 
-                        type="url" 
-                        id="source_url" 
-                        name="source_url" 
-                        placeholder="https://github.com/dobin/malware/metasploit/test1/"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="file_comment" class="block text-sm font-medium text-gray-700 mb-1">
-                        File Comment (optional)
-                    </label>
-                    <textarea 
-                        id="file_comment" 
-                        name="file_comment" 
-                        rows="2"
-                        placeholder="e.g., fiber based shc loader with Metasploit winhttp payload"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    ></textarea>
-                </div>
-                <div>
-                    <label for="scan_comment" class="block text-sm font-medium text-gray-700 mb-1">
-                        Scan Comment (optional)
-                    </label>
-                    <textarea 
-                        id="scan_comment" 
-                        name="scan_comment" 
-                        rows="2"
-                        placeholder="e.g., Check if sgn works against elastic"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    ></textarea>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="project" class="block text-sm font-medium text-gray-700 mb-1">
-                        Scan Project (optional)
-                    </label>
-                    <input 
-                        type="text" 
-                        id="project" 
-                        name="project" 
-                        placeholder="e.g., metasploit_1 research"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                </div>
-                <div>
-                    <label for="edr_template" class="block text-sm font-medium text-gray-700 mb-1">
-                        EDR Template
-                    </label>
-                    <select 
-                        id="edr_template" 
-                        name="edr_template"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        {% for template in edr_templates %}
-                        <option value="{{ template.id }}" title="{{ template.description }}">
-                            {{ template.id }}
-                            {% if template.category %} ({{ template.category }}){% endif %}
-                            {% if template.ports %} - Ports: {{ template.ports|join(', ') }}{% endif %}
-                        </option>
-                        {% endfor %}
-                        {% if not edr_templates %}
-                        <option value="" disabled>No EDR templates available</option>
-                        {% endif %}
-                    </select>
-                </div>
-            </div>
-            <div class="flex space-x-4">
-                <button 
-                    type="submit" 
-                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                    Upload & Start Analysis
-                </button>
-            </div>
-        </form>
-        <div id="upload-result" class="mt-4"></div>
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Quick Actions -->
+        <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">Start Analysis</h3>
+            <p class="text-blue-700 text-sm mb-4">Upload a file and automatically start malware analysis with VM provisioning.</p>
+            <a href="/newscan" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block">
+                Upload & Scan
+            </a>
+        </div>
+        
+        <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+            <h3 class="text-lg font-semibold text-green-800 mb-3">Manage Files</h3>
+            <p class="text-green-700 text-sm mb-4">View uploaded files, their associated scans, and manage your file collection.</p>
+            <a href="/files" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-block">
+                View Files
+            </a>
+        </div>
+        
+        <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
+            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Scans</h3>
+            <p class="text-purple-700 text-sm mb-4">Track the progress of your analysis jobs and view detailed results.</p>
+            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
+                View Scans
+            </a>
+        </div>
+        
+        <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+            <h3 class="text-lg font-semibold text-yellow-800 mb-3">Storage Only</h3>
+            <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can scan them later).</p>
+            <a href="/upload" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 inline-block">
+                Upload Only
+            </a>
+        </div>
+        
+        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Virtual Machines</h3>
+            <p class="text-gray-700 text-sm mb-4">Monitor and manage your Azure VMs used for malware analysis.</p>
+            <a href="/vms" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
+                View VMs
+            </a>
+        </div>
+        
+        <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
+            <h3 class="text-lg font-semibold text-indigo-800 mb-3">EDR Templates</h3>
+            <p class="text-indigo-700 text-sm mb-4">Configure and manage EDR templates for your analysis environments.</p>
+            <a href="/edr-templates" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block">
+                Manage Templates
+            </a>
+        </div>
     </div>
 </div>
-
-<script>
-    // Handle upload response on home page
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.target.id === 'upload-result') {
-            const xhr = evt.detail.xhr;
-            const container = document.getElementById('upload-result');
-            
-            if (xhr.status === 200) {
-                const response = JSON.parse(xhr.responseText);
-                container.innerHTML = `
-                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-green-800">File uploaded and analysis started!</h3>
-                                <div class="mt-2 text-sm text-green-700">
-                                    <p><strong>Scan ID:</strong> ${response.scan_id}</p>
-                                    <p>Analysis has been automatically started with status</p>
-                                </div>
-                                <div class="mt-4">
-                                    <div class="flex space-x-2">
-                                        <a href="/files" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
-                                            View Files
-                                        </a>
-                                        <a href="/scans" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
-                                            Monitor Analysis
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                // Reset form
-                evt.detail.target.closest('form').reset();
-            } else {
-                const response = JSON.parse(xhr.responseText);
-                container.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">Upload failed</h3>
-                                <div class="mt-2 text-sm text-red-700">
-                                    <p>${response.detail || response.error || 'Unknown error occurred'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-    });
-    
-    // EDR Template selection handler
-    document.getElementById('edr_template').addEventListener('change', function(e) {
-        const templateSelect = e.target;
-        const selectedOption = templateSelect.options[templateSelect.selectedIndex];
-        const description = selectedOption.getAttribute('title');
-        
-        // Remove any existing template info
-        const existingInfo = document.getElementById('edr_template_info');
-        if (existingInfo) {
-            existingInfo.remove();
-        }
-        
-        // Add template description if a template is selected
-        if (templateSelect.value && description) {
-            const infoDiv = document.createElement('div');
-            infoDiv.id = 'edr_template_info';
-            infoDiv.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md';
-            infoDiv.innerHTML = `
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <h4 class="text-sm font-medium text-blue-800">${selectedOption.text}</h4>
-                        <p class="mt-1 text-sm text-blue-700">${description}</p>
-                    </div>
-                </div>
-            `;
-            templateSelect.parentNode.appendChild(infoDiv);
-        }
-    });
-</script>
 {% endblock %}

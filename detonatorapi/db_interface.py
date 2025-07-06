@@ -18,7 +18,7 @@ def db_change_status(db, db_scan: Scan, status: str, log_message: str = ""):
     db_scan.status = status
 
     if log_message != "":
-        logger.info("  " + log_mesage)
+        logger.info("  " + log_message)
         db_scan.detonator_srv_logs += mylog(log)
 
     #db_scan.updated_at = datetime.utcnow()

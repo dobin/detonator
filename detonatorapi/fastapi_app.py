@@ -121,10 +121,10 @@ async def upload_file_and_scan(
     logger.info(f"Uploading file: {actual_filename}")
 
     content = await file.read()
-    file_id = db_create_file(actual_filename, content, source_url, file_comment)
+    file_id = db_create_file(db, actual_filename, content, source_url, file_comment)
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(file_id, edr_template=edr_template, comment=scan_comment, project=project)
+    scan_id = db_create_scan(db, file_id, edr_template=edr_template, comment=scan_comment, project=project)
 
     data = { 
         "file_id": file_id,
@@ -134,10 +134,10 @@ async def upload_file_and_scan(
     return data
 
 
-@app.get("/api/files", response_model=List[FileResponse])
+@app.get("/api/files", response_model=List[FileWithScans])
 async def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Get all files"""
-    files = db.query(File).offset(skip).limit(limit).all()
+    """Get all files with their scans"""
+    files = db.query(File).options(joinedload(File.scans)).offset(skip).limit(limit).all()
     return files
 
 @app.get("/api/files/{file_id}", response_model=FileWithScans)
