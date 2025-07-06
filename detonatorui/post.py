@@ -15,7 +15,8 @@ def upload_file():
         data = {}
         
         if 'file' in request.files:
-            files['file'] = request.files['file']
+            uploaded_file = request.files['file']
+            files['file'] = (uploaded_file.filename, uploaded_file.stream, uploaded_file.content_type)
         
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']

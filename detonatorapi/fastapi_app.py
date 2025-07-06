@@ -68,6 +68,7 @@ async def root():
 async def health_check():
     return {"status": "healthy", "service": "detonator-api"}
 
+
 # File endpoints
 @app.post("/api/files", response_model=FileResponse)
 async def upload_file(
@@ -77,26 +78,13 @@ async def upload_file(
     db: Session = Depends(get_db)
 ):
     """Upload a file without automatically creating a scan"""
+
+    actual_filename = file.filename
     # Read file content
     content = await file.read()
-    file_hash = File.calculate_hash(content)
-    
-    # Check if file already exists
-    existing_file = db.query(File).filter(File.file_hash == file_hash).first()
-    if existing_file:
-        raise HTTPException(status_code=400, detail="File with this hash already exists")
-    
-    # Create file record
-    db_file = File(
-        content=content,
-        filename=file.filename,
-        file_hash=file_hash,
-        source_url=source_url,
-        comment=comment
-    )
-    db.add(db_file)
-    db.commit()
-    db.refresh(db_file)
+    file_id = db_create_file(db, actual_filename, content, source_url, comment)
+
+    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans)).first()
     
     return db_file
 
@@ -115,6 +103,7 @@ async def upload_file_and_scan(
     
     # DB: Create File
     actual_filename = file.filename
+    print("----> Uploading file:", actual_filename)
     if not actual_filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     logger.info(f"Uploading file: {actual_filename}")
