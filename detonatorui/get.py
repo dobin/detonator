@@ -212,6 +212,29 @@ def edr_templates_template():
     
     return render_template("partials/edr_templates_list.html", templates=templates)
 
+@get_bp.route("/templates/create-scan/<int:file_id>")
+def create_file_scan_template(file_id):
+    """Template endpoint to render scan creation form via HTMX"""
+    try:
+        # Fetch file details
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}")
+        if file_response.status_code == 200:
+            file_data = file_response.json()
+        else:
+            file_data = None
+            
+        # Fetch EDR templates
+        edr_response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        if edr_response.status_code == 200:
+            edr_templates = edr_response.json()
+        else:
+            edr_templates = []
+    except requests.RequestException:
+        file_data = None
+        edr_templates = []
+    
+    return render_template("partials/file_create_scan.html", file=file_data, edr_templates=edr_templates)
+
 # API endpoints (return JSON)
 
 @get_bp.route("/api/files")

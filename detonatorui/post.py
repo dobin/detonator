@@ -69,3 +69,30 @@ def delete_vm(vm_name):
         return response.json()
     except requests.RequestException as e:
         return {"error": f"Could not delete VM: {str(e)}"}, 500
+
+@post_bp.route("/api/files/<int:file_id>/createscan", methods=["POST"])
+def file_create_scan(file_id):
+    """Proxy endpoint to create scan via FastAPI"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.json
+        else:
+            # Convert form data to dictionary
+            data = {}
+            for key, value in request.form.items():
+                if value.strip():  # Only include non-empty values
+                    data[key] = value
+        
+        logger.info(f"Creating scan for file {file_id} with data: {data}")
+        response = requests.post(f"{API_BASE_URL}/api/files/{file_id}/createscan", json=data)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not create scan: {str(e)}"}, 500

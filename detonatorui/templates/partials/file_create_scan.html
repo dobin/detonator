@@ -1,0 +1,232 @@
+{% if file %}
+<div class="space-y-4">
+    <div class="border-b border-gray-200 pb-4">
+        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>{{ file.filename }}</strong><br>
+                        {% if file.comment %}Comment: {{ file.comment }}<br>{% endif %}
+                        Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <form 
+        id="create-scan-form"
+        hx-post="/api/files/{{ file.id }}/createscan" 
+        hx-target="#create-scan-result"
+        hx-indicator="#scan-loading"
+        class="space-y-4"
+    >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="scan_comment" class="block text-sm font-medium text-gray-700 mb-1">
+                    Scan Comment (optional)
+                </label>
+                <textarea 
+                    id="scan_comment" 
+                    name="comment" 
+                    rows="2"
+                    placeholder="e.g., Check if sgn works against elastic"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+            </div>
+            <div>
+                <label for="project" class="block text-sm font-medium text-gray-700 mb-1">
+                    Scan Project (optional)
+                </label>
+                <input 
+                    type="text" 
+                    id="project" 
+                    name="project" 
+                    placeholder="e.g., metasploit_1 research"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+            </div>
+        </div>
+        
+        <div>
+            <label for="edr_template" class="block text-sm font-medium text-gray-700 mb-1">
+                EDR Template *
+            </label>
+            <select 
+                id="edr_template" 
+                name="edr_template"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+                <option value="">Select an EDR template...</option>
+                {% for template in edr_templates %}
+                <option value="{{ template.id }}" title="{{ template.description }}">
+                    {{ template.id }}
+                    {% if template.category %} ({{ template.category }}){% endif %}
+                    {% if template.ports %} - Ports: {{ template.ports|join(', ') }}{% endif %}
+                </option>
+                {% endfor %}
+                {% if not edr_templates %}
+                <option value="" disabled>No EDR templates available</option>
+                {% endif %}
+            </select>
+        </div>
+        
+        <div id="edr_template_info_container"></div>
+        
+        <div class="flex space-x-4 pt-4">
+            <button 
+                type="submit" 
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex-1"
+            >
+                <span id="scan-loading" class="hidden">Creating...</span>
+                <span id="scan-button-text">Create Scan</span>
+            </button>
+            <button 
+                type="button" 
+                onclick="closeCreateScanModal()"
+                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+                Cancel
+            </button>
+        </div>
+    </form>
+    
+    <div id="create-scan-result" class="mt-4"></div>
+</div>
+
+<script>
+    // EDR Template selection handler for create scan form
+    document.getElementById('edr_template').addEventListener('change', function(e) {
+        const templateSelect = e.target;
+        const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+        const description = selectedOption.getAttribute('title');
+        const container = document.getElementById('edr_template_info_container');
+        
+        // Clear existing info
+        container.innerHTML = '';
+        
+        // Add template description if a template is selected
+        if (templateSelect.value && description) {
+            container.innerHTML = `
+                <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="text-sm font-medium text-blue-800">${selectedOption.text}</h4>
+                            <p class="mt-1 text-sm text-blue-700">${description}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    // Handle form submission
+    document.getElementById('create-scan-form').addEventListener('htmx:beforeRequest', function(evt) {
+        // Show loading state
+        document.getElementById('scan-loading').classList.remove('hidden');
+        document.getElementById('scan-button-text').classList.add('hidden');
+    });
+
+    // Handle response
+    document.getElementById('create-scan-form').addEventListener('htmx:afterRequest', function(evt) {
+        const xhr = evt.detail.xhr;
+        const container = document.getElementById('create-scan-result');
+        
+        // Hide loading state
+        document.getElementById('scan-loading').classList.add('hidden');
+        document.getElementById('scan-button-text').classList.remove('hidden');
+        
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            container.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-green-800">Scan created successfully!</h3>
+                            <div class="mt-2 text-sm text-green-700">
+                                <p><strong>Scan ID:</strong> ${response.id}</p>
+                                <p>Analysis has been started with status: <strong>${response.status}</strong></p>
+                                ${response.edr_template ? '<p><strong>EDR Template:</strong> ' + response.edr_template + '</p>' : ''}
+                                ${response.project ? '<p><strong>Project:</strong> ' + response.project + '</p>' : ''}
+                                ${response.comment ? '<p><strong>Comment:</strong> ' + response.comment + '</p>' : ''}
+                            </div>
+                            <div class="mt-4">
+                                <div class="flex space-x-2">
+                                    <button onclick="closeCreateScanModal(); htmx.trigger('#files-container', 'load');" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                        Close & Refresh
+                                    </button>
+                                    <a href="/scans" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 inline-block">
+                                        View All Scans
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Reset form
+            evt.detail.target.reset();
+            document.getElementById('edr_template_info_container').innerHTML = '';
+        } else {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Scan creation failed</h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <p>${response.detail || response.error || 'Unknown error occurred'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Scan creation failed</h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <p>Server error: ${xhr.status} - ${xhr.statusText}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    });
+</script>
+{% else %}
+<div class="text-center text-red-500">
+    <p>Error: Could not load file information.</p>
+</div>
+{% endif %}

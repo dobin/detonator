@@ -36,9 +36,9 @@ class Scan(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
-    comment = Column(Text, nullable=False)
+    comment = Column(Text, default="", nullable=False)
 
-    project = Column(String(100), nullable=False)
+    project = Column(String(100), default="", nullable=False)
     edr_template = Column(String(100), nullable=False)
 
     detonator_srv_logs = Column(Text, nullable=False)          # Detonator API logs

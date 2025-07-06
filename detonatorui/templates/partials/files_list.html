@@ -21,7 +21,7 @@
                 {% if file.scans and file.scans|length > 0 %}
                 <div class="mt-4 p-3 bg-gray-50 rounded">
                     <div class="space-y-2">
-                        {% for scan in file.scans %}
+                        {% for scan in file.scans|sort(attribute='id', reverse=True) %}
                         <div class="flex items-center justify-between text-xs">
                             <div class="flex items-center space-x-2">
                                 <span class="text-gray-600">Scan #{{ scan.id }}: </span>

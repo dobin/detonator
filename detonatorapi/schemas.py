@@ -60,10 +60,11 @@ class FileResponse(FileBase):
 class ScanBase(BaseModel):
     project: Optional[str] = None
     edr_template: Optional[str] = None
+    comment: Optional[str] = None
 
 # create_scan() request
-class ScanCreate(ScanBase):
-    file_id: int
+class FileCreateScan(ScanBase):
+    pass  # file_id comes from path parameter
 
 # update_scan() request
 class ScanUpdate(BaseModel):

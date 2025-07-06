@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 
 from .database import get_db, File, Scan
-from .schemas import FileResponse, ScanResponse, FileWithScans, ScanCreate, ScanUpdate, NewScanResponse
+from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse
 from .azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .edr_templates import get_edr_template_manager
@@ -192,67 +192,26 @@ async def update_scan(scan_id: int, scan_update: ScanUpdate, db: Session = Depen
     db.refresh(db_scan)
     return db_scan
 
-@app.post("/api/files/{file_id}/scans", response_model=ScanResponse)
-async def create_scan(file_id: int, scan_data: ScanCreate, db: Session = Depends(get_db)):
+@app.post("/api/files/{file_id}/createscan", response_model=ScanResponse)
+async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session = Depends(get_db)):
     """Create a new scan for a file and automatically provision Azure Windows 11 VM"""
     # Check if file exists
     db_file = db.query(File).filter(File.id == file_id).first()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Create scan record first
-    db_scan = Scan(
-        file_id=file_id, 
-        **scan_data.dict(),
-        status="initializing",
-        project=""
-    )
-    db.add(db_scan)
-    db.commit()
-    db.refresh(db_scan)
+    # Extract data with defaults
+    edr_template = scan_data.edr_template or ""
+    comment = scan_data.comment or ""
+    project = scan_data.project or ""
     
-    # Create Azure VM for the scan
-    try:
-        vm_manager = get_azure_manager()
-        
-        # Create VM with EDR template
-        edr_template_id = db_scan.edr_template
-        vm_info = await vm_manager.create_machine(db_scan.id, edr_template_id)
-        
-        # Update scan with VM information
-        db_scan.vm_instance_name = vm_info["vm_name"]
-        db_scan.vm_ip_address = vm_info["public_ip"]
-        
-        # Log VM creation
-        creation_log = f"[{datetime.utcnow().isoformat()}] Azure Windows 11 VM creation initiated\n"
-        creation_log += f"VM Name: {vm_info['vm_name']}\n"
-        creation_log += f"Public IP: {vm_info['public_ip']}\n"
-        creation_log += f"EDR Template: {edr_template_id or 'None'}\n"
-        if vm_info.get("edr_template_info"):
-            template_info = vm_info["edr_template_info"]
-            creation_log += f"Template Description: {template_info.get('description', 'N/A')}\n"
-            creation_log += f"Template Ports: {template_info.get('ports', [])}\n"
-        creation_log += f"Status: {vm_info['status']}\n"
-        db_scan.detonator_srv_logs = creation_log  # first log entry
-        
-        db.commit()
-        db.refresh(db_scan)
-        
-        logger.info(f"Created scan {db_scan.id} with Azure VM {vm_info['vm_name']}")
-        
-    except Exception as e:
-        logger.error(f"Failed to create VM for scan {db_scan.id}: {str(e)}")
-        
-        # Update scan status to reflect error
-        db_scan.status = "error"
-        error_log = f"[{datetime.utcnow().isoformat()}] VM creation failed: {str(e)}\n"
-        db_scan.detonator_srv_logs = error_log
-        db.commit()
-        
-        # Still return the scan, but with error status
-        # Don't raise HTTPException to allow user to see the scan record
+    # Create the scan
+    scan_id = db_create_scan(db, file_id, edr_template=edr_template, comment=comment, project=project)
     
+    # Retrieve the created scan to return full details
+    db_scan = db.query(Scan).options(joinedload(Scan.file)).filter(Scan.id == scan_id).first()
     return db_scan
+
 
 @app.post("/api/scans/{scan_id}/shutdown-vm")
 async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
