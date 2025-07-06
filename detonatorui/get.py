@@ -63,6 +63,11 @@ def edr_templates_page():
     return render_template("edr_templates.html")
 
 
+@get_bp.route("/semidatasieve/<int:scan_id>")
+def semidatasieve(scan_id):
+    """Page to display semidatasieve results for a scan"""
+    return render_template("semidatasieve.html", scan_id=scan_id)
+
 # Template endpoints for HTMX (return HTML)
 
 @get_bp.route("/templates/files")
