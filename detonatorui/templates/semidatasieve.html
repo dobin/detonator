@@ -302,8 +302,17 @@
         ]
         let visibility = [
             //{ type: "key", action: "hide", key: "stuff", value: "" },
+            { type: "key", action: "header", key: "event", value: "" },
+            { type: "key", action: "header", key: "ProcessID", value: "" },
+            { type: "key", action: "header", key: "provider_name", value: "" },
+            { type: "key", action: "header", key: "TimeDataStamp", value: "" },
             { type: "key", action: "header", key: "id", value: "" },
+            { type: "key", action: "header", key: "pid", value: "" },
+            { type: "key", action: "header", key: "type", value: "" },
             { type: "key", action: "header", key: "time", value: "" },
+            { type: "key", action: "header", key: "thread_id", value: "" },
+            { type: "key", action: "hide", key: "trace_id", value: "" },
+            { type: "key", action: "hide", key: "event_id", value: "" },
         ]
 
         // Popup menu data uargh
@@ -636,11 +645,11 @@
             document.getElementById("settings").style.display = "none";
         }
 
-        function settings_load_data_from_url(url) {
+        function settings_load_data_from_scan_url(url) {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    logs_orig = data;
+                    logs_orig = JSON.parse(data['rededr_events'] || "[]");
                     refresh();
                 })
                 .catch(error => console.error("Error loading JSON from URL:", error));
@@ -951,7 +960,7 @@
         }
 
         popupInit();
-        refresh()
+        settings_load_data_from_scan_url("/api/scans/{{scan_id}}");
     </script>
 </body>
 </html>
