@@ -34,24 +34,29 @@ class File(Base):
 class Scan(Base):
     __tablename__ = "scans"
     
+    # IN
     id = Column(Integer, primary_key=True, index=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
     comment = Column(Text, default="", nullable=False)
-
     project = Column(String(100), default="", nullable=False)
     edr_template = Column(String(100), nullable=False)
 
+    # TRACK
     detonator_srv_logs = Column(Text, nullable=False)          # Detonator API logs
+    status = Column(String(20), default="fresh", nullable=False)
+
+    # OUT
     agent_logs = Column(Text, default="", nullable=False)      # RedEdr result (log, output)
     rededr_events = Column(Text, default="", nullable=False)   # RedEdr logs, exec output
     edr_logs = Column(Text, default="", nullable=False)        # AV/EDR logs (Event Viewer)
+    edr_summary = Column(Text, default="", nullable=False)     # Summary of EDR logs
     result = Column(Text, default="", nullable=False)          # Detected or not (based on agent_logs)
-
-    status = Column(String(20), default="fresh", nullable=False)
-
+    
+    # TEMP
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
 
+    # META
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)

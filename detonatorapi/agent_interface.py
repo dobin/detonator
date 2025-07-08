@@ -22,8 +22,12 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
     if not agent_ip:
         logger.error(f"EDR template {edr_template_id} has no URL defined")
         return False
+    agent_port = edr_template.get("port", 8080)
+    if not agent_ip:
+        logger.error(f"EDR template {edr_template_id} has no IP defined")
+        return False
     
-    url = "http://" + agent_ip + ":8080"
+    url = "http://" + agent_ip + ":" + str(agent_port)
     try:
         response = requests.get(url, timeout=5)
         if response.status_code == 200:

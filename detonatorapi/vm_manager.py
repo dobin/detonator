@@ -2,6 +2,8 @@ from datetime import datetime
 import logging
 import time
 import threading
+import json 
+from typing import Dict, List, Optional
 
 from .database import get_db_for_thread, Scan
 from .utils import mylog, scanid_to_vmname
@@ -10,6 +12,8 @@ from .azure_manager import initialize_azure_manager, get_azure_manager
 from .agent_interface import connect_to_agent
 from .rededr_api import RedEdrApi
 from .edr_templates import edr_template_manager
+from .windowseventxml_parser import get_xmlevent_data
+
 
 logger = logging.getLogger(__name__)
 
@@ -140,10 +144,14 @@ class VmManagerRunning(VmManager):
             if not rededr_ip:
                 logger.error(f"EDR template {edr_template_id} has no IP defined")
                 return
+            rededr_port = edr_template.get("port", 8080)
+            if not rededr_ip:
+                logger.error(f"EDR template {edr_template_id} has no port defined")
+                return
             
             filename = db_scan.file.filename
             file_content = db_scan.file.content
-            rededrApi = RedEdrApi(rededr_ip)
+            rededrApi = RedEdrApi(rededr_ip, rededr_port)
 
             if not rededrApi.StartTrace(filename):
                 db_change_status(thread_db, db_scan, "error", f"Could not start trace on RedEdr")
@@ -157,9 +165,10 @@ class VmManagerRunning(VmManager):
             db_scan_add_log(thread_db, db_scan, [f"Executed file {filename} on RedEdr at {rededr_ip}"])
             time.sleep(10.0)
 
-            rededr_events = rededrApi.GetJsonResult()
+            rededr_events = rededrApi.GetJsonResult()  # FIXME only if edr_template["rededr"] is True?
             agent_logs = rededrApi.GetLog()  # { 'log': [ 'logline', ],  'output': '...' }
             edr_logs = rededrApi.GetEdrLogs()
+            edr_summary = None
             is_detected = ""
 
             if agent_logs is None:
@@ -170,9 +179,25 @@ class VmManagerRunning(VmManager):
                 db_scan_add_log(thread_db, db_scan, ["could not get results from RedEdr"])
             if edr_logs is None:
                 is_detected = "N/A"
-                edr_logs = "No EDR logs available"
+                edr_logs = ""
                 db_scan_add_log(thread_db, db_scan, ["could not get EDR logs from RedEdr"])
             else:
+                # EDR logs summary
+                edr_summary = []
+                if edr_template.get("edr_collector", '') == "defender":
+                    try:
+                        edr_logs_obj: Dict = json.loads(edr_logs)
+                        xml_events = edr_logs_obj.get("xml_events", "")
+                        defender_xml_parsed = get_xmlevent_data(xml_events)
+                    except Exception as e:
+                        logger.error(edr_logs)
+                        logger.error(f"Error parsing Defender XML logs: {e}")
+                        defender_xml_parsed = []
+                        
+                    for event in defender_xml_parsed:
+                        e = f"{event.get('threat_name', '?')}: {event.get('severity_name', '?')}, {event.get('description', '?')}"
+                        edr_summary.append(e)
+
                 # Super Simple heuristics for now (Defender)
                 if 'Suspicious' in edr_logs:
                     is_detected = "detected"
@@ -182,6 +207,7 @@ class VmManagerRunning(VmManager):
                     db_scan_add_log(thread_db, db_scan, ["EDR logs indicate clean"])
             
             db_scan.edr_logs = edr_logs
+            db_scan.edr_summary = "\n".join(edr_summary) if edr_summary else ""
             db_scan.agent_logs = agent_logs
             db_scan.rededr_events = rededr_events
             db_scan.result = is_detected

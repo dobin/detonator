@@ -3,13 +3,13 @@ import sys
 import time
 import requests
 import argparse
-from pathlib import Path
+
 
 # Default API base URL
 API_BASE_URL = "http://localhost:8000"
+DEBUG = False
 
 def get_edr_templates():
-    """Get available EDR templates from the API"""
     try:
         response = requests.get(f"{API_BASE_URL}/api/edr-templates")
         response.raise_for_status()
@@ -18,8 +18,8 @@ def get_edr_templates():
         print(f"Error fetching EDR templates: {e}")
         return []
 
+
 def upload_file(filename, source_url="", comment=""):
-    """Upload a file to the API"""
     try:
         with open(filename, "rb") as f:
             files = {"file": (os.path.basename(filename), f, "application/octet-stream")}
@@ -34,8 +34,8 @@ def upload_file(filename, source_url="", comment=""):
         print(f"Error uploading file: {e}")
         return None
 
+
 def create_scan(file_id, edr_template, comment="", project=""):
-    """Create a scan for the uploaded file"""
     try:
         data = {
             "edr_template": edr_template,
@@ -49,8 +49,8 @@ def create_scan(file_id, edr_template, comment="", project=""):
         print(f"Error creating scan: {e}")
         return None
 
+
 def get_scan_status(scan_id):
-    """Get the current status of a scan"""
     try:
         response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}")
         response.raise_for_status()
@@ -59,8 +59,8 @@ def get_scan_status(scan_id):
         print(f"Error getting scan status: {e}")
         return None
 
+
 def wait_for_scan_completion(scan_id, timeout=3600):
-    """Wait for scan to complete, polling every 5 seconds"""
     #print(f"Waiting for scan {scan_id} to complete...")
     start_time = time.time()
     
@@ -74,17 +74,35 @@ def wait_for_scan_completion(scan_id, timeout=3600):
         sys.stdout.write(f".")
         sys.stdout.flush()
         
-        if scan['status'] in ["finished", "error", "completed"]:
+        if scan['status'] in ["finished", "error" ]:
             print("")
             return scan
-        elif scan['status'] == "failed":
-            print(f"Scan {scan_id} failed")
-            return scan
+        elif DEBUG:
+            print(f"Scan {scan_id} status: {scan['status']}")
             
         time.sleep(1)
     
     print(f"Timeout waiting for scan {scan_id} to complete")
     return None
+
+
+def print_templates():
+    templates = get_edr_templates()
+    if templates:
+        #print("Available EDR templates:")
+        for template in templates:
+            print(f"Template: {template['id']}")
+            print(f"    Type: {template.get('type', '')}")
+            if template.get('comment'):
+                print(f"    Comment: {template.get('comment', '')}")
+            if template.get('image_reference'):
+                image_reference_name = template.get('image_reference', '').split("/")[-1]  # Last part
+                print(f"    Image Reference: {image_reference_name}")
+            if template.get('ip'):
+                print(f"    IP: {template['ip']}")
+    else:
+        print("No templates available or error fetching templates")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
@@ -103,17 +121,7 @@ def main():
     API_BASE_URL = args.api_url
     
     if args.command == "list-templates":
-        templates = get_edr_templates()
-        if templates:
-            print("Available EDR templates:")
-            for template in templates:
-                print(f"  - {template['id']}: {template.get('description', 'No description')}")
-                if template.get('category'):
-                    print(f"    Category: {template['category']}")
-                if template.get('ports'):
-                    print(f"    Ports: {', '.join(map(str, template['ports']))}")
-        else:
-            print("No templates available or error fetching templates")
+        print_templates()
         return
     
     elif args.command == "scan":
@@ -136,14 +144,13 @@ def main():
         if edr_template_id not in template_ids:
             print(f"Error: EDR template '{edr_template_id}' not found")
             print("Available templates:")
-            for template in templates:
-                print(f"  - {template['id']}: {template.get('description', 'No description')}")
+            print_templates()
             return
         
         #print(f"> Scanning file {filename} with EDR template {edr_template_id}")
         
         # Upload file
-        file_info = upload_file(filename, args.source_url, f"Uploaded via CLI: {args.comment}")
+        file_info = upload_file(filename, args.source_url, f"CLI {args.comment}")
         if not file_info:
             print("Failed to upload file")
             return

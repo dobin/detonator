@@ -53,16 +53,26 @@
                         </div>
                     </div>
                     <div class="col-span-9">
+                        {% if scan.result %}
+                        <strong>EDR Logs:</strong>
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" onload="this.scrollTop = this.scrollHeight;" data-scroll-bottom
+                         >{{scan.edr_summary}}
+                        </pre>
+                        {% else %}
                         <strong>Detonator Server Logs:</strong>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" onload="this.scrollTop = this.scrollHeight;" data-scroll-bottom>{{scan.detonator_srv_logs}}</pre>
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" onload="this.scrollTop = this.scrollHeight;" data-scroll-bottom
+                        >{{scan.detonator_srv_logs}}
+                        </pre>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             
             <div class="flex flex-col space-y-2 ml-4">
                 <button onclick="viewScanDetails({{ scan.id }})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">View Details</button>
-                <button onclick="updateScanStatus({{ scan.id }})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Update</button>
-                <button onclick="window.open('/semidatasieve/{{ scan.id }}')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">JSON</button>
+                {% if scan.rededr_events %}
+                <button onclick="window.open('/semidatasieve/{{ scan.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
+                {% endif %}
             </div>
         </div>
     </div>

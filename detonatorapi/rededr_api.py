@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 # Note: Copy from https://github.com/dobin/RedEdrUi/blob/main/rededrapi.py
 
 class RedEdrApi:
-    def __init__(self, rededr_ip: str):
-        self.rededr_url = "http://" + rededr_ip + ":8080"
+    def __init__(self, rededr_ip: str, rededr_port: int = 8080):
+        self.rededr_url = "http://" + rededr_ip + ":" + str(rededr_port)
 
 
     def StartTrace(self, target_name: str) -> bool:

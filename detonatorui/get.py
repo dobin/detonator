@@ -6,7 +6,7 @@ from .config import API_BASE_URL
 import json
 import logging
 
-from .windowseventxml_parser import get_xmlevent_data
+#from .windowseventxml_parser import get_xmlevent_data
 
 get_bp = Blueprint('get', __name__)
 logger = logging.getLogger(__name__)
@@ -131,23 +131,21 @@ def scan_details_template(scan_id):
     log = ""
     output = ""
     xml_parsed = []
+    edr_summary = ""
     if scan:
         l = scan.get("agent_logs", "")
         agent_logs: Dict = json.loads(l) if l else {}
         log = "\n".join(agent_logs.get("log", []))
         output = agent_logs.get("output", "")
+        
+        edr_summary = scan.get("edr_summary", "")
+        logger.info(f"EDR Summary: {edr_summary}")
 
-        l = scan.get("edr_logs", "" )
-        edr_logs: Dict = json.loads(l) if l else {}
-        xml_events = edr_logs.get("xml_events", "")
-        #logger.info(f"XML events: {xml_events}")
-        xml_parsed = get_xmlevent_data(xml_events)
-        #print("xml_parsed: ", xml_parsed)
 
     return render_template("partials/scan_details.html", 
                            scan=scan, 
                            log=log, 
-                           xml_parsed=xml_parsed,
+                           edr_summary=edr_summary,
                            output=output)
 
 @get_bp.route("/templates/vms")
@@ -198,9 +196,10 @@ def edr_templates_template():
 
                     # Check HTTP connectivity
                     ip = template.get('ip')
+                    port = template.get('port', 8080)
                     if ip:
                         try:
-                            url = f"http://{ip}:8080"
+                            url = f"http://{ip}:{port}"
                             test_response = requests.get(url, timeout=1)
                             template['available'] = "true"
                         except:

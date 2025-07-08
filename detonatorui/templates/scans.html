@@ -144,36 +144,6 @@
         });
     }
 
-    function updateScanStatus(scanId) {
-        const newStatus = prompt('Enter new status (fresh, running, completed, failed):');
-        if (newStatus && ['fresh', 'running', 'completed', 'failed'].includes(newStatus)) {
-            const updateData = { status: newStatus };
-            if (newStatus === 'completed') {
-                updateData.completed_at = new Date().toISOString();
-            }
-            
-            fetch('http://localhost:8000/api/scans/' + scanId, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updateData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Refresh the scans list using current filter
-                const url = currentFilter === 'all' ? '/templates/scans' : '/templates/scans?filter=' + currentFilter;
-                htmx.ajax('GET', url, {
-                    target: '#scans-container',
-                    swap: 'innerHTML'
-                });
-            })
-            .catch(error => {
-                alert('Error updating scan: ' + error.message);
-            });
-        }
-    }
-
     function closeScanModal() {
         document.getElementById('scan-modal').classList.add('hidden');
     }
