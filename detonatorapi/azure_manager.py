@@ -22,6 +22,26 @@ logging.getLogger("azure.identity").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+
+unattend_xml = '''
+<AutoLogon>
+    <Username>rededr</Username>
+    <Password>
+        <Value>rededr</Value>
+        <PlainText>true</PlainText>
+    </Password>
+    <Enabled>true</Enabled>
+    <LogonCount>1</LogonCount>
+</AutoLogon>
+'''
+
+unattend_xml_oobe = '''
+<OOBE>
+  <HidePrivacySettings>true</HidePrivacySettings>
+</OOBE>
+'''
+
+
 class AzureManager:
     """Manages Azure VM lifecycle for malware analysis"""
     
@@ -141,6 +161,28 @@ class AzureManager:
                 'access': 'Allow',
                 'priority': 1000,
                 'direction': 'Inbound'
+            },
+            {
+                'name': 'AllowHTTP',
+                'protocol': 'Tcp',
+                'source_port_range': '*',
+                'destination_port_range': '80',
+                'source_address_prefix': '*',
+                'destination_address_prefix': '*',
+                'access': 'Allow',
+                'priority': 1001,
+                'direction': 'Inbound'
+            },
+            {
+                'name': 'Allow8080',
+                'protocol': 'Tcp',
+                'source_port_range': '*',
+                'destination_port_range': '8080',
+                'source_address_prefix': '*',
+                'destination_address_prefix': '*',
+                'access': 'Allow',
+                'priority': 1002,
+                'direction': 'Inbound'
             }
         ]
         
@@ -222,16 +264,30 @@ class AzureManager:
     
 
     def _create_vm(self, vm_name: str, nic_id: str, image_reference: str, admin_username: str, admin_password: str, deployment_script: str = None):
-        """Create Windows 11 virtual machine with optional deployment script"""
         vm_params = {
             'location': self.location,
-            'os_profile': {
-                'computer_name': vm_name,
-                'admin_username': admin_username,
-                'admin_password': admin_password,
-                'windows_configuration': {
-                    'enable_automatic_updates': False,
-                    'provision_vm_agent': True
+            'osProfile': {
+                'computerName': vm_name,
+                'adminUsername': admin_username,
+                'adminPassword': admin_password,
+                'windowsConfiguration': {
+                    'provision_vm_agent': True,
+                    'enable_automatic_updates': True,
+                    'additional_unattend_content': [
+                        {
+                            'pass_name': "oobeSystem",
+                            'component_name': "Microsoft-Windows-Shell-Setup",
+                            'setting_name': "AutoLogon",
+                            'content': unattend_xml
+                        }
+                        #, 
+                        #{
+                        #    "pass_name": "oobeSystem",
+                        #    "component_name": "Microsoft-Windows-Shell-Setup",
+                        #    "setting_name": "OOBE",
+                        #    "content": unattend_xml_oobe
+                        #}
+                    ]
                 }
             },
             'hardware_profile': {
@@ -256,15 +312,6 @@ class AzureManager:
                     }
                 ]
             },
-
-            # ATM
-            'security_profile': {
-                'security_type': 'TrustedLaunch',
-                'uefi_settings': {
-                    'secure_boot_enabled': True,
-                    'v_tpm_enabled': True
-                }
-            }
         }
         
         # Add custom script extension if deployment script is provided

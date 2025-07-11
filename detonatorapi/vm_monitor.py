@@ -108,12 +108,11 @@ class VMMonitorTask:
                     azure_vm_status = self.azure_manager.get_vm_status(vm_name)
                     if azure_vm_status in [ "running" ]:
                         logger.info(f"Scan {scan_id} is in error state but VM {vm_name} running: stopping VM")
-                        thread = threading.Thread(target=vmManager.stop, args=(scan_id,))
-                        thread.start()
+                        db_change_status(self.db, scan, "stop")
+
                     elif azure_vm_status in [ "stopped" ]:
                         logger.info(f"Scan {scan_id} is in error state but VM {vm_name} exist: removing VM")
-                        thread = threading.Thread(target=vmManager.remove, args=(scan_id,))
-                        thread.start()
+                        db_change_status(self.db, scan, "remove")
 
             # State Machine
             match status:
