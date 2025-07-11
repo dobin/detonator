@@ -4,3 +4,5 @@ service-account-key.json
 .env
 tools/
 edr_templates.yaml
+bak/
+config.env
