@@ -9,11 +9,11 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
-from .utils import mylog, scanid_to_vmname
+from detonatorapi.utils import mylog, scanid_to_vmname
 import uuid
 
-from .database import Scan
-from .edr_templates import edr_template_manager
+from detonatorapi.database import Scan
+from detonatorapi.edr_templates import edr_template_manager
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)

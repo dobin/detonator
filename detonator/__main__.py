@@ -14,7 +14,7 @@ import logging
 
 from detonatorapi.edr_templates import edr_template_manager
 from detonatorapi.logging_config import setup_logging
-from detonatorapi.azure_manager import initialize_azure_manager
+from detonatorapi.connectors.azure_manager import initialize_azure_manager
 from detonatorapi.db_interface import db_create_file, db_create_scan
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorui.flask_app import app as flask_app

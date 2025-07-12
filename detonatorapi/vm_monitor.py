@@ -8,11 +8,15 @@ import threading
 
 from .database import get_db_for_thread, Scan
 from .db_interface import db_change_status
-from .vm_manager import *
-from .azure_manager import get_azure_manager, AzureManager
+from .connectors.azure_manager import get_azure_manager, AzureManager
 from .utils import mylog
 from .edr_templates import edr_template_manager
 from .settings import *
+
+from .connectors.connector import ConnectorBase
+from .connectors.connector_newazure import ConnectorNewAzure
+from .connectors.connector_running import ConnectorRunning
+
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +62,8 @@ class VMMonitorTask:
 
         # give it the same db
         self.vmManagers = {
-            "new": VmManagerNew(self.db),
-            "clone": VmManagerClone(self.db),
-            "running": VmManagerRunning(self.db),
+            "new": ConnectorNewAzure(self.db),
+            "running": ConnectorRunning(self.db),
         }
 
         while self.running:
@@ -93,11 +96,11 @@ class VMMonitorTask:
             # Check for validity
             edr_template = edr_template_manager.get_template(edr_template_id)
             if not edr_template:
-                logger.error(f"EDR2 template {edr_template_id} not found for scan {scan_id}")
+                logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
                 db_change_status(self.db, scan, "error")
                 continue
             server_type = edr_template["type"]
-            vmManager: VmManager = self.vmManagers[server_type]
+            vmManager: ConnectorBase = self.vmManagers[server_type]
 
             # Try cleanup old:
             #   error

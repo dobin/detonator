@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from .database import get_db, File, Scan
 from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse
-from .azure_manager import initialize_azure_manager, get_azure_manager
+from .connectors.azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .edr_templates import edr_template_manager
 from .utils import mylog

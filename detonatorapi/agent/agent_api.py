@@ -5,15 +5,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# Note: Copy from https://github.com/dobin/RedEdrUi/blob/main/rededrapi.py
+# Note: Copy from https://github.com/dobin/AgentUi/blob/main/rededrapi.py
 
-class RedEdrApi:
-    def __init__(self, rededr_ip: str, rededr_port: int = 8080):
-        self.rededr_url = "http://" + rededr_ip + ":" + str(rededr_port)
+class AgentApi:
+    def __init__(self, agent_ip: str, agent_port: int = 8080):
+        self.agent_url = "http://" + agent_ip + ":" + str(agent_port)
 
 
     def StartTrace(self, target_name: str) -> bool:
-        url = self.rededr_url + "/api/trace"
+        url = self.agent_url + "/api/trace"
         headers = {"Content-Type": "application/json"}
         payload = {"trace": target_name}
 
@@ -23,10 +23,10 @@ class RedEdrApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("RedEdr HTTP response error: ", e)
+            logging.warning("Agent HTTP response error: ", e)
             return False
         
     
@@ -35,7 +35,7 @@ class RedEdrApi:
 
 
     def ExecFile(self, filename: str, file_data: bytes) -> bool:
-        url = self.rededr_url + "/api/exec"
+        url = self.agent_url + "/api/exec"
         files = {
             "file": (filename, file_data)
         }
@@ -46,53 +46,53 @@ class RedEdrApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("RedEdr HTTP response error: ", e)
+            logging.warning("Agent HTTP response error: ", e)
             return False
         
 
-    def GetJsonResult(self):
-        url = self.rededr_url + "/api/events"
+    def GetRedEdrEvents(self):
+        url = self.agent_url + "/api/events"
         try:
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("RedEdr HTTP response error: ", e)
+            logging.warning("Agent HTTP response error: ", e)
             return None
 
 
-    def GetLog(self):
-        url = self.rededr_url + "/api/log"
+    def GetAgentLogs(self):
+        url = self.agent_url + "/api/log"
         try:
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("RedEdr HTTP response error: ", e)
+            logging.warning("Agent HTTP response error: ", e)
             return None
         
 
     def GetEdrLogs(self):
-        url = self.rededr_url + "/api/edr_result"
+        url = self.agent_url + "/api/edr_result"
         try:
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.text
                 return data
             else:
-                logging.warning("RedEdr HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("RedEdr HTTP response error: ", e)
+            logging.warning("Agent HTTP response error: ", e)
             return None
