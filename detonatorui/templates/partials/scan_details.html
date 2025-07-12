@@ -36,13 +36,9 @@
     {% if scan.edr_summary %}
     <div>
         <strong>EDR Logs:</strong>
-        <div class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>
-            {% for event in xml_parsed %}
-              Threat: {{ event.threat_name }}
-              ({{ event.severity_name }}) <br>
-
-            {% endfor %}
-        </div>
+        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
+        >{{ scan.edr_summary }}
+        </pre>
     </div>
     {% endif %}
     

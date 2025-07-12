@@ -129,22 +129,14 @@ def scan_details_template(scan_id):
     # }
     log = ""
     output = ""
-    xml_parsed = []
-    edr_summary = ""
     if scan:
-        l = scan.get("agent_logs", "")
-        agent_logs: Dict = json.loads(l) if l else {}
+        agent_logs: Dict = json.loads(scan.get("agent_logs", ""))
         log = "\n".join(agent_logs.get("log", []))
         output = agent_logs.get("output", "")
         
-        edr_summary = scan.get("edr_summary", "")
-        logger.info(f"EDR Summary: {edr_summary}")
-
-
     return render_template("partials/scan_details.html", 
-                           scan=scan, 
-                           log=log, 
-                           edr_summary=edr_summary,
+                           scan=scan,
+                           log=log,
                            output=output)
 
 @get_bp.route("/templates/vms")
