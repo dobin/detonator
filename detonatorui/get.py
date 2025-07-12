@@ -6,7 +6,6 @@ from .config import API_BASE_URL
 import json
 import logging
 
-#from .windowseventxml_parser import get_xmlevent_data
 
 get_bp = Blueprint('get', __name__)
 logger = logging.getLogger(__name__)
