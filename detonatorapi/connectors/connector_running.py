@@ -21,6 +21,13 @@ class ConnectorRunning(ConnectorBase):
     def get_comment(self) -> str:
         """Return additional comments about this connector"""
         return "Wait time: Instant. Reproducability: Low"
+    
+    def get_sample_data(self) -> Dict[str, str]:
+        """Return sample data for this connector"""
+        return {
+            "ip": "192.168.1.1",
+        }
+
 
     def instantiate(self, db, db_scan: Scan):
         # nothing todo here, the VM is already running

@@ -174,7 +174,6 @@ def delete_profile(profile_id):
 def get_profile(profile_id):
     """Proxy endpoint to get a single profile via FastAPI"""
     try:
-        logger.info(f"Getting profile {profile_id}")
         response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}")
         
         if response.status_code == 200:

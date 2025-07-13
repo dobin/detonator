@@ -22,6 +22,10 @@ class ConnectorBase:
     def get_comment(self) -> str:
         """Return additional comments about this connector"""
         return ""
+    
+    def get_sample_data(self) -> Dict[str, str]:
+        """Return sample data for this connector"""
+        return {}
 
     def instantiate(self, db, db_scan: Scan):
         raise NotImplementedError("This method should be overridden by subclasses")

@@ -78,7 +78,8 @@ async def get_connectors():
         connectors[name] = {
             "name": name,
             "description": connector.get_description(),
-            "comment": connector.get_comment()
+            "comment": connector.get_comment(),
+            "sample_data": connector.get_sample_data()
         }
     return connectors
 

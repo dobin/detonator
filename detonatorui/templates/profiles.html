@@ -115,7 +115,7 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder='{"ip": "192.168.1.100", "admin_username": "admin", "admin_password": "password"}'
                 ></textarea>
-                <p class="text-sm text-gray-500 mt-1">Enter valid JSON data for the profile configuration</p>
+                <p class="text-sm text-gray-500 mt-1">Enter valid JSON data for the profile configuration. Sample data will be auto-filled when you select a connector type.</p>
             </div>
             
             <div class="flex space-x-3">
@@ -200,15 +200,33 @@ function loadConnectors() {
 function updateConnectorComment() {
     const typeSelect = document.getElementById('type');
     const commentDiv = document.getElementById('connector-comment');
+    const dataField = document.getElementById('data');
     const selectedType = typeSelect.value;
     
     if (selectedType && connectorsData[selectedType]) {
-        const comment = connectorsData[selectedType].comment;
+        const connector = connectorsData[selectedType];
+        const comment = connector.comment;
+        const sampleData = connector.sample_data;
+        
+        // Update comment display
         if (comment && comment.trim() !== '') {
             commentDiv.innerHTML = `${comment}`;
             commentDiv.style.display = 'block';
         } else {
             commentDiv.style.display = 'none';
+        }
+        
+        // Update data field with sample data
+        if (sampleData && Object.keys(sampleData).length > 0) {
+            dataField.value = JSON.stringify(sampleData, null, 2);
+            
+            // Brief visual feedback that the field was auto-filled
+            const originalBorderColor = dataField.style.borderColor;
+            dataField.style.borderColor = '#10B981'; // green
+            dataField.style.transition = 'border-color 0.3s ease';
+            setTimeout(() => {
+                dataField.style.borderColor = originalBorderColor;
+            }, 1000);
         }
     } else {
         commentDiv.style.display = 'none';

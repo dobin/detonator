@@ -24,6 +24,15 @@ class ConnectorNewAzure(ConnectorBase):
     def get_comment(self) -> str:
         """Return additional comments about this connector"""
         return "Wait time: around 5 minutes. Reproducability: High"
+    
+    def get_sample_data(self) -> Dict[str, str]:
+        """Return sample data for this connector"""
+        return {
+            "image_reference": "/subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/images/rededr-image",
+            "admin_username": "detonator",
+            "admin_password": "secret",
+        }
+
 
     def instantiate(self, db, db_scan: Scan):
         def instantiate_thread(scan_id: int): 
