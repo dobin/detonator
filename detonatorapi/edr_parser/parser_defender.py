@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 #   <System>
 #   <EventData>
 #      <Data>
+#
+# For more details, see test_parser_defender.py
+#
 def parse_windows_event(event):
     data = {}
     system = event.find('System')
