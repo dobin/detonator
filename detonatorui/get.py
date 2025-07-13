@@ -164,25 +164,7 @@ def profiles_template():
             
             # Check status for each template
             for template_name, template in templates.items():
-                if template['type'] == 'clone':
-                    template['available'] = "Not exist"
-
-                    # Check if VM exists in Azure
-                    vm_name = template.get('vm_name')
-                    if vm_name:
-                        try:
-                            vm_check_response = requests.get(f"{API_BASE_URL}/api/vms")
-                            if vm_check_response.status_code == 200:
-                                vms = vm_check_response.json()
-                                vm_exists = any(vm['name'] == vm_name for vm in vms)
-                                if vm_exists:
-                                    template['available'] = "true"
-                        except:
-                            template['available'] = "Error"
-                    else:
-                        template['available'] = 'Error'
-                        
-                elif template['type'] == 'running':
+                if template['type'] == 'Running':
                     template['available'] = "Not running"
 
                     # Check HTTP connectivity
@@ -197,8 +179,7 @@ def profiles_template():
                             template['available'] = 'Error'
                     else:
                         template['available'] = 'Error'
-
-                elif template['type'] == 'new':
+                else:
                     template["available"] = "true"
                     
                 # Add the name to the template for easier access in templates
