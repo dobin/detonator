@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import requests
 import logging
+import json
 from .config import API_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -97,3 +98,126 @@ def file_create_scan(file_id):
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")
         return {"error": f"Could not create scan: {str(e)}"}, 500
+
+@post_bp.route("/api/profiles", methods=["POST"])
+def create_profile():
+    """Proxy endpoint to create profile via FastAPI"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.json
+        else:
+            # Convert form data to dictionary
+            data = {}
+            for key, value in request.form.items():
+                if value.strip():  # Only include non-empty values
+                    data[key] = value
+        
+        logger.info(f"Creating profile with data: {data}")
+        response = requests.post(f"{API_BASE_URL}/api/profiles", data=data)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not create profile: {str(e)}"}, 500
+
+@post_bp.route("/api/profiles/<int:profile_id>", methods=["PUT"])
+def update_profile(profile_id):
+    """Proxy endpoint to update profile via FastAPI"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.json
+        else:
+            # Convert form data to dictionary
+            data = {}
+            for key, value in request.form.items():
+                if value.strip():  # Only include non-empty values
+                    data[key] = value
+        
+        logger.info(f"Updating profile {profile_id} with data: {data}")
+        response = requests.put(f"{API_BASE_URL}/api/profiles/{profile_id}", data=data)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not update profile: {str(e)}"}, 500
+
+@post_bp.route("/api/profiles/<int:profile_id>", methods=["DELETE"])
+def delete_profile(profile_id):
+    """Proxy endpoint to delete profile via FastAPI"""
+    try:
+        logger.info(f"Deleting profile {profile_id}")
+        response = requests.delete(f"{API_BASE_URL}/api/profiles/{profile_id}")
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not delete profile: {str(e)}"}, 500
+
+@post_bp.route("/api/profiles/<int:profile_id>", methods=["GET"])
+def get_profile(profile_id):
+    """Proxy endpoint to get a single profile via FastAPI"""
+    try:
+        logger.info(f"Getting profile {profile_id}")
+        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}")
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not get profile: {str(e)}"}, 500
+
+@post_bp.route("/api/profiles/submit", methods=["POST"])
+def submit_profile():
+    """Proxy endpoint to create or update profile via FastAPI"""
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.json or {}
+        else:
+            # Convert form data to dictionary
+            data = {}
+            for key, value in request.form.items():
+                if value.strip():  # Only include non-empty values
+                    data[key] = value
+        
+        profile_id = data.get('profile_id')
+        
+        if profile_id:
+            # Update existing profile
+            logger.info(f"Updating profile {profile_id} with data: {data}")
+            response = requests.put(f"{API_BASE_URL}/api/profiles/{profile_id}", data=data)
+        else:
+            # Create new profile
+            logger.info(f"Creating new profile with data: {data}")
+            response = requests.post(f"{API_BASE_URL}/api/profiles", data=data)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not submit profile: {str(e)}"}, 500

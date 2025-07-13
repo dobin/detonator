@@ -8,11 +8,11 @@ import os
 from dotenv import load_dotenv
 
 from .database import get_db, File, Scan, Profile
-from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse
+from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse, ProfileCreate, ProfileUpdate, ProfileResponse
 from .connectors.azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .utils import mylog
-from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles
+from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles, db_create_profile, db_get_profile_by_id
 
 
 # Setup logging - reduce verbosity for HTTP requests
@@ -61,6 +61,7 @@ async def get_profiles(db: Session = Depends(get_db)):
     result = {}
     for profile in profiles:
         result[profile.name] = {
+            "id": profile.id,
             "type": profile.type,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
@@ -268,6 +269,147 @@ async def delete_vm(vm_name: str, background_tasks: BackgroundTasks):
     except Exception as e:
         logger.error(f"Error deleting VM {vm_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete VM: {str(e)}")
+
+
+@app.post("/api/profiles")
+async def create_profile(
+    name: str = Form(...),
+    type: str = Form(...),
+    port: int = Form(...),
+    edr_collector: str = Form(...),
+    comment: str = Form(""),
+    data: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Create a new profile"""
+    try:
+        # Parse JSON data
+        import json
+        try:
+            data_dict = json.loads(data)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON in data field")
+        
+        # Check if profile name already exists
+        existing_profile = db.query(Profile).filter(Profile.name == name).first()
+        if existing_profile:
+            raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
+        
+        # Create the profile
+        profile_id = db_create_profile(
+            db=db,
+            name=name,
+            type=type,
+            port=port,
+            edr_collector=edr_collector,
+            data=data_dict,
+            comment=comment
+        )
+        
+        # Return the created profile
+        created_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+        if not created_profile:
+            raise HTTPException(status_code=500, detail="Failed to retrieve created profile")
+            
+        return {
+            "id": created_profile.id,
+            "name": created_profile.name,
+            "type": created_profile.type,
+            "port": created_profile.port,
+            "edr_collector": created_profile.edr_collector,
+            "comment": created_profile.comment,
+            "data": created_profile.data,
+            "created_at": created_profile.created_at
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create profile: {str(e)}")
+
+@app.get("/api/profiles/{profile_id}", response_model=ProfileResponse)
+async def get_profile(profile_id: int, db: Session = Depends(get_db)):
+    """Get a specific profile by ID"""
+    db_profile = db_get_profile_by_id(db, profile_id)
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return db_profile
+
+@app.put("/api/profiles/{profile_id}")
+async def update_profile(
+    profile_id: int,
+    name: str = Form(...),
+    type: str = Form(...),
+    port: int = Form(...),
+    edr_collector: str = Form(...),
+    comment: str = Form(""),
+    data: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Update a profile"""
+    try:
+        # Find the profile
+        profile = db.query(Profile).filter(Profile.id == profile_id).first()
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        
+        # Parse JSON data
+        import json
+        try:
+            data_dict = json.loads(data)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON in data field")
+        
+        # Check if new name conflicts with existing profile (excluding current one)
+        if name != profile.name:
+            existing = db.query(Profile).filter(Profile.name == name, Profile.id != profile_id).first()
+            if existing:
+                raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
+        
+        # Update fields
+        profile.name = name
+        profile.type = type
+        profile.port = port
+        profile.edr_collector = edr_collector
+        profile.comment = comment
+        profile.data = data_dict
+        
+        db.commit()
+        db.refresh(profile)
+        
+        return {
+            "id": profile.id,
+            "name": profile.name,
+            "type": profile.type,
+            "port": profile.port,
+            "edr_collector": profile.edr_collector,
+            "comment": profile.comment,
+            "data": profile.data,
+            "created_at": profile.created_at
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error updating profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
+
+@app.delete("/api/profiles/{profile_id}")
+async def delete_profile(profile_id: int, db: Session = Depends(get_db)):
+    """Delete a profile"""
+    db_profile = db_get_profile_by_id(db, profile_id)
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Check if profile is being used by any scans
+    scans_using_profile = db.query(Scan).filter(Scan.profile_id == profile_id).count()
+    if scans_using_profile > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete profile: {scans_using_profile} scans are using this profile")
+    
+    db.delete(db_profile)
+    db.commit()
+    return {"message": f"Profile '{db_profile.name}' deleted successfully"}
 
 
 if __name__ == "__main__":

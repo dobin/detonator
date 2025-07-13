@@ -14,6 +14,17 @@ class ProfileBase(BaseModel):
     comment: Optional[str] = None
     data: dict
 
+class ProfileCreate(ProfileBase):
+    pass
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    port: Optional[int] = None
+    edr_collector: Optional[str] = None
+    comment: Optional[str] = None
+    data: Optional[dict] = None
+
 class ProfileResponse(ProfileBase):
     id: int
     created_at: datetime
