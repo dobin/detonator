@@ -8,7 +8,7 @@ from datetime import datetime
 
 class ProfileBase(BaseModel):
     name: str
-    type: str
+    connector: str
     port: int
     edr_collector: str
     comment: Optional[str] = None
@@ -19,7 +19,7 @@ class ProfileCreate(ProfileBase):
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
-    type: Optional[str] = None
+    connector: Optional[str] = None
     port: Optional[int] = None
     edr_collector: Optional[str] = None
     comment: Optional[str] = None

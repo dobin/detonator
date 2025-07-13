@@ -62,7 +62,7 @@ async def get_profiles(db: Session = Depends(get_db)):
     for profile in profiles:
         result[profile.name] = {
             "id": profile.id,
-            "type": profile.type,
+            "connector": profile.connector,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
             "comment": profile.comment,
@@ -287,7 +287,7 @@ async def delete_vm(vm_name: str, background_tasks: BackgroundTasks):
 @app.post("/api/profiles")
 async def create_profile(
     name: str = Form(...),
-    type: str = Form(...),
+    connector: str = Form(...),
     port: int = Form(...),
     edr_collector: str = Form(...),
     comment: str = Form(""),
@@ -312,7 +312,7 @@ async def create_profile(
         profile_id = db_create_profile(
             db=db,
             name=name,
-            type=type,
+            connector=connector,
             port=port,
             edr_collector=edr_collector,
             data=data_dict,
@@ -327,7 +327,7 @@ async def create_profile(
         return {
             "id": created_profile.id,
             "name": created_profile.name,
-            "type": created_profile.type,
+            "connector": created_profile.connector,
             "port": created_profile.port,
             "edr_collector": created_profile.edr_collector,
             "comment": created_profile.comment,
@@ -353,7 +353,7 @@ async def get_profile(profile_id: int, db: Session = Depends(get_db)):
 async def update_profile(
     profile_id: int,
     name: str = Form(...),
-    type: str = Form(...),
+    connector: str = Form(...),
     port: int = Form(...),
     edr_collector: str = Form(...),
     comment: str = Form(""),
@@ -382,7 +382,7 @@ async def update_profile(
         
         # Update fields
         profile.name = name
-        profile.type = type
+        profile.connector = connector
         profile.port = port
         profile.edr_collector = edr_collector
         profile.comment = comment
@@ -394,7 +394,7 @@ async def update_profile(
         return {
             "id": profile.id,
             "name": profile.name,
-            "type": profile.type,
+            "connector": profile.connector,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
             "comment": profile.comment,

@@ -69,11 +69,11 @@ def db_create_scan(db, file_id: int, profile_id: int, comment: str = "", project
     return db_scan.id
 
 
-def db_create_profile(db, name: str, type: str, port: int, edr_collector: str, data: dict, comment: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = ""):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
-        type=type,
+        connector=connector,
         port=port,
         edr_collector=edr_collector,
         comment=comment,

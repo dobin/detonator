@@ -164,7 +164,7 @@ def profiles_template():
             
             # Check status for each template
             for template_name, template in templates.items():
-                if template['type'] == 'Running':
+                if template['connector'] == 'Running':
                     template['available'] = "Not running"
 
                     # Check HTTP connectivity

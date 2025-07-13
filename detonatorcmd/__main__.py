@@ -93,7 +93,7 @@ def print_profiles():
         #print("Available profiles:")
         for profile_name, profile in profiles.items():
             print(f"Profile: {profile_name}")
-            print(f"    Type: {profile.get('type', '')}")
+            print(f"    Connector: {profile.get('connector', '')}")
             print(f"    EDR Collector: {profile.get('edr_collector', '')}")
             print(f"    Port: {profile.get('port', '')}")
             if profile.get('comment'):

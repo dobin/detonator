@@ -68,7 +68,7 @@
                 <option value="{{ profile_name }}" title="{{ profile.comment }}">
                     {{ profile_name }}
                     {% if profile.edr_collector %} ({{ profile.edr_collector }}){% endif %}
-                    {% if profile.type %} - {{ profile.type }}{% endif %}
+                    {% if profile.connector %} - {{ profile.connector }}{% endif %}
                 </option>
                 {% endfor %}
                 {% if not profiles %}

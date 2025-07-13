@@ -8,22 +8,16 @@
 
         <div class="space-y-3">
             <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-20">Type:</span>
-                    <span class="text-gray-900">{{ template.type }}</span>
+                    <span class="font-medium text-gray-500 w-20">Connector:</span>
+                    <span class="text-gray-900">{{ template.connector }}</span>
                 </div>
 
-            <!-- Type-specific information -->
-            {% if template.type == 'new' %}
+            {% if template.software != '' %}
                 <div class="flex items-center text-sm">
                     <span class="font-medium text-gray-500 w-20">Software:</span>
                     <span class="text-gray-900">{{ template.software or 'N/A' }}</span>
                 </div>
-            {% elif template.type == 'clone' %}
-                <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-20">VM Name:</span>
-                    <span class="text-gray-900">{{ template.vm_name or 'N/A' }}</span>
-                </div>
-            {% elif template.type == 'running' %}
+            {% elif template.ip != "" %}
                 <div class="flex items-center text-sm">
                     <span class="font-medium text-gray-500 w-20">IP Address:</span>
                     <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.ip or 'N/A' }}</code>
@@ -49,15 +43,6 @@
         <!-- Actions section -->
         <div class="mt-4 pt-4 border-t border-gray-100">
             <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-500">
-                    {% if template.type == 'new' %}
-                        Stages new VM
-                    {% elif template.type == 'clone' %}
-                        Clones existing VM
-                    {% elif template.type == 'running' %}
-                        Uses existing running VM
-                    {% endif %}
-                </span>
                 <div class="flex items-center">
                     {% if template.available == "true" or template.available == true %}
                         <span class="inline-flex items-center text-xs text-green-600">

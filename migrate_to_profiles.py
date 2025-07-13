@@ -25,7 +25,7 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
         db_create_profile(
             db=db,
             name=profile_name,
-            type=profile_config.get('type', ''),
+            connector=profile_config.get('connector', ''),
             port=profile_config.get('port', 80),
             edr_collector=profile_config.get('edr_collector', ''),
             data=profile_config.get('data', {}),
