@@ -94,6 +94,15 @@ class VMMonitorTask:
                 continue
 
             # get responsible VM manager, based on the profile->type
+            if scan.profile.type not in vmManagers:
+                logger.error(f"Scan {scan_id} has no profile type")
+                db_change_status(self.db, scan, "error")
+                continue
+            if scan.profile.type not in vmManagers:
+                logger.error(f"Scan {scan_id} has no valid VM manager defined for profile type: {scan.profile.type}")
+                logger.error(f"VM Managers: {list(vmManagers.keys())}")
+                db_change_status(self.db, scan, "error")
+                continue
             vmManager: ConnectorBase = vmManagers[scan.profile.type]
 
             # Try cleanup old:
