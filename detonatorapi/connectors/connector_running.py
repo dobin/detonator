@@ -11,30 +11,37 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectorRunning(ConnectorBase):
-    def __init__(self, db):
-        self.db = db
+    def __init__(self):
+        pass
 
+    def get_description(self) -> str:
+        """Return a description of what this connector does"""
+        return "Connects to already running virtual machine"
+    
+    def get_comment(self) -> str:
+        """Return additional comments about this connector"""
+        return "Wait time: Instant. Reproducability: Low"
 
-    def instantiate(self, db_scan: Scan):
+    def instantiate(self, db, db_scan: Scan):
         # nothing todo here, the VM is already running
-        db_change_status(self.db, db_scan, "connect")
+        db_change_status(db, db_scan, "connect")
 
 
-    def connect(self, db_scan: Scan):
+    def connect(self, db, db_scan: Scan):
         # default agent connect
-        super().connect(db_scan)
+        super().connect(db, db_scan)
 
 
-    def scan(self, db_scan: Scan):
+    def scan(self, db, db_scan: Scan):
         # default agent scan
-        super().scan(db_scan)
+        super().scan(db, db_scan)
 
 
-    def stop(self, db_scan: Scan):
+    def stop(self, db, db_scan: Scan):
         # nothing todo here, VM keeps running
-        db_change_status(self.db, db_scan, "finished")
+        db_change_status(db, db_scan, "finished")
 
 
-    def remove(self, db_scan: Scan):
+    def remove(self, db, db_scan: Scan):
         # nothing todo here, VM keeps running
-        db_change_status(self.db, db_scan, "finished")
+        db_change_status(db, db_scan, "finished")

@@ -14,10 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectorNewAzure(ConnectorBase):
-    def __init__(self, db):
-        self.db = db
+    def __init__(self):
+        pass
 
-    def instantiate(self, db_scan: Scan):
+    def get_description(self) -> str:
+        """Return a description of what this connector does"""
+        return "Creates new Azure virtual machine"
+    
+    def get_comment(self) -> str:
+        """Return additional comments about this connector"""
+        return "Wait time: around 5 minutes. Reproducability: High"
+
+    def instantiate(self, db, db_scan: Scan):
         def instantiate_thread(scan_id: int): 
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
@@ -30,17 +38,17 @@ class ConnectorNewAzure(ConnectorBase):
         threading.Thread(target=instantiate_thread, args=(db_scan.id, )).start()
 
 
-    def connect(self, db_scan: Scan):
+    def connect(self, db, db_scan: Scan):
         # default agent connect
-        super().connect(db_scan)
+        super().connect(db, db_scan)
 
 
-    def scan(self, db_scan: Scan):
+    def scan(self, db, db_scan: Scan):
         # default agent scan
-        super().scan(db_scan)
+        super().scan(db, db_scan)
 
 
-    def stop(self, db_scan: Scan):
+    def stop(self, db, db_scan: Scan):
         def stop_thread(scan_id: int):
             thread_db = get_db_for_thread()
             azure_manager = get_azure_manager()
@@ -54,7 +62,7 @@ class ConnectorNewAzure(ConnectorBase):
         threading.Thread(target=stop_thread, args=(db_scan.id, )).start()
             
 
-    def remove(self, db_scan: Scan):
+    def remove(self, db, db_scan: Scan):
         def remove_thread(scan_id: int):
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)

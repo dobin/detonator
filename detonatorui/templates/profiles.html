@@ -58,13 +58,15 @@
                         id="type" 
                         name="type" 
                         required
+                        onchange="updateConnectorComment()"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="">Select type...</option>
-                        <option value="new">New VM</option>
-                        <option value="running">Running VM</option>
-                        <option value="clone">Clone VM</option>
+                        <!-- Options will be populated dynamically from connectors API -->
                     </select>
+                    <div id="connector-comment" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700" style="display: none;">
+                        <!-- Connector comment will be displayed here -->
+                    </div>
                 </div>
                 
                 <div>
@@ -149,13 +151,79 @@
 </div>
 
 <script>
+// Global variable to store connector data
+let connectorsData = {};
+
+// Load available connectors dynamically
+function loadConnectors() {
+    fetch('/api/connectors')
+        .then(response => response.json())
+        .then(connectors => {
+            // Store connector data globally for later use
+            connectorsData = connectors;
+            
+            const typeSelect = document.getElementById('type');
+            // Clear existing options except the first one
+            while (typeSelect.children.length > 1) {
+                typeSelect.removeChild(typeSelect.lastChild);
+            }
+            
+            // Add connector options
+            Object.keys(connectors).forEach(connectorKey => {
+                const connector = connectors[connectorKey];
+                const option = document.createElement('option');
+                option.value = connectorKey;
+                option.textContent = `${connectorKey} - ${connector.description}`;
+                option.title = connector.comment; // Show comment as tooltip
+                typeSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading connectors:', error);
+            // Fallback to basic options if API fails
+            const typeSelect = document.getElementById('type');
+            ['NewAzure', 'Running'].forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeSelect.appendChild(option);
+            });
+        });
+}
+
+// Update connector comment display when selection changes
+function updateConnectorComment() {
+    const typeSelect = document.getElementById('type');
+    const commentDiv = document.getElementById('connector-comment');
+    const selectedType = typeSelect.value;
+    
+    if (selectedType && connectorsData[selectedType]) {
+        const comment = connectorsData[selectedType].comment;
+        if (comment && comment.trim() !== '') {
+            commentDiv.innerHTML = `${comment}`;
+            commentDiv.style.display = 'block';
+        } else {
+            commentDiv.style.display = 'none';
+        }
+    } else {
+        commentDiv.style.display = 'none';
+    }
+}
+
+// Load connectors when page loads
+document.addEventListener('DOMContentLoaded', loadConnectors);
+
 function showCreateProfileForm() {
     document.getElementById('create-profile-form').style.display = 'block';
+    // Reload connectors each time form is shown to ensure fresh data
+    loadConnectors();
 }
 
 function hideCreateProfileForm() {
     document.getElementById('create-profile-form').style.display = 'none';
     document.getElementById('form-result').innerHTML = '';
+    // Hide connector comment
+    document.getElementById('connector-comment').style.display = 'none';
     // Reset form
     document.querySelector('#create-profile-form form').reset();
 }
@@ -177,12 +245,14 @@ function editProfile(profileName, profileData) {
     document.querySelector('#create-profile-form button[type="submit"]').textContent = 'Update Profile';
     
     showCreateProfileForm();
+    
+    // Update connector comment display after form is populated
+    setTimeout(() => {
+        updateConnectorComment();
+    }, 100);
 }
 
-function editProfileById(button) {
-    const profileId = button.getAttribute('data-profile-id');
-    const profileName = button.getAttribute('data-profile-name');
-    
+function editProfileById(profileId, profileName) {
     console.log('Fetching profile data for ID:', profileId);
     
     // Show loading state

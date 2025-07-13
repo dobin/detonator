@@ -20,6 +20,13 @@ from .connectors.connector_running import ConnectorRunning
 logger = logging.getLogger(__name__)
 
 
+# give it the same db
+vmManagers = {
+    "NewAzure": ConnectorNewAzure(),
+    "Running": ConnectorRunning(),
+}
+
+
 class VMMonitorTask:
     """Background task to monitor Scan status and lifecycle"""
     
@@ -59,11 +66,6 @@ class VMMonitorTask:
         # IN-thread initialization
         self.db = get_db_for_thread()
 
-        # give it the same db
-        self.vmManagers = {
-            "new": ConnectorNewAzure(self.db),
-            "running": ConnectorRunning(self.db),
-        }
 
         while self.running:
             try:
@@ -92,7 +94,7 @@ class VMMonitorTask:
                 continue
 
             # get responsible VM manager, based on the profile->type
-            vmManager: ConnectorBase = self.vmManagers[scan.profile.type]
+            vmManager: ConnectorBase = vmManagers[scan.profile.type]
 
             # Try cleanup old:
             #   error
@@ -117,31 +119,31 @@ class VMMonitorTask:
 
                 case "instantiate":
                     db_change_status(self.db, scan, "instantiating")
-                    vmManager.instantiate(scan)
+                    vmManager.instantiate(self.db, scan)
                 case "instantiated":
                     db_change_status(self.db, scan, "connect")
 
                 case "connect":
                     db_change_status(self.db, scan, "connecting")
-                    vmManager.connect(scan)
+                    vmManager.connect(self.db, scan)
                 case "connected":
                     db_change_status(self.db, scan, "scan")
 
                 case "scan":
                     db_change_status(self.db, scan, "scanning")
-                    vmManager.scan(scan)
+                    vmManager.scan(self.db, scan)
                 case "scanned":
                     db_change_status(self.db, scan, "stop")
 
                 case "stop":
                     db_change_status(self.db, scan, "stopping")
-                    vmManager.stop(scan)
+                    vmManager.stop(self.db, scan)
                 case "stopped":
                     db_change_status(self.db, scan, "remove")
 
                 case "remove":
                     db_change_status(self.db, scan, "removing")
-                    vmManager.remove(scan)
+                    vmManager.remove(self.db, scan)
                 case "removed":
                     db_change_status(self.db, scan, "finished")
 

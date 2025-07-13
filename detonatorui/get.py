@@ -298,3 +298,12 @@ def get_vms():
     except requests.RequestException:
         return {"error": "Could not fetch VMs"}, 500
 
+@get_bp.route("/api/connectors")
+def get_connectors():
+    """Proxy endpoint to fetch available connectors from FastAPI"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/connectors")
+        return response.json()
+    except requests.RequestException:
+        return {"error": "Could not fetch connectors"}, 500
+

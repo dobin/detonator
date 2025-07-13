@@ -12,13 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectorBase:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self,):
+        pass
 
-    def instantiate(self, db_scan: Scan):
+    def get_description(self) -> str:
+        """Return a description of what this connector does"""
+        return "Base connector class"
+    
+    def get_comment(self) -> str:
+        """Return additional comments about this connector"""
+        return ""
+
+    def instantiate(self, db, db_scan: Scan):
         raise NotImplementedError("This method should be overridden by subclasses")
 
-    def connect(self, db_scan: Scan):
+    def connect(self, db, db_scan: Scan):
         def connect_thread(scan_id: int):
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
@@ -30,8 +38,7 @@ class ConnectorBase:
 
         threading.Thread(target=connect_thread, args=(db_scan.id, )).start()
 
-
-    def scan(self, db_scan: Scan):
+    def scan(self, db, db_scan: Scan):
         def scan_thread(scan_id: int):
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
@@ -42,9 +49,8 @@ class ConnectorBase:
 
         threading.Thread(target=scan_thread, args=(db_scan.id, )).start()
 
-    def stop(self, db_scan: Scan):
+    def stop(self, db, db_scan: Scan):
         raise NotImplementedError("This method should be overridden by subclasses")
 
-    def remove(self, db_scan: Scan):
+    def remove(self, db, db_scan: Scan):
         raise NotImplementedError("This method should be overridden by subclasses")
-    
