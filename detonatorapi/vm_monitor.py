@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # give it the same db
-vmManagers = {
+Connectors = {
     "NewAzure": ConnectorNewAzure(),
     "Running": ConnectorRunning(),
 }
@@ -94,16 +94,16 @@ class VMMonitorTask:
                 continue
 
             # get responsible VM manager, based on the profile->connector
-            if scan.profile.connector not in vmManagers:
+            if scan.profile.connector not in Connectors:
                 logger.error(f"Scan {scan_id} has no profile connector")
                 db_change_status(self.db, scan, "error")
                 continue
-            if scan.profile.connector not in vmManagers:
+            if scan.profile.connector not in Connectors:
                 logger.error(f"Scan {scan_id} has no valid VM manager defined for profile connector: {scan.profile.connector}")
-                logger.error(f"VM Managers: {list(vmManagers.keys())}")
+                logger.error(f"VM Managers: {list(Connectors.keys())}")
                 db_change_status(self.db, scan, "error")
                 continue
-            vmManager: ConnectorBase = vmManagers[scan.profile.connector]
+            connector: ConnectorBase = Connectors[scan.profile.connector]
 
             # Try cleanup old:
             #   error
@@ -128,31 +128,31 @@ class VMMonitorTask:
 
                 case "instantiate":
                     db_change_status(self.db, scan, "instantiating")
-                    vmManager.instantiate(self.db, scan)
+                    connector.instantiate(self.db, scan)
                 case "instantiated":
                     db_change_status(self.db, scan, "connect")
 
                 case "connect":
                     db_change_status(self.db, scan, "connecting")
-                    vmManager.connect(self.db, scan)
+                    connector.connect(self.db, scan)
                 case "connected":
                     db_change_status(self.db, scan, "scan")
 
                 case "scan":
                     db_change_status(self.db, scan, "scanning")
-                    vmManager.scan(self.db, scan)
+                    connector.scan(self.db, scan)
                 case "scanned":
                     db_change_status(self.db, scan, "stop")
 
                 case "stop":
                     db_change_status(self.db, scan, "stopping")
-                    vmManager.stop(self.db, scan)
+                    connector.stop(self.db, scan)
                 case "stopped":
                     db_change_status(self.db, scan, "remove")
 
                 case "remove":
                     db_change_status(self.db, scan, "removing")
-                    vmManager.remove(self.db, scan)
+                    connector.remove(self.db, scan)
                 case "removed":
                     db_change_status(self.db, scan, "finished")
 

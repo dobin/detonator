@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from .database import get_db, File, Scan, Profile
 from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse, ProfileCreate, ProfileUpdate, ProfileResponse
 from .connectors.azure_manager import initialize_azure_manager, get_azure_manager
-from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, vmManagers
+from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, Connectors
 from .utils import mylog
 from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles, db_create_profile, db_get_profile_by_id
 
@@ -74,7 +74,7 @@ async def get_profiles(db: Session = Depends(get_db)):
 async def get_connectors():
     """Get available connector types with descriptions"""
     connectors = {}
-    for name, connector in vmManagers.items():
+    for name, connector in Connectors.items():
         connectors[name] = {
             "name": name,
             "description": connector.get_description(),
