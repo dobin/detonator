@@ -41,6 +41,15 @@ unattend_xml_oobe = '''
 </OOBE>
 '''
 
+unattend_xml_stuff = '''
+<FirstLogonCommands>
+    <SynchronousCommand>
+        <CommandLine>powershell.exe -EncodedCommand {base64.b64encode(powershell_command.encode('utf-16le')).decode('ascii')}</CommandLine>
+        <Order>1</Order>
+    </SynchronousCommand>
+</FirstLogonCommands>
+'''
+
 
 class AzureManager:
     """Manages Azure VM lifecycle for malware analysis"""
@@ -95,10 +104,6 @@ class AzureManager:
                 return False
             admin_username = edr_template["admin_username"]
             admin_password = edr_template["admin_password"]
-            deployment_script = None
-            #if edr_template_id:
-            #    deployment_script = self.edr_template_manager.get_template_deployment_script(edr_template_id)
-            #    logger.info(f"Using EDR template: {edr_template_id}")
             
             # Create: network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
@@ -123,8 +128,7 @@ class AzureManager:
                 nic.id, 
                 image_reference=image_reference, 
                 admin_username=admin_username,
-                admin_password=admin_password,
-                deployment_script=deployment_script)
+                admin_password=admin_password)
             if not vm_result:
                 logger.error(f"Failed to create VM for scan {scan_id}")
                 return False
@@ -185,12 +189,6 @@ class AzureManager:
                 'direction': 'Inbound'
             }
         ]
-        
-        # Add EDR-specific rules if template is specified
-        if edr_template_id:
-            additional_rules = self.edr_template_manager.get_template_network_security_rules(edr_template_id)
-            security_rules.extend(additional_rules)
-            #logger.info(f"Added {len(additional_rules)} EDR-specific security rules for template: {edr_template_id}")
         
         nsg_params = {
             'location': self.location,
@@ -263,7 +261,7 @@ class AzureManager:
         return operation.result()
     
 
-    def _create_vm(self, vm_name: str, nic_id: str, image_reference: str, admin_username: str, admin_password: str, deployment_script: str = None):
+    def _create_vm(self, vm_name: str, nic_id: str, image_reference: str, admin_username: str, admin_password: str):
         vm_params = {
             'location': self.location,
             'osProfile': {
@@ -313,36 +311,6 @@ class AzureManager:
                 ]
             },
         }
-        
-        # Add custom script extension if deployment script is provided
-        if deployment_script:
-            # Encode the script in base64 for transmission
-            script_b64 = base64.b64encode(deployment_script.encode('utf-8')).decode('utf-8')
-            
-            # Create a PowerShell command that decodes and executes the script
-            powershell_command = f"""
-            $scriptContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("{script_b64}"))
-            $scriptContent | Out-File -FilePath "C:\\DetonatorDeployment.ps1" -Encoding UTF8
-            PowerShell.exe -ExecutionPolicy Bypass -File "C:\\DetonatorDeployment.ps1"
-            """
-            
-            vm_params['os_profile']['windows_configuration']['additional_unattend_content'] = [
-                {
-                    'pass_name': 'OobeSystem',
-                    'component_name': 'Microsoft-Windows-Shell-Setup',
-                    'setting_name': 'FirstLogonCommands',
-                    'content': f"""
-                    <FirstLogonCommands>
-                        <SynchronousCommand>
-                            <CommandLine>powershell.exe -EncodedCommand {base64.b64encode(powershell_command.encode('utf-16le')).decode('ascii')}</CommandLine>
-                            <Order>1</Order>
-                        </SynchronousCommand>
-                    </FirstLogonCommands>
-                    """
-                }
-            ]
-            
-            logger.info(f"Added deployment script to VM {vm_name}")
         
         operation = self.compute_client.virtual_machines.begin_create_or_update(
             self.resource_group, vm_name, vm_params
