@@ -156,7 +156,7 @@ let connectorsData = {};
 
 // Load available connectors dynamically
 function loadConnectors() {
-    fetch('/api/connectors')
+    return fetch('/api/connectors')
         .then(response => response.json())
         .then(connectors => {
             // Store connector data globally for later use
@@ -177,6 +177,8 @@ function loadConnectors() {
                 option.title = connector.comment; // Show comment as tooltip
                 typeSelect.appendChild(option);
             });
+            
+            return connectors; // Return the connectors data
         })
         .catch(error => {
             console.error('Error loading connectors:', error);
@@ -188,6 +190,9 @@ function loadConnectors() {
                 option.textContent = type;
                 typeSelect.appendChild(option);
             });
+            
+            // Return empty object for fallback
+            return {};
         });
 }
 
@@ -215,8 +220,10 @@ document.addEventListener('DOMContentLoaded', loadConnectors);
 
 function showCreateProfileForm() {
     document.getElementById('create-profile-form').style.display = 'block';
-    // Reload connectors each time form is shown to ensure fresh data
-    loadConnectors();
+    // Only load connectors if they haven't been loaded yet
+    if (Object.keys(connectorsData).length === 0) {
+        loadConnectors();
+    }
 }
 
 function hideCreateProfileForm() {
@@ -229,27 +236,39 @@ function hideCreateProfileForm() {
 }
 
 function editProfile(profileName, profileData) {
-    // Populate form with existing data
-    document.getElementById('name').value = profileName;
-    document.getElementById('type').value = profileData.type;
-    document.getElementById('edr_collector').value = profileData.edr_collector;
-    document.getElementById('port').value = profileData.port;
-    document.getElementById('comment').value = profileData.comment || '';
-    document.getElementById('data').value = JSON.stringify(profileData.data, null, 2);
-    
-    // Set the profile ID for updating
-    document.getElementById('profile-id').value = profileData.id;
+    // Show form first
+    showCreateProfileForm();
     
     // Change button text and form title
     document.querySelector('#create-profile-form h3').textContent = 'Edit Profile';
     document.querySelector('#create-profile-form button[type="submit"]').textContent = 'Update Profile';
     
-    showCreateProfileForm();
-    
-    // Update connector comment display after form is populated
-    setTimeout(() => {
+    // Load connectors first, then populate form data
+    loadConnectors().then(() => {
+        // Populate form with existing data after connectors are loaded
+        document.getElementById('name').value = profileName;
+        document.getElementById('type').value = profileData.type;
+        document.getElementById('edr_collector').value = profileData.edr_collector;
+        document.getElementById('port').value = profileData.port;
+        document.getElementById('comment').value = profileData.comment || '';
+        document.getElementById('data').value = JSON.stringify(profileData.data, null, 2);
+        
+        // Set the profile ID for updating
+        document.getElementById('profile-id').value = profileData.id;
+        
+        // Update connector comment display after form is populated
         updateConnectorComment();
-    }, 100);
+    }).catch(error => {
+        console.error('Error loading connectors for edit:', error);
+        // Fallback: populate form anyway
+        document.getElementById('name').value = profileName;
+        document.getElementById('type').value = profileData.type;
+        document.getElementById('edr_collector').value = profileData.edr_collector;
+        document.getElementById('port').value = profileData.port;
+        document.getElementById('comment').value = profileData.comment || '';
+        document.getElementById('data').value = JSON.stringify(profileData.data, null, 2);
+        document.getElementById('profile-id').value = profileData.id;
+    });
 }
 
 function editProfileById(profileId, profileName) {
@@ -324,6 +343,11 @@ function resetFormForCreate() {
     form.reset();
     // Reset the profile ID again since form.reset() will clear it
     document.getElementById('profile-id').value = '';
+    
+    // Ensure connectors are loaded for new profiles
+    if (Object.keys(connectorsData).length === 0) {
+        loadConnectors();
+    }
 }
 
 // Add JSON validation
