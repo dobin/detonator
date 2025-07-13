@@ -11,7 +11,7 @@
         {% endif %}
         <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(scan.status) }}">{{ scan.status }}</span></div>
         <div><strong>Project:</strong> {{ scan.project or '' }}</div>
-        <div><strong>EDR Template:</strong> {{ scan.edr_template or '' }}</div>
+        <div><strong>Profile:</strong> {{ scan.profile.name if scan.profile else '' }}</div>
         <div><strong>VM Instance:</strong> {{ scan.vm_instance_name or '' }}</div>
         <div><strong>VM IP:</strong> {{ scan.vm_ip_address or '' }}</div>
         <div><strong>Result:</strong> {{ scan.result or '' }}</div>

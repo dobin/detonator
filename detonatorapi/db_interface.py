@@ -2,7 +2,7 @@ from typing import Optional, List
 from datetime import datetime
 import logging
 
-from .database import Scan, File
+from .database import Scan, File, Profile
 from .utils import mylog
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def db_scan_add_log(db, db_scan, log_messages: List[str]):
         if log_message is None or log_message == "":
             continue
         log = f"[{datetime.utcnow().isoformat()}] {log_message}"
-        logger.info(log)
+        logger.info(log_message)
         db_scan.detonator_srv_logs += log + "\n"
 
     db.commit()
@@ -54,11 +54,11 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_scan(db, file_id: int, edr_template: str, comment: str = "", project: str = "") -> int:
+def db_create_scan(db, file_id: int, profile_id: int, comment: str = "", project: str = "") -> int:
     db_scan = Scan(
         file_id=file_id,
+        profile_id=profile_id,
         comment=comment,
-        edr_template=edr_template,
         project=project,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
@@ -67,3 +67,65 @@ def db_create_scan(db, file_id: int, edr_template: str, comment: str = "", proje
     db.commit()
     logger.info(f"DB: Created scan {db_scan.id}")
     return db_scan.id
+
+
+def db_create_profile(db, name: str, type: str, port: int, edr_collector: str, data: dict, comment: str = ""):
+    """Create a new profile in the database"""
+    db_profile = Profile(
+        name=name,
+        type=type,
+        port=port,
+        edr_collector=edr_collector,
+        comment=comment,
+        data=data
+    )
+    db.add(db_profile)
+    db.commit()
+    db.refresh(db_profile)
+    
+    logger.info(f"DB: Created profile {db_profile.id} with name: {name}")
+    return db_profile.id
+
+
+def db_get_profile_id_by_name(db, name: str) -> Optional[int]:
+    """Get profile ID by name"""
+    profile = db.query(Profile).filter(Profile.name == name).first()
+    if profile:
+        return profile.id
+    return None
+
+def db_get_profile_by_name(db, name: str) -> Optional[Profile]:
+    """Get a profile by name"""
+    return db.query(Profile).filter(Profile.name == name).first()
+
+
+def db_get_profile_by_id(db, profile_id: int) -> Optional[Profile]:
+    """Get a profile by ID"""
+    return db.query(Profile).filter(Profile.id == profile_id).first()
+
+
+def db_list_profiles(db) -> List[Profile]:
+    """List all profiles"""
+    return db.query(Profile).all()
+
+
+def db_create_scan_with_profile_name(db, file_id: int, profile_name: str, comment: str = "", project: str = ""):
+    """Create a scan using a profile name instead of profile_id"""
+    profile = db_get_profile_by_name(db, profile_name)
+    if not profile:
+        raise ValueError(f"Profile '{profile_name}' not found")
+    
+    # Create scan directly with the profile instance
+    db_scan = Scan(
+        file_id=file_id,
+        profile_id=profile.id,
+        comment=comment,
+        project=project,
+        detonator_srv_logs=mylog(f"DB: Scan created"),
+        status="fresh",
+    )
+    db.add(db_scan)
+    db.commit()
+    logger.info(f"DB: Created scan {db_scan.id}")
+    return db_scan.id
+

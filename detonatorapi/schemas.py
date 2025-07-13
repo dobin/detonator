@@ -4,19 +4,22 @@ from datetime import datetime
 
 
 #################
-# EDR Template
+# Profile
 
-class EDRTemplate(BaseModel):
-    id: str
+class ProfileBase(BaseModel):
     name: str
-    description: str
-    category: str
-    ports: List[int]
-    available: bool
+    type: str
+    port: int
+    edr_collector: str
+    comment: Optional[str] = None
+    data: dict
 
-class EDRTemplateResponse(BaseModel):
-    templates: List[EDRTemplate]
-    all_templates: List[EDRTemplate]
+class ProfileResponse(ProfileBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 
 #################
@@ -52,25 +55,21 @@ class FileResponse(FileBase):
         from_attributes = True
 
 
-
 #################
 # Scan
 
-# Abstract
-class ScanBase(BaseModel):
-    project: Optional[str] = None
-    edr_template: Optional[str] = None
-    comment: Optional[str] = None
-
 # create_scan() request
-class FileCreateScan(ScanBase):
-    pass  # file_id comes from path parameter
+class FileCreateScan(BaseModel):
+    # file_id comes from path parameter
+    project: Optional[str] = None
+    profile_name: Optional[str] = None
+    comment: Optional[str] = None
 
 # update_scan() request
 class ScanUpdate(BaseModel):
     comment: Optional[str] = None
     project: Optional[str] = None
-    edr_template: Optional[str] = None
+    profile_id: Optional[str] = None
     result: Optional[str] = None
     status: Optional[str] = None
     completed_at: Optional[datetime] = None
@@ -78,9 +77,11 @@ class ScanUpdate(BaseModel):
 # get_scans() response
 # get_scan() response
 # update_scan() response
-class ScanResponse(ScanBase):
+class ScanResponse(BaseModel):
     id: int
     file_id: int
+    profile_id: int
+    project: Optional[str] = None
     comment: Optional[str] = None
     detonator_srv_logs: Optional[str] = None
     agent_logs: Optional[str] = None
@@ -95,6 +96,7 @@ class ScanResponse(ScanBase):
     updated_at: datetime
     completed_at: Optional[datetime] = None
     file: Optional[FileResponse] = None
+    profile: Optional[ProfileResponse] = None
     
     class Config:
         from_attributes = True

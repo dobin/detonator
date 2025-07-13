@@ -26,8 +26,8 @@
                             <div class="flex items-center space-x-2">
                                 <span class="text-gray-600">Scan #{{ scan.id }}: </span>
                                 <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}">{{ scan.status }}</span>
-                                {% if scan.edr_template %}
-                                <span class="text-gray-500">@{{ scan.edr_template }}</span>
+                                {% if scan.profile %}
+                                <span class="text-gray-500">@{{ scan.profile.name }}</span>
                                 {% endif %}
 
                                 {% if scan.result %}

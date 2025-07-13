@@ -9,14 +9,14 @@ import argparse
 API_BASE_URL = "http://localhost:8000"
 DEBUG = False
 
-def get_edr_templates():
+def get_profiles():
     try:
-        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
-        print(f"Error fetching EDR templates: {e}")
-        return []
+        print(f"Error fetching profiles: {e}")
+        return {}
 
 
 def upload_file(filename, source_url="", comment=""):
@@ -35,12 +35,13 @@ def upload_file(filename, source_url="", comment=""):
         return None
 
 
-def create_scan(file_id, edr_template, comment="", project=""):
+def create_scan(file_id, profile_name, comment="", project=""):
     try:
         data = {
-            "edr_template": edr_template,
+            "project": project,
+            "profile_name": profile_name,
             "comment": comment,
-            "project": project
+            
         }
         response = requests.post(f"{API_BASE_URL}/api/files/{file_id}/createscan", json=data)
         response.raise_for_status()
@@ -86,31 +87,33 @@ def wait_for_scan_completion(scan_id, timeout=3600):
     return None
 
 
-def print_templates():
-    templates = get_edr_templates()
-    if templates:
-        #print("Available EDR templates:")
-        for template in templates:
-            print(f"Template: {template['id']}")
-            print(f"    Type: {template.get('type', '')}")
-            if template.get('comment'):
-                print(f"    Comment: {template.get('comment', '')}")
-            if template.get('image_reference'):
-                image_reference_name = template.get('image_reference', '').split("/")[-1]  # Last part
+def print_profiles():
+    profiles = get_profiles()
+    if profiles:
+        #print("Available profiles:")
+        for profile_name, profile in profiles.items():
+            print(f"Profile: {profile_name}")
+            print(f"    Type: {profile.get('type', '')}")
+            print(f"    EDR Collector: {profile.get('edr_collector', '')}")
+            print(f"    Port: {profile.get('port', '')}")
+            if profile.get('comment'):
+                print(f"    Comment: {profile.get('comment', '')}")
+            if profile.get('data', {}).get('image_reference'):
+                image_reference_name = profile.get('data', {}).get('image_reference', '').split("/")[-1]  # Last part
                 print(f"    Image Reference: {image_reference_name}")
-            if template.get('ip'):
-                print(f"    IP: {template['ip']}")
+            if profile.get('data', {}).get('ip'):
+                print(f"    IP: {profile.get('data', {}).get('ip')}")
     else:
-        print("No templates available or error fetching templates")
+        print("No profiles available or error fetching profiles")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
-    parser.add_argument("command", choices=["scan", "list-templates"], help="Command to execute")
+    parser.add_argument("command", choices=["scan", "list-profiles"], help="Command to execute")
     parser.add_argument("filename", nargs="?", help="File to scan")
-    parser.add_argument("--edr-template", "-t", default="running_rededr", help="EDR template to use")
+    parser.add_argument("--profile", "-p", default="running_defender", help="Profile to use")
     parser.add_argument("--comment", "-c", default="", help="Comment for the scan")
-    parser.add_argument("--project", "-p", default="", help="Project name for the scan")
+    parser.add_argument("--project", "-j", default="", help="Project name for the scan")
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
     parser.add_argument("--api-url", default="http://localhost:8000", help="API base URL")
     parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
@@ -120,8 +123,8 @@ def main():
     global API_BASE_URL
     API_BASE_URL = args.api_url
     
-    if args.command == "list-templates":
-        print_templates()
+    if args.command == "list-profiles":
+        print_profiles()
         return
     
     elif args.command == "scan":
@@ -131,23 +134,23 @@ def main():
             return
             
         filename = args.filename
-        edr_template_id = args.edr_template
+        profile_name = args.profile
         
         # Check if file exists
         if not os.path.exists(filename):
             print(f"Error: File {filename} does not exist")
             return
         
-        # Get available templates to validate
-        templates = get_edr_templates()
-        template_ids = [t['id'] for t in templates] if templates else []
-        if edr_template_id not in template_ids:
-            print(f"Error: EDR template '{edr_template_id}' not found")
-            print("Available templates:")
-            print_templates()
+        # Get available profiles to validate
+        profiles = get_profiles()
+        profile_names = list(profiles.keys()) if profiles else []
+        if profile_name not in profile_names:
+            print(f"Error: Profile '{profile_name}' not found")
+            print("Available profiles:")
+            print_profiles()
             return
         
-        #print(f"> Scanning file {filename} with EDR template {edr_template_id}")
+        #print(f"> Scanning file {filename} with profile {profile_name}")
         
         # Upload file
         file_info = upload_file(filename, args.source_url, f"CLI {args.comment}")
@@ -158,7 +161,7 @@ def main():
         #print(f"File uploaded successfully with ID: {file_id}")
         
         # Create scan
-        scan_info = create_scan(file_id, edr_template_id, args.comment, args.project)
+        scan_info = create_scan(file_id, profile_name, args.comment, args.project)
         if not scan_info:
             print("Failed to create scan")
             return

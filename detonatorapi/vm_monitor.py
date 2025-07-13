@@ -10,7 +10,6 @@ from .database import get_db_for_thread, Scan
 from .db_interface import db_change_status
 from .connectors.azure_manager import get_azure_manager, AzureManager
 from .utils import mylog
-from .edr_templates import edr_template_manager
 from .settings import *
 
 from .connectors.connector import ConnectorBase
@@ -85,7 +84,6 @@ class VMMonitorTask:
         for scan in scans:
             scan_id: int = scan.id
             status: str = scan.status
-            edr_template_id: str = scan.edr_template
 
             # Skip finished (nothing todo)
             if status in [ 'finished' ]:
@@ -93,14 +91,8 @@ class VMMonitorTask:
             if status in [ 'error' ]:
                 continue
 
-            # Check for validity
-            edr_template = edr_template_manager.get_template(edr_template_id)
-            if not edr_template:
-                logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
-                db_change_status(self.db, scan, "error")
-                continue
-            server_type = edr_template["type"]
-            vmManager: ConnectorBase = self.vmManagers[server_type]
+            # get responsible VM manager, based on the profile->type
+            vmManager: ConnectorBase = self.vmManagers[scan.profile.type]
 
             # Try cleanup old:
             #   error

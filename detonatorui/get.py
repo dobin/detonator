@@ -27,39 +27,39 @@ def scans_page():
 
 @get_bp.route("/newscan")
 def scan_page():
-    # Fetch EDR templates from FastAPI
+    # Fetch profiles list
     try:
-        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
         if response.status_code == 200:
-            edr_templates = response.json()
+            profiles = response.json()
         else:
-            edr_templates = []
+            profiles = []
     except requests.RequestException:
-        edr_templates = []
+        profiles = []
     
-    return render_template("newscan.html", edr_templates=edr_templates)
+    return render_template("newscan.html", profiles=profiles)
 
 @get_bp.route("/upload")
 def upload_page():
-    # Fetch EDR templates from FastAPI
+    # Fetch profiles list
     try:
-        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
         if response.status_code == 200:
-            edr_templates = response.json()
+            profiles = response.json()
         else:
-            edr_templates = []
+            profiles = []
     except requests.RequestException:
-        edr_templates = []
+        profiles = []
     
-    return render_template("upload.html", edr_templates=edr_templates)
+    return render_template("upload.html", profiles=profiles)
 
 @get_bp.route("/vms")
 def vms_page():
     return render_template("vms.html")
 
-@get_bp.route("/edr-templates")
-def edr_templates_page():
-    return render_template("edr_templates.html")
+@get_bp.route("/profiles")
+def profiles_page():
+    return render_template("profiles.html")
 
 
 @get_bp.route("/semidatasieve/<int:scan_id>")
@@ -154,16 +154,16 @@ def vms_template():
     
     return render_template("partials/vms_list.html", vms=vms)
 
-@get_bp.route("/templates/edr-templates")
-def edr_templates_template():
-    """Template endpoint to render EDR templates list via HTMX"""
+@get_bp.route("/templates/profiles")
+def profiles_template():
+    """Template endpoint to render profiles list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
         if response.status_code == 200:
             templates = response.json()
             
             # Check status for each template
-            for template in templates:
+            for template_name, template in templates.items():
                 if template['type'] == 'clone':
                     template['available'] = "Not exist"
 
@@ -186,7 +186,7 @@ def edr_templates_template():
                     template['available'] = "Not running"
 
                     # Check HTTP connectivity
-                    ip = template.get('ip')
+                    ip = template.get('data', {}).get('ip')
                     port = template.get('port', 8080)
                     if ip:
                         try:
@@ -196,16 +196,19 @@ def edr_templates_template():
                         except:
                             template['available'] = 'Error'
                     else:
-                        template['connectivity_status'] = 'Error'
+                        template['available'] = 'Error'
 
                 elif template['type'] == 'new':
                     template["available"] = "true"
+                    
+                # Add the name to the template for easier access in templates
+                template['name'] = template_name
         else:
-            templates = []
+            templates = {}
     except requests.RequestException:
-        templates = []
+        templates = {}
     
-    return render_template("partials/edr_templates_list.html", templates=templates)
+    return render_template("partials/profiles_list.html", templates=templates)
 
 @get_bp.route("/templates/create-scan/<int:file_id>")
 def create_file_scan_template(file_id):
@@ -218,17 +221,17 @@ def create_file_scan_template(file_id):
         else:
             file_data = None
             
-        # Fetch EDR templates
-        edr_response = requests.get(f"{API_BASE_URL}/api/edr-templates")
-        if edr_response.status_code == 200:
-            edr_templates = edr_response.json()
+        # Fetch profiles
+        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles")
+        if profiles_response.status_code == 200:
+            profiles = profiles_response.json()
         else:
-            edr_templates = []
+            profiles = {}
     except requests.RequestException:
         file_data = None
-        edr_templates = []
+        profiles = {}
     
-    return render_template("partials/file_create_scan.html", file=file_data, edr_templates=edr_templates)
+    return render_template("partials/file_create_scan.html", file=file_data, profiles=profiles)
 
 # API endpoints (return JSON)
 
@@ -277,14 +280,14 @@ def update_scan(scan_id):
     except requests.RequestException:
         return {"error": "Could not update scan"}, 500
 
-@get_bp.route("/api/edr-templates")
-def get_edr_templates():
-    """Proxy endpoint to fetch EDR templates from FastAPI"""
+@get_bp.route("/api/profiles")
+def get_profiles():
+    """Proxy endpoint to fetch profiles from FastAPI"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/edr-templates")
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
         return response.json()
     except requests.RequestException:
-        return [], 500
+        return {}, 500
 
 @get_bp.route("/api/vms")
 def get_vms():

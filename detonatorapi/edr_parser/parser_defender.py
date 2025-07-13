@@ -85,9 +85,6 @@ class DefenderParser(EdrParser):
     
 
     def get_summary(self) -> str:
-        if len(self.events) == 0:
-            logger.warning("No events found in EDR data - did you call .parse() first?")
-
         edr_summary: List[str] = []
         for event in self.events:
             e = f"{event.get('threat_name', '?')}: {event.get('severity_name', '?')}"

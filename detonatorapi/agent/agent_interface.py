@@ -6,7 +6,6 @@ import json
 from datetime import datetime
 
 from detonatorapi.database import Scan
-from detonatorapi.edr_templates import edr_template_manager
 from detonatorapi.db_interface import db_change_status, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
@@ -16,27 +15,17 @@ logger = logging.getLogger(__name__)
 
 # Attempt to connect to the agent port to see if its up and running
 def connect_to_agent(db, db_scan: Scan) -> bool:
-    edr_template_id = db_scan.edr_template
-    if not edr_template_id:
-        logger.error(f"Scan {db_scan.id} has no EDR template defined")
-        return False
-    edr_template = edr_template_manager.get_template(edr_template_id)
-    if not edr_template:
-        logger.error(f"EDR template {edr_template_id} not found for scan {db_scan.id}")
-        return False
-    agent_port = edr_template.get("port", 8080)
-    if not agent_port:
-        logger.error(f"EDR template {edr_template_id} has no IP defined")
-        return False
-    
-    # IP from template
-    agent_ip: Optional[str] = edr_template.get("ip", None)
-    if not agent_ip:
-        # IP from VM
-        agent_ip: str = db_scan.vm_ip_address
+    agent_ip = None
+    # IP in template?
+    if 'ip' in db_scan.profile.data:
+        agent_ip: Optional[str] = db_scan.profile.data['ip']
+    else:
+        # IP in VM?
+        agent_ip = db_scan.vm_ip_address
         if not agent_ip:
             logger.error(f"Scan {db_scan.id} has no VM IP address defined")
             return False
+    agent_port = db_scan.profile.port
     
     url = "http://" + agent_ip + ":" + str(agent_port)
 
@@ -59,25 +48,17 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
 
 
 def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
-    scan_id = db_scan.id
-    edr_template_id = db_scan.edr_template
-    if not edr_template_id:
-        logger.error(f"Scan {scan_id} has no EDR template defined")
-        return False
-    edr_template = edr_template_manager.get_template(edr_template_id)
-    if not edr_template:
-        logger.error(f"EDR template {edr_template_id} not found for scan {scan_id}")
-        return False
-    agent_ip = edr_template.get("ip", None)
-    if not agent_ip:
+    agent_ip = None
+    # IP in template?
+    if 'ip' in db_scan.profile.data:
+        agent_ip: Optional[str] = db_scan.profile.data['ip']
+    else:
+        # IP in VM?
         agent_ip = db_scan.vm_ip_address
         if not agent_ip:
-                logger.error(f"EDR template {edr_template_id} and vm_ip_address has no IP defined")
-                return False
-    agent_port = edr_template.get("port", 8080)
-    if not agent_port:
-        logger.error(f"EDR template {edr_template_id} has no port defined")
-        return False
+            logger.error(f"Scan {db_scan.id} has no VM IP address defined")
+            return False
+    agent_port = db_scan.profile.port
 
     filename = db_scan.file.filename
     file_content = db_scan.file.content
@@ -95,8 +76,8 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     db_scan_add_log(thread_db, db_scan, [f"Executed file {filename} on Agent at {agent_ip}"])
     time.sleep(10.0)
 
-    rededr_events = agentApi.GetRedEdrEvents()  # FIXME only if edr_template["rededr"] is True?
-    agent_logs = agentApi.GetAgentLogs()  # { 'log': [ 'logline', ],  'output': '...' }
+    rededr_events = agentApi.GetRedEdrEvents()
+    agent_logs = agentApi.GetAgentLogs()
     edr_logs = agentApi.GetEdrLogs()
     edr_summary = ""
     is_detected = ""
@@ -113,7 +94,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         db_scan_add_log(thread_db, db_scan, ["could not get EDR logs from Agent"])
     else:
         # EDR logs summary
-        if edr_template.get("edr_collector", '') == "defender":
+        if db_scan.profile.edr_collector == "defender":
             xml_events: str = ""
             try:
                 edr_logs_obj: Dict = json.loads(edr_logs)

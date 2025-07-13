@@ -6,3 +6,4 @@ tools/
 edr_templates.yaml
 bak/
 config.env
+.vscode/

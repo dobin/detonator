@@ -31,8 +31,8 @@
                         {% if scan.comment %}
                         <p class="text-gray-600 text-sm">Scan Comment: {{ scan.comment }}</p>
                         {% endif %}
-                        {% if scan.edr_template %}
-                        <p class="text-gray-600 text-sm">Template: {{ scan.edr_template }}</p>
+                        {% if scan.profile %}
+                        <p class="text-gray-600 text-sm">Profile: {{ scan.profile.name }}</p>
                         {% endif %}
 
                         {% if scan.vm_ip_address %}

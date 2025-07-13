@@ -1,0 +1,99 @@
+{% if templates %}
+<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {% for template_name, template in templates.items() %}
+    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">{{ template_name }}</h3>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex items-center text-sm">
+                <span class="font-medium text-gray-500 w-20">Type:</span>
+                <span class="text-gray-900">{{ template.type }}</span>
+            </div>
+
+            <div class="flex items-center text-sm">
+                <span class="font-medium text-gray-500 w-20">EDR:</span>
+                <span class="text-gray-900">{{ template.edr_collector or 'N/A' }}</span>
+            </div>
+
+            <div class="flex items-center text-sm">
+                <span class="font-medium text-gray-500 w-20">Port:</span>
+                <span class="text-gray-900">{{ template.port or 'N/A' }}</span>
+            </div>
+
+            <!-- Type-specific information -->
+            {% if template.type == 'new' %}
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-20">Image:</span>
+                    <span class="text-gray-900">{{ template.data.get('image_reference', 'N/A') | truncate(30) }}</span>
+                </div>
+            {% elif template.type == 'clone' %}
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-20">VM Name:</span>
+                    <span class="text-gray-900">{{ template.data.get('vm_name', 'N/A') }}</span>
+                </div>
+            {% elif template.type == 'running' %}
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-20">IP Address:</span>
+                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.data.get('ip', 'N/A') }}</code>
+                </div>
+            {% endif %}
+
+            <!-- Profile Name -->
+            <div class="text-sm">
+                <span class="font-medium text-gray-500">Profile Name:</span>
+                <code class="bg-gray-100 px-2 py-1 rounded text-xs ml-2">{{ template_name }}</code>
+            </div>
+
+            <!-- Comment if available -->
+            {% if template.comment %}
+                <div class="text-sm">
+                    <span class="font-medium text-gray-500">Comment:</span>
+                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.comment }}</code>
+                </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Actions section -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-500">
+                    {% if template.type == 'new' %}
+                        Stages new VM
+                    {% elif template.type == 'clone' %}
+                        Clones existing VM
+                    {% elif template.type == 'running' %}
+                        Uses existing running VM
+                    {% endif %}
+                </span>
+                <div class="flex items-center">
+                    {% if template.available == "true" or template.available == true %}
+                        <span class="inline-flex items-center text-xs text-green-600">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            Available
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center text-xs text-red-600">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            Unavailable
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <div class="text-gray-400 text-6xl mb-4">🛡️</div>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">No Profiles Found</h3>
+    <p class="text-gray-500">No profiles are currently configured.</p>
+</div>
+{% endif %}

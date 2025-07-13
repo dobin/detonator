@@ -6,12 +6,14 @@ echo "Running Azure image builder script..."
 echo "Upload install-agent.ps1 script to Azure Storage..."
 bash "./upload_script.sh"
 curl https://detonator1.blob.core.windows.net/scripts/install-agent.ps1
+echo "-------------------------------------------------------"
 
 echo 
 echo "Deleting existing image if it exists..."
 az image delete \
   --resource-group "$RESOURCE_GROUP" \
   --name "$AIB_DISTRIBUTE_IMAGE"
+echo "-------------------------------------------------------"
 
 sleep 2
 
@@ -20,12 +22,14 @@ echo "Deleting existing image template if it exists..."
 az image builder delete \
   --resource-group "$RESOURCE_GROUP" \
   --name "$AIB_IMAGE_TEMPLATE"
+echo "-------------------------------------------------------"
 
 sleep 2
 
 echo
 echo "Template..."
 cat image_template.json
+echo "-------------------------------------------------------"
 
 echo
 echo "Creating a new image template..."
@@ -34,10 +38,10 @@ az image builder create \
   --name "$AIB_IMAGE_TEMPLATE" \
   --location "$LOCATION" \
   --image-template image_template.json 
+echo "-------------------------------------------------------"
 
 echo
-echo "-------------------------------------------------------"
-echo "Create image template..."
+echo "Create image template. This will take around 30 minutes..."
 az image builder run \
   --resource-group "$RESOURCE_GROUP" \
   --name "$AIB_IMAGE_TEMPLATE"

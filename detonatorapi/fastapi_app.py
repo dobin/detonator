@@ -7,13 +7,12 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from .database import get_db, File, Scan
+from .database import get_db, File, Scan, Profile
 from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse
 from .connectors.azure_manager import initialize_azure_manager, get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
-from .edr_templates import edr_template_manager
 from .utils import mylog
-from .db_interface import db_create_file, db_create_scan
+from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles
 
 
 # Setup logging - reduce verbosity for HTTP requests
@@ -54,11 +53,21 @@ async def shutdown_event():
         logger.error(f"Error during shutdown: {str(e)}")
 
 
-@app.get("/api/edr-templates")
-async def get_edr_templates():
-    """Get available EDR templates"""
-    templates = edr_template_manager.get_templates()
-    return templates
+@app.get("/api/profiles")
+async def get_profiles(db: Session = Depends(get_db)):
+    """Get available profiles"""
+    profiles = db_list_profiles(db)
+    # Convert to dict format similar to old templates
+    result = {}
+    for profile in profiles:
+        result[profile.name] = {
+            "type": profile.type,
+            "port": profile.port,
+            "edr_collector": profile.edr_collector,
+            "comment": profile.comment,
+            "data": profile.data
+        }
+    return result
 
 @app.get("/")
 async def root():
@@ -80,9 +89,11 @@ async def upload_file(
     """Upload a file without automatically creating a scan"""
 
     actual_filename = file.filename
+    if not actual_filename:
+        raise HTTPException(status_code=400, detail="Filename cannot be empty")
     # Read file content
     content = await file.read()
-    file_id = db_create_file(db, actual_filename, content, source_url, comment)
+    file_id = db_create_file(db, actual_filename, content, source_url or "", comment or "")
 
     db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans)).first()
     
@@ -96,23 +107,25 @@ async def upload_file_and_scan(
     file_comment: Optional[str] = Form(None),
     scan_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
-    edr_template: Optional[str] = Form(None),
+    profile: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
     
     # DB: Create File
     actual_filename = file.filename
-    print("----> Uploading file:", actual_filename)
     if not actual_filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     logger.info(f"Uploading file: {actual_filename}")
 
     content = await file.read()
-    file_id = db_create_file(db, actual_filename, content, source_url, file_comment)
+    file_id = db_create_file(db, actual_filename, content, source_url or "", file_comment or "")
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, file_id, edr_template=edr_template, comment=scan_comment, project=project)
+    if profile:
+        scan_id = db_create_scan_with_profile_name(db, file_id, profile, scan_comment or "", project or "")
+    else:
+        raise HTTPException(status_code=400, detail="Profile is required")
 
     data = { 
         "file_id": file_id,
@@ -125,13 +138,13 @@ async def upload_file_and_scan(
 @app.get("/api/files", response_model=List[FileWithScans])
 async def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all files with their scans"""
-    files = db.query(File).options(joinedload(File.scans)).offset(skip).limit(limit).all()
+    files = db.query(File).options(joinedload(File.scans).joinedload(Scan.profile)).offset(skip).limit(limit).all()
     return files
 
 @app.get("/api/files/{file_id}", response_model=FileWithScans)
 async def get_file(file_id: int, db: Session = Depends(get_db)):
     """Get a specific file with its scans"""
-    db_file = db.query(File).filter(File.id == file_id).first()
+    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans).joinedload(Scan.profile)).first()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
     return db_file
@@ -153,13 +166,13 @@ async def delete_file(file_id: int, db: Session = Depends(get_db)):
 @app.get("/api/scans", response_model=List[ScanResponse])
 async def get_scans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all scans with file information"""
-    scans = db.query(Scan).options(joinedload(Scan.file)).offset(skip).limit(limit).all()
+    scans = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).offset(skip).limit(limit).all()
     return scans
 
 @app.get("/api/scans/{scan_id}", response_model=ScanResponse)
 async def get_scan(scan_id: int, db: Session = Depends(get_db)):
     """Get a specific scan with file information"""
-    db_scan = db.query(Scan).options(joinedload(Scan.file)).filter(Scan.id == scan_id).first()
+    db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     return db_scan
@@ -189,15 +202,18 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
         raise HTTPException(status_code=404, detail="File not found")
     
     # Extract data with defaults
-    edr_template = scan_data.edr_template or ""
+    profile_name = scan_data.profile_name or ""
     comment = scan_data.comment or ""
     project = scan_data.project or ""
     
+    if not profile_name:
+        raise HTTPException(status_code=400, detail="Profile is required")
+    
     # Create the scan
-    scan_id = db_create_scan(db, file_id, edr_template=edr_template, comment=comment, project=project)
+    scan_id = db_create_scan_with_profile_name(db, file_id, profile_name, comment, project)
     
     # Retrieve the created scan to return full details
-    db_scan = db.query(Scan).options(joinedload(Scan.file)).filter(Scan.id == scan_id).first()
+    db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
     return db_scan
 
 
@@ -213,7 +229,7 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
     
     try:
         vm_manager = get_azure_manager()
-        shutdown_success = await vm_manager.shutdown_vm(db_scan.vm_instance_name)
+        shutdown_success = vm_manager.shutdown_vm(db_scan.vm_instance_name)
         
         if shutdown_success:
             db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"

@@ -13,7 +13,6 @@ from detonatorapi.utils import mylog, scanid_to_vmname
 import uuid
 
 from detonatorapi.database import Scan
-from detonatorapi.edr_templates import edr_template_manager
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
@@ -59,7 +58,6 @@ class AzureManager:
         self.resource_group = resource_group
         self.location = location
         self.credential = DefaultAzureCredential()
-        self.edr_template_manager = edr_template_manager
         
         # Initialize Azure clients
         self.compute_client = ComputeManagementClient(self.credential, self.subscription_id)
@@ -82,32 +80,23 @@ class AzureManager:
         db_scan.vm_instance_name = vm_name
         db.commit()
         
-        # Validate EDR template if provided
-        edr_template_id = db_scan.edr_template
-        edr_template: Dict = {}
-        if edr_template_id and not self.edr_template_manager.has_template(edr_template_id):
-            logger.error(f"Invalid EDR template '{edr_template_id}' for scan {db_scan.id}, proceeding without template")
-            return False
-        edr_template = self.edr_template_manager.get_template(edr_template_id)
-        
         try:
-            logger.info(f"Azure: Creating VM: {vm_name} with EDR template: {edr_template_id}")
+            logger.info(f"Azure: Creating VM: {vm_name} with profile {db_scan.profile.name}")
             logger.info(f"Azure: This can take a few minutes")
 
             # General VM creation data (check first)
-            if 'image_reference' not in edr_template:
-                logger.error("No base image given, abort")
+            if 'image_reference' not in db_scan.profile.data or \
+                'admin_username' not in db_scan.profile.data or \
+                'admin_password' not in db_scan.profile.data:
+                logger.error(f"Scan {scan_id} profile data is missing required fields (image_reference, admin_username, admin_password)")
                 return False
-            image_reference = edr_template["image_reference"]
-            if 'admin_username' not in edr_template or 'admin_password' not in edr_template:
-                logger.error("No admin credentials given, abort")
-                return False
-            admin_username = edr_template["admin_username"]
-            admin_password = edr_template["admin_password"]
+            image_reference = db_scan.profile.data['image_reference']
+            admin_username = db_scan.profile.data['admin_username']
+            admin_password = db_scan.profile.data['admin_password']
             
             # Create: network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
-            self._create_network_security_group(nsg_name, edr_template_id)
+            self._create_network_security_group(nsg_name)
             
             # Create: virtual network and subnet
             vnet_name = f"{vm_name}-vnet"
@@ -151,7 +140,7 @@ class AzureManager:
         return True
     
     
-    def _create_network_security_group(self, nsg_name: str, edr_template_id: str = None):
+    def _create_network_security_group(self, nsg_name: str):
         """Create network security group with basic rules and EDR-specific rules"""
         # Base security rules
         security_rules = [
@@ -505,6 +494,7 @@ class AzureManager:
         logger.info(f"Stopping and deleting VM: {vm_name}")
         self.shutdown_vm(vm_name)
         self.delete_vm_resources(vm_name)
+        return True
           
 
 # Global VM manager instance (will be initialized in main app)

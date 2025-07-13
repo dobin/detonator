@@ -12,10 +12,9 @@ from dotenv import load_dotenv
 import uvicorn
 import logging
 
-from detonatorapi.edr_templates import edr_template_manager
 from detonatorapi.logging_config import setup_logging
 from detonatorapi.connectors.azure_manager import initialize_azure_manager
-from detonatorapi.db_interface import db_create_file, db_create_scan
+from detonatorapi.db_interface import db_create_file, db_create_scan, db_get_profile_id_by_name
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorui.flask_app import app as flask_app
 from detonatorapi.vm_monitor import vm_monitor, VMMonitorTask
@@ -69,18 +68,13 @@ def main():
     command = sys.argv[1].lower()
     db = get_db_for_thread()
 
-    # Templates: Init
-    if not edr_template_manager.load_templates():
-        logger.error("Failed to load EDR templates. Please check edr_templates.yaml file.")
-        sys.exit(1)
-
     # Azure: Init
-    subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
+    subscription_id = "1a7ea32c-9e7a-43c1-b0ca-e4927197c053"
     resource_group = os.getenv("AZURE_RESOURCE_GROUP", "detonator-rg")
-    location = os.getenv("AZURE_LOCATION", "East US")
+    location = os.getenv("AZURE_LOCATION", "Switzerland North")
     if not subscription_id:
         logger.warning("AZURE_SUBSCRIPTION_ID not set - VM creation will not work")
-        #return
+        return
     else:
         initialize_azure_manager(subscription_id, resource_group, location)
         logger.info("Azure Manager initialized successfully")
@@ -96,26 +90,6 @@ def main():
     elif command == "web":
         print("Starting Flask server on http://localhost:5000")
         run_flask()
-
-    elif command == "monitor_once":
-        print("Running VM monitor once...")
-        monitor_task = VMMonitorTask()
-        monitor_task.check_all_scans()
-    elif command == "add_test_scan":
-        filename = sys.argv[2] if len(sys.argv) > 2 else "test_file.exe"
-        edr_template_id = sys.argv[3] if len(sys.argv) > 3 else "running_rededr"
-        print(f"Adding a new scan: {filename} with EDR template: {edr_template_id}")
-
-        if not os.path.exists(filename):
-            print(f"Error: File {filename} does not exist")
-            return
-        with open(filename, "rb") as f:
-            file_content = f.read()
-
-        file_id = db_create_file(db, filename, file_content)
-        scan_id = db_create_scan(db, file_id, edr_template=edr_template_id)
-        print(f"Created test scan with ID: {scan_id}")
-
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, LargeBinary, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, LargeBinary, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -9,6 +9,22 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./detonator.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True, index=True)
+    type = Column(String(50), nullable=False)
+    port = Column(Integer, nullable=False)
+    edr_collector = Column(String(100), nullable=False)
+    comment = Column(Text, nullable=True)
+    data = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    scans = relationship("Scan", back_populates="profile")
 
 
 class File(Base):
@@ -37,9 +53,9 @@ class Scan(Base):
     # IN
     id = Column(Integer, primary_key=True, index=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
     comment = Column(Text, default="", nullable=False)
     project = Column(String(100), default="", nullable=False)
-    edr_template = Column(String(100), nullable=False)
 
     # TRACK
     detonator_srv_logs = Column(Text, nullable=False)          # Detonator API logs
@@ -52,7 +68,7 @@ class Scan(Base):
     edr_summary = Column(Text, default="", nullable=False)     # Summary of EDR logs
     result = Column(Text, default="", nullable=False)          # Detected or not (based on agent_logs)
     
-    # TEMP
+    # Set by Instantiate
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
 
@@ -61,8 +77,9 @@ class Scan(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
     
-    # Relationship
+    # Relationships
     file = relationship("File", back_populates="scans")
+    profile = relationship("Profile", back_populates="scans")
 
 
 # Create tables

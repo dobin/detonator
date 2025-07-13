@@ -54,8 +54,8 @@ def upload_file_and_scan():
         if 'project' in request.form:
             data['project'] = request.form['project']
             
-        if 'edr_template' in request.form:
-            data['edr_template'] = request.form['edr_template']
+        if 'profile_name' in request.form:
+            data['profile'] = request.form['profile_name']
         
         response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)
         return response.json()
