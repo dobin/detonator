@@ -39,9 +39,9 @@ class ConnectorRunning(ConnectorBase):
         super().connect(db, db_scan)
 
 
-    def scan(self, db, db_scan: Scan):
+    def scan(self, db, db_scan: Scan, pre_wait: int = 0):
         # default agent scan
-        super().scan(db, db_scan)
+        super().scan(db, db_scan, pre_wait=pre_wait)
 
 
     def stop(self, db, db_scan: Scan):

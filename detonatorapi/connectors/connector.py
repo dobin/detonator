@@ -1,6 +1,7 @@
 import logging
 import threading
 from typing import Dict, List, Optional
+import time
 
 from detonatorapi.database import get_db_for_thread, Scan
 from detonatorapi.db_interface import db_change_status, db_scan_add_log
@@ -42,14 +43,20 @@ class ConnectorBase:
 
         threading.Thread(target=connect_thread, args=(db_scan.id, )).start()
 
-    def scan(self, db, db_scan: Scan):
+    def scan(self, db, db_scan: Scan, pre_wait: int = 0):
         def scan_thread(scan_id: int):
+            # This is to handle Azure VM startup weirdness
+            # Just because we could connect, doesnt mean we want to immediately scan
+            # Let the VM start up for a bit
+            time.sleep(pre_wait)
+
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
             if scan_file_with_agent(thread_db, db_scan):
                 db_change_status(thread_db, db_scan, "finished")
             else:
                 db_change_status(thread_db, db_scan, "error", f"Could not start trace on RedEdr")
+            db.close()
 
         threading.Thread(target=scan_thread, args=(db_scan.id, )).start()
 
