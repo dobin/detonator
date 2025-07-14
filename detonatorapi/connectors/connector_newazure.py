@@ -39,6 +39,10 @@ class ConnectorNewAzure(ConnectorBase):
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
             azure_manager = get_azure_manager()
+            if not azure_manager:
+                db_change_status(thread_db, db_scan, "error", "Azure not configured")
+                thread_db.close()
+                return
             if azure_manager.create_machine(thread_db, db_scan):
                 db_change_status(thread_db, db_scan, "instantiated")
             else:
@@ -61,6 +65,10 @@ class ConnectorNewAzure(ConnectorBase):
         def stop_thread(scan_id: int):
             thread_db = get_db_for_thread()
             azure_manager = get_azure_manager()
+            if not azure_manager:
+                db_change_status(thread_db, db_scan, "error", "Azure not configured")
+                thread_db.close()
+                return
             vm_name = scanid_to_vmname(scan_id)
             if azure_manager.shutdown_vm(vm_name):
                 db_change_status(thread_db, db_scan, "stopped")
@@ -76,6 +84,10 @@ class ConnectorNewAzure(ConnectorBase):
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
             azure_manager = get_azure_manager()
+            if not azure_manager:
+                db_change_status(thread_db, db_scan, "error", "Azure not configured")
+                thread_db.close()
+                return
             vm_name = scanid_to_vmname(scan_id)
             if azure_manager.delete_vm_resources(vm_name):
                 db_change_status(thread_db, db_scan, "removed")

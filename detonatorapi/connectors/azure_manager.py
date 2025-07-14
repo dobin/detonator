@@ -508,8 +508,6 @@ def initialize_azure_manager(subscription_id: str, resource_group: str, location
     return azure_manager
 
 
-def get_azure_manager() -> AzureManager:
+def get_azure_manager() -> AzureManager|None:
     """Get the global VM manager instance"""
-    if azure_manager is None:
-        raise RuntimeError("Azure Manager not initialized. Call initialize_azure_manager() first.")
     return azure_manager

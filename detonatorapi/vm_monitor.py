@@ -8,7 +8,6 @@ import threading
 
 from .database import get_db_for_thread, Scan
 from .db_interface import db_change_status
-from .connectors.azure_manager import get_azure_manager, AzureManager
 from .utils import mylog
 from .settings import *
 
@@ -28,13 +27,11 @@ class VMMonitorTask:
         self.running = False
         self.task = None
         self.db = None
-        self.azure_manager: AzureManager = None
 
 
     def init(self):
         """Initialize the VM monitor task"""
-        #self.db = get_background_db()
-        self.azure_manager = get_azure_manager()
+        pass
     
 
     def start_monitoring(self):
@@ -102,17 +99,17 @@ class VMMonitorTask:
             # Try cleanup old:
             #   error
             #   non-finished older than 5 minutes
-            if status in [ "error" ] or (status not in [ "finished" ] and (datetime.utcnow() - scan.created_at) > timedelta(minutes=VM_DESTROY_AFTER)):
-                vm_name = scan.vm_instance_name
-                if vm_name and vm_name != "":
-                    azure_vm_status = self.azure_manager.get_vm_status(vm_name)
-                    if azure_vm_status in [ "running" ]:
-                        logger.info(f"Scan {scan_id} is in error state but VM {vm_name} running: stopping VM")
-                        db_change_status(self.db, scan, "stop")
-
-                    elif azure_vm_status in [ "stopped" ]:
-                        logger.info(f"Scan {scan_id} is in error state but VM {vm_name} exist: removing VM")
-                        db_change_status(self.db, scan, "remove")
+            #if status in [ "error" ] or (status not in [ "finished" ] and (datetime.utcnow() - scan.created_at) > timedelta(minutes=VM_DESTROY_AFTER)):
+            #    vm_name = scan.vm_instance_name
+            #    if vm_name and vm_name != "":
+            #        azure_vm_status = self.azure_manager.get_vm_status(vm_name)
+            #        if azure_vm_status in [ "running" ]:
+            #            logger.info(f"Scan {scan_id} is in error state but VM {vm_name} running: stopping VM")
+            #            db_change_status(self.db, scan, "stop")
+            #
+            #        elif azure_vm_status in [ "stopped" ]:
+            #            logger.info(f"Scan {scan_id} is in error state but VM {vm_name} exist: removing VM")
+            #            db_change_status(self.db, scan, "remove")
 
             # State Machine
             match status:

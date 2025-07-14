@@ -20,6 +20,8 @@ from detonatorui.flask_app import app as flask_app
 from detonatorapi.vm_monitor import vm_monitor, VMMonitorTask
 from detonatorapi.database import get_db, get_db_for_thread
 
+from detonatorapi.settings import AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION
+
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -45,9 +47,6 @@ def run_both():
     fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
     fastapi_thread.start()
     
-    # Give FastAPI a moment to start
-    #time.sleep(2)
-    
     # Start Flask in the main thread
     try:
         run_flask()
@@ -69,14 +68,10 @@ def main():
     db = get_db_for_thread()
 
     # Azure: Init
-    subscription_id = "1a7ea32c-9e7a-43c1-b0ca-e4927197c053"
-    resource_group = os.getenv("AZURE_RESOURCE_GROUP", "detonator-rg")
-    location = os.getenv("AZURE_LOCATION", "Switzerland North")
-    if not subscription_id:
+    if not AZURE_SUBSCRIPTION_ID or AZURE_SUBSCRIPTION_ID == "":
         logger.warning("AZURE_SUBSCRIPTION_ID not set - VM creation will not work")
-        return
     else:
-        initialize_azure_manager(subscription_id, resource_group, location)
+        initialize_azure_manager(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION)
         logger.info("Azure Manager initialized successfully")
 
     # VM Monitor: Init

@@ -243,8 +243,10 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="No VM associated with this scan")
     
     try:
-        vm_manager = get_azure_manager()
-        shutdown_success = vm_manager.shutdown_vm(db_scan.vm_instance_name)
+        azure_manager = get_azure_manager()
+        if not azure_manager:
+            return {"message": "Azure not configured"}
+        shutdown_success = azure_manager.shutdown_vm(db_scan.vm_instance_name)
         
         if shutdown_success:
             db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"
@@ -265,6 +267,8 @@ async def get_vms():
     """Get all VMs in the resource group"""
     try:
         azure_manager = get_azure_manager()
+        if not azure_manager:
+            return {}
         vms = azure_manager.list_all_vms()
         return vms
     except Exception as e:
@@ -277,6 +281,8 @@ async def delete_vm(vm_name: str, background_tasks: BackgroundTasks):
     """Stop and delete a VM and all its resources"""
     try:
         azure_manager = get_azure_manager()
+        if not azure_manager:
+            return {"message": f"Azure not configured"}
         # Run deletion in background to avoid blocking
         background_tasks.add_task(azure_manager.stop_and_delete_vm, vm_name)
         return {"message": f"VM {vm_name} deletion initiated"}
