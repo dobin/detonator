@@ -73,6 +73,18 @@ def delete_vm(vm_name):
     except requests.RequestException as e:
         return {"error": f"Could not delete VM: {str(e)}"}, 500
 
+@post_bp.route("/api/scans/<int:scan_id>", methods=["DELETE"])
+def delete_scan(scan_id):
+    """Proxy endpoint to delete scan via FastAPI"""
+    try:
+        response = requests.delete(f"{API_BASE_URL}/api/scans/{scan_id}")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"Failed to delete scan: {response.text}"}, response.status_code
+    except requests.RequestException as e:
+        return {"error": f"Could not delete scan: {str(e)}"}, 500
+
 @post_bp.route("/api/files/<int:file_id>/createscan", methods=["POST"])
 def file_create_scan(file_id):
     """Proxy endpoint to create scan via FastAPI"""

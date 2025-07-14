@@ -263,6 +263,27 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Failed to shutdown VM: {str(e)}")
 
 
+@app.delete("/api/scans/{scan_id}")
+async def delete_scan(scan_id: int, db: Session = Depends(get_db)):
+    """Delete a specific scan"""
+    db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if db_scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    
+    # If scan has a VM running, attempt to shut it down first
+    if db_scan.vm_instance_name and db_scan.status == "running":
+        try:
+            azure_manager = get_azure_manager()
+            if azure_manager:
+                azure_manager.shutdown_vm(db_scan.vm_instance_name)
+        except Exception as e:
+            logger.warning(f"Failed to shutdown VM {db_scan.vm_instance_name} when deleting scan {scan_id}: {str(e)}")
+    
+    db.delete(db_scan)
+    db.commit()
+    return {"message": "Scan deleted successfully"}
+
+
 # VM management endpoints
 @app.get("/api/vms")
 async def get_vms():

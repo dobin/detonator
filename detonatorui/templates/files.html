@@ -64,10 +64,16 @@
             fetch('http://localhost:8000/api/files/' + fileId, {
                 method: 'DELETE'
             })
-            .then(response => response.json())
-            .then(data => {
-                // Refresh the files list using HTMX
-                htmx.trigger('#files-container', 'load');
+            .then(response => {
+                if (response.ok) {
+                    // Refresh the files list using HTMX
+                    htmx.ajax('GET', '/templates/files', {
+                        target: '#files-container',
+                        swap: 'innerHTML'
+                    });
+                } else {
+                    throw new Error('Failed to delete file');
+                }
             })
             .catch(error => {
                 alert('Error deleting file: ' + error.message);
