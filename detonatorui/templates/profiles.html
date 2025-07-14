@@ -3,7 +3,7 @@
 {% block title %}Profiles{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="mx-auto">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex justify-between items-center mb-4">
@@ -70,14 +70,13 @@
                 </div>
                 
                 <div>
-                    <label for="edr_collector" class="block text-sm font-medium text-gray-700 mb-1">EDR Collector *</label>
+                    <label for="edr_collector" class="block text-sm font-medium text-gray-700 mb-1">EDR Collector</label>
                     <input 
                         type="text" 
                         id="edr_collector" 
                         name="edr_collector" 
-                        required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., defender, crowdstrike"
+                        placeholder="e.g., defender"
                     >
                 </div>
                 

@@ -164,24 +164,16 @@ def profiles_template():
             
             # Check status for each template
             for template_name, template in templates.items():
-                if template['connector'] == 'Running':
-                    template['available'] = "Not running"
-
-                    # Check HTTP connectivity
-                    ip = template.get('data', {}).get('ip')
-                    port = template.get('port', 8080)
-                    if ip:
-                        try:
-                            url = f"http://{ip}:{port}"
-                            test_response = requests.get(url, timeout=1)
-                            template['available'] = "true"
-                        except:
-                            template['available'] = 'Error'
+                url = f"{API_BASE_URL}/api/profiles/{template['id']}/status"
+                try:
+                    status_response = requests.get(url)
+                    if status_response.status_code == 200:
+                        template['available'] = status_response.json().get('is_available', 'false')
                     else:
-                        template['available'] = 'Error'
-                else:
-                    template["available"] = "true"
-                    
+                        template['available'] = "Error"
+                except requests.RequestException:
+                    template['available'] = "Error"
+                
                 # Add the name to the template for easier access in templates
                 template['name'] = template_name
         else:

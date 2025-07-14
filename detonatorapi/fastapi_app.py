@@ -6,11 +6,12 @@ from datetime import datetime
 import logging
 import os
 from dotenv import load_dotenv
+import requests
 
 from .database import get_db, File, Scan, Profile
-from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse, ProfileCreate, ProfileUpdate, ProfileResponse
-from .connectors.azure_manager import initialize_azure_manager, get_azure_manager
-from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, Connectors
+from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, ScanUpdate, NewScanResponse, ProfileCreate, ProfileUpdate, ProfileResponse, ProfileStatusResponse
+from .connectors.azure_manager import get_azure_manager
+from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, connectors
 from .utils import mylog
 from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles, db_create_profile, db_get_profile_by_id
 
@@ -73,15 +74,15 @@ async def get_profiles(db: Session = Depends(get_db)):
 @app.get("/api/connectors")
 async def get_connectors():
     """Get available connector types with descriptions"""
-    connectors = {}
-    for name, connector in Connectors.items():
-        connectors[name] = {
+    conns = {}
+    for name, connector in connectors.get_all().items():
+        conns[name] = {
             "name": name,
             "description": connector.get_description(),
             "comment": connector.get_comment(),
             "sample_data": connector.get_sample_data()
         }
-    return connectors
+    return conns
 
 @app.get("/")
 async def root():
@@ -289,8 +290,8 @@ async def create_profile(
     name: str = Form(...),
     connector: str = Form(...),
     port: int = Form(...),
-    edr_collector: str = Form(...),
-    comment: str = Form(""),
+    edr_collector: Optional[str] = Form(""),
+    comment: Optional[str] = Form(""),
     data: str = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -348,6 +349,36 @@ async def get_profile(profile_id: int, db: Session = Depends(get_db)):
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     return db_profile
+
+
+@app.get("/api/profiles/{profile_id}/status", response_model=ProfileStatusResponse)
+async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
+    db_profile = db_get_profile_by_id(db, profile_id)
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    is_available = ""
+
+    ip = db_profile.data.get('ip', '')
+    port = db_profile.port
+    if ip == "" or port == 0:
+        is_available = ""
+    else:
+        port = db_profile.port
+        try:
+            url = f"http://{ip}:{port}"
+            test_response = requests.get(url, timeout=0.5)
+            is_available = "true"
+        except:
+            is_available = "false"
+
+    return {
+        "id": db_profile.id,
+        "ip": ip,
+        "port": port,
+        "is_available": is_available
+    }
+
 
 @app.put("/api/profiles/{profile_id}")
 async def update_profile(

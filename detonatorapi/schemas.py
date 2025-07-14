@@ -32,6 +32,12 @@ class ProfileResponse(ProfileBase):
     class Config:
         from_attributes = True
 
+class ProfileStatusResponse(BaseModel):
+    id: int
+    ip: Optional[str] = None
+    port: Optional[int] = None
+    is_available: str
+
 
 #################
 # Scan and File 

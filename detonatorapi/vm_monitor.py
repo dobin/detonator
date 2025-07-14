@@ -15,16 +15,10 @@ from .settings import *
 from .connectors.connector import ConnectorBase
 from .connectors.connector_newazure import ConnectorNewAzure
 from .connectors.connector_running import ConnectorRunning
-
+from .connectors.connectors import connectors
 
 logger = logging.getLogger(__name__)
 
-
-# give it the same db
-Connectors = {
-    "NewAzure": ConnectorNewAzure(),
-    "Running": ConnectorRunning(),
-}
 
 
 class VMMonitorTask:
@@ -94,16 +88,16 @@ class VMMonitorTask:
                 continue
 
             # get responsible VM manager, based on the profile->connector
-            if scan.profile.connector not in Connectors:
+            if not scan.profile.connector:
                 logger.error(f"Scan {scan_id} has no profile connector")
                 db_change_status(self.db, scan, "error")
                 continue
-            if scan.profile.connector not in Connectors:
+            if not connectors.has(scan.profile.connector):
                 logger.error(f"Scan {scan_id} has no valid VM manager defined for profile connector: {scan.profile.connector}")
-                logger.error(f"VM Managers: {list(Connectors.keys())}")
+                logger.error(f"VM Managers: {list(connectors.get_all().keys())}")
                 db_change_status(self.db, scan, "error")
                 continue
-            connector: ConnectorBase = Connectors[scan.profile.connector]
+            connector: ConnectorBase = connectors.get(scan.profile.connector)
 
             # Try cleanup old:
             #   error
