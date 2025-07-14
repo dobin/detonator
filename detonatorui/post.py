@@ -58,6 +58,7 @@ def upload_file_and_scan():
         if 'profile_name' in request.form:
             data['profile'] = request.form['profile_name']
         
+        data['runtime'] = 12
         response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)
         return response.json()
     except requests.RequestException as e:
@@ -77,8 +78,9 @@ def file_create_scan(file_id):
     """Proxy endpoint to create scan via FastAPI"""
     try:
         # Handle both JSON and form data
+        data = {}
         if request.is_json:
-            data = request.json
+            data = request.json or {}
         else:
             # Convert form data to dictionary
             data = {}
@@ -87,6 +89,7 @@ def file_create_scan(file_id):
                     data[key] = value
         
         logger.info(f"Creating scan for file {file_id} with data: {data}")
+        data['runtime'] = 12
         response = requests.post(f"{API_BASE_URL}/api/files/{file_id}/createscan", json=data)
         
         if response.status_code == 200:

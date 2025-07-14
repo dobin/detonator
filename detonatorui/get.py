@@ -244,15 +244,6 @@ def get_scan(scan_id):
     except requests.RequestException:
         return {"error": "Could not fetch scan"}, 500
 
-@get_bp.route("/api/scans/<int:scan_id>", methods=["PUT"])
-def update_scan(scan_id):
-    """Proxy endpoint to update scan via FastAPI"""
-    try:
-        response = requests.put(f"{API_BASE_URL}/api/scans/{scan_id}", json=request.json)
-        return response.json()
-    except requests.RequestException:
-        return {"error": "Could not update scan"}, 500
-
 @get_bp.route("/api/profiles")
 def get_profiles():
     """Proxy endpoint to fetch profiles from FastAPI"""

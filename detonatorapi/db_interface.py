@@ -54,21 +54,6 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_scan(db, file_id: int, profile_id: int, comment: str = "", project: str = "") -> int:
-    db_scan = Scan(
-        file_id=file_id,
-        profile_id=profile_id,
-        comment=comment,
-        project=project,
-        detonator_srv_logs=mylog(f"DB: Scan created"),
-        status="fresh",
-    )
-    db.add(db_scan)
-    db.commit()
-    logger.info(f"DB: Created scan {db_scan.id}")
-    return db_scan.id
-
-
 def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = ""):
     """Create a new profile in the database"""
     db_profile = Profile(
@@ -109,7 +94,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan_with_profile_name(db, file_id: int, profile_name: str, comment: str = "", project: str = ""):
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: Optional[int] =10) -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
@@ -121,6 +106,7 @@ def db_create_scan_with_profile_name(db, file_id: int, profile_name: str, commen
         profile_id=profile.id,
         comment=comment,
         project=project,
+        runtime=runtime,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
     )

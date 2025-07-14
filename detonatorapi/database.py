@@ -73,6 +73,7 @@ class Scan(Base):
     vm_ip_address = Column(String(15), nullable=True)
 
     # META
+    runtime = Column(Integer, nullable=True)  # Runtime in seconds
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)

@@ -13,7 +13,7 @@ from .schemas import FileResponse, ScanResponse, FileWithScans, FileCreateScan, 
 from .connectors.azure_manager import get_azure_manager
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, connectors
 from .utils import mylog
-from .db_interface import db_create_file, db_create_scan_with_profile_name, db_list_profiles, db_create_profile, db_get_profile_by_id
+from .db_interface import db_create_file, db_create_scan, db_list_profiles, db_create_profile, db_get_profile_by_id
 
 
 # Setup logging - reduce verbosity for HTTP requests
@@ -123,6 +123,7 @@ async def upload_file_and_scan(
     scan_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
     profile: Optional[str] = Form(None),
+    runtime: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
@@ -138,7 +139,7 @@ async def upload_file_and_scan(
 
     # DB: Create scan record (auto-scan)
     if profile:
-        scan_id = db_create_scan_with_profile_name(db, file_id, profile, scan_comment or "", project or "")
+        scan_id = db_create_scan(db, file_id, profile, scan_comment or "", project or "", runtime or 10)
     else:
         raise HTTPException(status_code=400, detail="Profile is required")
 
@@ -220,12 +221,13 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     profile_name = scan_data.profile_name or ""
     comment = scan_data.comment or ""
     project = scan_data.project or ""
+    runtime = scan_data.runtime or 10
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
     
     # Create the scan
-    scan_id = db_create_scan_with_profile_name(db, file_id, profile_name, comment, project)
+    scan_id = db_create_scan(db, file_id, profile_name, comment, project, runtime=runtime)
     
     # Retrieve the created scan to return full details
     db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()

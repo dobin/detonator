@@ -53,7 +53,7 @@ class ConnectorBase:
             thread_db = get_db_for_thread()
             db_scan = thread_db.get(Scan, scan_id)
             if scan_file_with_agent(thread_db, db_scan):
-                db_change_status(thread_db, db_scan, "finished")
+                db_change_status(thread_db, db_scan, "stop")
             else:
                 db_change_status(thread_db, db_scan, "error", f"Could not start trace on RedEdr")
             db.close()

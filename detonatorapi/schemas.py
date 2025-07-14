@@ -80,6 +80,7 @@ class FileCreateScan(BaseModel):
     # file_id comes from path parameter
     project: Optional[str] = None
     profile_name: Optional[str] = None
+    runtime: Optional[int] = 10
     comment: Optional[str] = None
 
 # update_scan() request
@@ -89,6 +90,7 @@ class ScanUpdate(BaseModel):
     profile_id: Optional[str] = None
     result: Optional[str] = None
     status: Optional[str] = None
+    runtime: Optional[int] = None
     completed_at: Optional[datetime] = None
 
 # get_scans() response
@@ -109,6 +111,7 @@ class ScanResponse(BaseModel):
     status: str
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
+    runtime: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None

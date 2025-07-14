@@ -62,20 +62,24 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     filename = db_scan.file.filename
     file_content = db_scan.file.content
+    runtime = db_scan.runtime
     agentApi = AgentApi(agent_ip, agent_port)
 
     if not agentApi.StartTrace(filename):
         db_scan_add_log(thread_db, db_scan, [f"Could not start trace on Agent"])
         return False
     db_scan_add_log(thread_db, db_scan, [f"Started trace for file {filename} on Agent at {agent_ip}"])
-    time.sleep(1.0)
+    time.sleep(1.0)  # let RedEdr boot it up
 
     if not agentApi.ExecFile(filename, file_content):
         db_scan_add_log(thread_db, db_scan, [f"Could not exec file on Agent"])
         return False
-    db_scan_add_log(thread_db, db_scan, [f"Executed file {filename} on Agent at {agent_ip}"])
-    time.sleep(10.0)
+    db_scan_add_log(thread_db, db_scan, [f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds"])
+    thread_db.commit()
+    time.sleep(runtime)
 
+    db_scan_add_log(thread_db, db_scan, [f"Runtime of {runtime} seconds completed, gathering results"])
+    thread_db.commit()
     rededr_events = agentApi.GetRedEdrEvents()
     agent_logs = agentApi.GetAgentLogs()
     edr_logs = agentApi.GetEdrLogs()

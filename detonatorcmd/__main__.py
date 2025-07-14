@@ -75,7 +75,7 @@ def wait_for_scan_completion(scan_id, timeout=3600):
         sys.stdout.write(f".")
         sys.stdout.flush()
         
-        if scan['status'] in ["finished", "error" ]:
+        if scan['status'] in ["finished", "error", "stopping", "removing" ]:
             print("")
             return scan
         elif DEBUG:
