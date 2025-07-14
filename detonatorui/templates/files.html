@@ -13,7 +13,7 @@
     <div 
         id="files-container" 
         hx-get="/templates/files" 
-        hx-trigger="load"
+        hx-trigger="load, every 3s"
         hx-indicator="#loading"
     >
         <div class="text-center text-gray-500">Loading files...</div>

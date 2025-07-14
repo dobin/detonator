@@ -17,7 +17,7 @@
 
         <div id="vms-list" 
              hx-get="/templates/vms" 
-             hx-trigger="load"
+             hx-trigger="load, every 3s"
              hx-swap="innerHTML">
             <div class="text-center py-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
