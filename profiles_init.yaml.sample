@@ -1,12 +1,12 @@
+live_rededr:
+  connector: Live
+  comment: win10 defender rededr
+  ip: 192.168.1.1
+
 new_defender:
   connector: NewAzure
   comment: 
   software: defender
-  image_reference: /subscriptions/1a7ea32c-9e7a-43c1-b0ca-e4927197c053/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
+  image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
   admin_username: admin 
   admin_password: password
-
-running_rededr:
-  connector: Running
-  comment: win10 defender rededr
-  ip: 192.168.1.1

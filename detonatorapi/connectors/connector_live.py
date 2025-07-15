@@ -10,7 +10,7 @@ from .connector import ConnectorBase
 logger = logging.getLogger(__name__)
 
 
-class ConnectorRunning(ConnectorBase):
+class ConnectorLive(ConnectorBase):
     def __init__(self):
         pass
 

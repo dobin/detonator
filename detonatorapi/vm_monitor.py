@@ -13,7 +13,7 @@ from .settings import *
 
 from .connectors.connector import ConnectorBase
 from .connectors.connector_newazure import ConnectorNewAzure
-from .connectors.connector_running import ConnectorRunning
+from .connectors.connector_live import ConnectorLive
 from .connectors.connectors import connectors
 
 logger = logging.getLogger(__name__)

@@ -187,7 +187,7 @@ function loadConnectors() {
             console.error('Error loading connectors:', error);
             // Fallback to basic options if API fails
             const connectorSelect = document.getElementById('connector');
-            ['NewAzure', 'Running'].forEach(connector => {
+            ['NewAzure', 'Live'].forEach(connector => {
                 const option = document.createElement('option');
                 option.value = connector;
                 option.textContent = connector;

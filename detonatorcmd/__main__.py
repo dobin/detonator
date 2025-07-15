@@ -121,7 +121,7 @@ def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
     parser.add_argument("command", choices=["scan", "list-profiles"], help="Command to execute")
     parser.add_argument("filename", nargs="?", help="File to scan")
-    parser.add_argument("--profile", "-p", default="running_defender", help="Profile to use")
+    parser.add_argument("--profile", "-p", default="live_defender", help="Profile to use")
     parser.add_argument("--comment", "-c", default="", help="Comment for the scan")
     parser.add_argument("--project", "-j", default="", help="Project name for the scan")
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")

@@ -1,12 +1,12 @@
 
 from .connector import ConnectorBase
 from .connector_newazure import ConnectorNewAzure
-from .connector_running import ConnectorRunning
+from .connector_live import ConnectorLive
 
 
 connectors_init = {
     "NewAzure": ConnectorNewAzure(),
-    "Running": ConnectorRunning(),
+    "Live": ConnectorLive(),
 }
 
 
