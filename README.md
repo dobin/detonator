@@ -24,7 +24,6 @@ myfirstvm:
 $ poetry run python3 migrate_to_profiles.py
 ```
 
-
 Run the server:
 ```bash
 # Install dependencies
@@ -46,13 +45,15 @@ $ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
 ```
 
 
+## Setup Guides
 
-## Setup 
+Depending on your needs, there is more or less configuration required.
 
-### Read only mode
+* [Simple easy single user](https://github.com/dobin/detonator/doc/setup-singleuser.md)
+* [Integrating with Azure](https://github.com/dobin/detonator/doc/setup-azure.md)
+* [Public use](https://github.com/dobin/detonator/doc/setup-public.md)
 
-Set the environment variable `DETONATOR_READ_ONLY=true` before starting both the API and UI components.
+There are some more docs: 
 
-```bash
-export DETONATOR_READ_ONLY=true
-```
+* [Overview](https://github.com/dobin/detonator/doc/overview) of architecture and stuff (mostly Claude generated. Probably obsolete)
+* 

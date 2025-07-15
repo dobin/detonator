@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Migration script to convert edr_templates.yaml to database profiles
+Migration script to convert profiles_init.yaml to database profiles
 """
 
 import yaml
@@ -41,7 +41,7 @@ def load_yaml_config(file_path: str) -> dict:
 
 def main():
     # Load the YAML data
-    yaml_data = load_yaml_config('edr_templates.yaml')
+    yaml_data = load_yaml_config('profiles_init.yaml')
     
     # Get database session
     db = get_db_for_thread()
@@ -49,7 +49,7 @@ def main():
     try:
         # Initialize profiles from YAML
         initialize_profiles_from_yaml(db, yaml_data)
-        print("Successfully migrated edr_templates.yaml to database profiles")
+        print("Successfully migrated profiles_init.yaml to database profiles")
         
     except Exception as e:
         print(f"Error during migration: {e}")
