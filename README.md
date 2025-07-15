@@ -45,3 +45,14 @@ To scan a file on the previously configured `myfirstvm`:
 $ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
 ```
 
+
+
+## Setup 
+
+### Read only mode
+
+Set the environment variable `DETONATOR_READ_ONLY=true` before starting both the API and UI components.
+
+```bash
+export DETONATOR_READ_ONLY=true
+```

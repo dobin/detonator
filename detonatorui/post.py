@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import requests
 import logging
 import json
-from .config import API_BASE_URL
+from .config import API_BASE_URL, READ_ONLY_MODE
 
 from detonatorapi.utils import filename_randomizer
 
@@ -10,10 +10,30 @@ logger = logging.getLogger(__name__)
 post_bp = Blueprint('post', __name__)
 
 
+def handle_api_response(response, operation_name="operation"):
+    """Helper function to handle API responses consistently"""
+    if response.status_code == 200:
+        return response.json()
+    elif response.status_code == 403:
+        return {
+            "error": "Server is running in read-only mode. Write operations are not permitted.",
+            "read_only_mode": True
+        }, 403
+    else:
+        logger.error(f"API error for {operation_name}: {response.status_code} - {response.text}")
+        return {"error": f"API error: {response.text}"}, response.status_code
+
+
 
 @post_bp.route("/api/upload", methods=["POST"])
 def upload_file():
     """Proxy endpoint to upload files to FastAPI"""
+    if READ_ONLY_MODE:
+        return {
+            "error": "Upload disabled in read-only mode",
+            "read_only_mode": True
+        }, 403
+        
     try:
         files = {}
         data = {}
@@ -36,7 +56,7 @@ def upload_file():
             data['comment'] = request.form['comment']
         
         response = requests.post(f"{API_BASE_URL}/api/files", files=files, data=data)
-        return response.json()
+        return handle_api_response(response, "file upload")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
 
@@ -77,7 +97,7 @@ def upload_file_and_scan():
         
         data['runtime'] = 12
         response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)
-        return response.json()
+        return handle_api_response(response, "file upload and scan")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
 
@@ -86,7 +106,7 @@ def delete_vm(vm_name):
     """Proxy endpoint to delete VM via FastAPI"""
     try:
         response = requests.delete(f"{API_BASE_URL}/api/vms/{vm_name}")
-        return response.json()
+        return handle_api_response(response, "VM deletion")
     except requests.RequestException as e:
         return {"error": f"Could not delete VM: {str(e)}"}, 500
 
@@ -95,10 +115,7 @@ def delete_scan(scan_id):
     """Proxy endpoint to delete scan via FastAPI"""
     try:
         response = requests.delete(f"{API_BASE_URL}/api/scans/{scan_id}")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {"error": f"Failed to delete scan: {response.text}"}, response.status_code
+        return handle_api_response(response, "scan deletion")
     except requests.RequestException as e:
         return {"error": f"Could not delete scan: {str(e)}"}, 500
 
@@ -121,11 +138,7 @@ def file_create_scan(file_id):
         data['runtime'] = 12
         response = requests.post(f"{API_BASE_URL}/api/files/{file_id}/createscan", json=data)
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
-            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+        return handle_api_response(response, "scan creation")
             
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")
@@ -148,11 +161,7 @@ def create_profile():
         logger.info(f"Creating profile with data: {data}")
         response = requests.post(f"{API_BASE_URL}/api/profiles", data=data)
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
-            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+        return handle_api_response(response, "profile creation")
             
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")
@@ -175,11 +184,7 @@ def update_profile(profile_id):
         logger.info(f"Updating profile {profile_id} with data: {data}")
         response = requests.put(f"{API_BASE_URL}/api/profiles/{profile_id}", data=data)
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
-            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+        return handle_api_response(response, "profile update")
             
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")
@@ -192,11 +197,7 @@ def delete_profile(profile_id):
         logger.info(f"Deleting profile {profile_id}")
         response = requests.delete(f"{API_BASE_URL}/api/profiles/{profile_id}")
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
-            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+        return handle_api_response(response, "profile deletion")
             
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")
@@ -243,11 +244,7 @@ def submit_profile():
             logger.info(f"Creating new profile with data: {data}")
             response = requests.post(f"{API_BASE_URL}/api/profiles", data=data)
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
-            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+        return handle_api_response(response, "profile submission")
             
     except requests.RequestException as e:
         logger.error(f"Request error: {str(e)}")

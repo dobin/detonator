@@ -73,7 +73,9 @@
                 {% if scan.rededr_events %}
                 <button onclick="window.open('/semidatasieve/{{ scan.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
                 {% endif %}
-                <button onclick="deleteScan({{ scan.id }})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" title="Delete Scan">Delete</button>
+                {% if not READ_ONLY_MODE %}
+                    <button onclick="deleteScan({{ scan.id }})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" title="Delete Scan">Delete</button>
+                {% endif %}
             </div>
         </div>
     </div>

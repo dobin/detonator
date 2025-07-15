@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from .post import post_bp
 from .get import get_bp
+from .config import READ_ONLY_MODE
 
 
 app = Flask(__name__)
@@ -16,6 +17,9 @@ app.register_blueprint(get_bp)
 # Reduce Flask/Werkzeug HTTP request logging verbosity
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+if READ_ONLY_MODE:
+    logger.warning("🔒 FLASK UI RUNNING IN READ-ONLY MODE - Write operations are disabled")
 
 
 # Helper function for Jinja2 templates
@@ -32,6 +36,7 @@ def get_status_color(status):
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
 app.jinja_env.globals.update(get_status_color=get_status_color)
+app.jinja_env.globals.update(READ_ONLY_MODE=READ_ONLY_MODE)
 
 
 def get_scan_status_color(status):

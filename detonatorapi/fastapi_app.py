@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
@@ -15,13 +16,40 @@ from .vm_monitor import start_vm_monitoring, stop_vm_monitoring, connectors
 from .utils import mylog
 from .db_interface import db_create_file, db_create_scan, db_list_profiles, db_create_profile, db_get_profile_by_id
 
+# Load environment variables
+load_dotenv()
+
+# Configuration
+READ_ONLY_MODE = os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
 
 # Setup logging - reduce verbosity for HTTP requests
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+if READ_ONLY_MODE:
+    logger.warning("🔒 DETONATOR RUNNING IN READ-ONLY MODE - All write operations are disabled")
+
 app = FastAPI(title="Detonator API", version="0.1.0")
+
+
+# Read-only mode middleware
+# Instead of authentication LOL
+@app.middleware("http")
+async def read_only_middleware(request: Request, call_next):
+    if READ_ONLY_MODE and request.method not in ["GET", "HEAD", "OPTIONS"]:
+        # Allow exception for upload_file_and_scan endpoint
+        if request.url.path == "/api/files/upload-and-scan" and request.method == "POST":
+            # This endpoint is allowed even in read-only mode
+            pass
+        else:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Server is running in read-only mode. Write operations are not permitted."}
+            )
+    response = await call_next(request)
+    return response
+
 
 # Add CORS middleware to allow requests from Flask frontend
 app.add_middleware(
@@ -90,7 +118,11 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "service": "detonator-api"}
+    return {
+        "status": "healthy", 
+        "service": "detonator-api",
+        "read_only_mode": READ_ONLY_MODE
+    }
 
 
 # File endpoints
@@ -344,9 +376,9 @@ async def create_profile(
             name=name,
             connector=connector,
             port=port,
-            edr_collector=edr_collector,
+            edr_collector=edr_collector or "",
             data=data_dict,
-            comment=comment
+            comment=comment or ""
         )
         
         # Return the created profile
