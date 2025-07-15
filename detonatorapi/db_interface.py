@@ -94,7 +94,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: Optional[int] =10) -> int:
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10) -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:

@@ -154,7 +154,7 @@ async def upload_file_and_scan(
     file_comment: Optional[str] = Form(None),
     scan_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
-    profile: Optional[str] = Form(None),
+    profile: str = Form(None),
     runtime: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):

@@ -56,24 +56,25 @@ class Scan(Base):
     profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
     comment = Column(Text, default="", nullable=False)
     project = Column(String(100), default="", nullable=False)
+    runtime = Column(Integer, default=10, nullable=False)
 
     # TRACK
-    detonator_srv_logs = Column(Text, nullable=False)          # Detonator API logs
+    detonator_srv_logs = Column(Text, nullable=False)
     status = Column(String(20), default="fresh", nullable=False)
 
     # OUT
-    agent_logs = Column(Text, default="", nullable=False)      # RedEdr result (log, output)
-    rededr_events = Column(Text, default="", nullable=False)   # RedEdr logs, exec output
-    edr_logs = Column(Text, default="", nullable=False)        # AV/EDR logs (Event Viewer)
-    edr_summary = Column(Text, default="", nullable=False)     # Summary of EDR logs
-    result = Column(Text, default="", nullable=False)          # Detected or not (based on agent_logs)
+    agent_logs = Column(Text, default="", nullable=False)
+    rededr_events = Column(Text, default="", nullable=False)
+    edr_logs = Column(Text, default="", nullable=False)
+    edr_summary = Column(Text, default="", nullable=False)
+    result = Column(Text, default="", nullable=False)
     
-    # Set by Instantiate
+    # Set by Instantiate, for Azure
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
+    vm_status = Column(String(20), default="unknown", nullable=False)
 
     # META
-    runtime = Column(Integer, nullable=True)  # Runtime in seconds
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
