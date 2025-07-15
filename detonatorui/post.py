@@ -4,8 +4,11 @@ import logging
 import json
 from .config import API_BASE_URL
 
+from detonatorapi.utils import filename_randomizer
+
 logger = logging.getLogger(__name__)
 post_bp = Blueprint('post', __name__)
+
 
 
 @post_bp.route("/api/upload", methods=["POST"])
@@ -17,7 +20,14 @@ def upload_file():
         
         if 'file' in request.files:
             uploaded_file = request.files['file']
-            files['file'] = (uploaded_file.filename, uploaded_file.stream, uploaded_file.content_type)
+            filename = uploaded_file.filename
+            
+            # Check if filename randomization is enabled
+            randomize = request.form.get('randomize_filename') == 'on'
+            if randomize and filename:
+                filename = filename_randomizer(filename)
+            
+            files['file'] = (filename, uploaded_file.stream, uploaded_file.content_type)
         
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']
@@ -41,7 +51,14 @@ def upload_file_and_scan():
         if 'file' in request.files:
             # fix filename handling
             uploaded_file = request.files['file']
-            files['file'] = (uploaded_file.filename, uploaded_file.stream, uploaded_file.content_type)
+            filename = uploaded_file.filename
+            
+            # Check if filename randomization is enabled
+            randomize = request.form.get('randomize_filename') == 'on'
+            if randomize and filename:
+                filename = filename_randomizer(filename)
+            
+            files['file'] = (filename, uploaded_file.stream, uploaded_file.content_type)
         
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']

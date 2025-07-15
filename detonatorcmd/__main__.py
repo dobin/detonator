@@ -4,8 +4,10 @@ import time
 import requests
 import argparse
 
+from detonatorapi.utils import filename_randomizer
 
-# Default API base URL
+
+# Default API base URL. Getting overwritten by the command line argument.
 API_BASE_URL = "http://localhost:8000"
 DEBUG = False
 
@@ -19,10 +21,18 @@ def get_profiles():
         return {}
 
 
-def upload_file(filename, source_url="", comment=""):
+def upload_file(filename, source_url="", comment="", randomize_filename=False):
     try:
+        if not os.path.exists(filename):
+            print(f"Error: File {filename} does not exist")
+            return None
+
+        upload_filename = os.path.basename(filename)
+        if randomize_filename:
+            upload_filename = filename_randomizer(upload_filename)
+
         with open(filename, "rb") as f:
-            files = {"file": (os.path.basename(filename), f, "application/octet-stream")}
+            files = {"file": (upload_filename, f, "application/octet-stream")}
             data = {
                 "source_url": source_url,
                 "comment": comment
@@ -117,6 +127,8 @@ def main():
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
     parser.add_argument("--api-url", default="http://localhost:8000", help="API base URL")
     parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--randomize-filename", action="store_true", help="Randomize filename before upload")
     
     args = parser.parse_args()
     
@@ -153,7 +165,7 @@ def main():
         #print(f"> Scanning file {filename} with profile {profile_name}")
         
         # Upload file
-        file_info = upload_file(filename, args.source_url, f"CLI {args.comment}")
+        file_info = upload_file(filename, args.source_url, f"CLI {args.comment}", randomize_filename=args.randomize_filename)
         if not file_info:
             print("Failed to upload file")
             return
