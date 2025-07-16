@@ -129,6 +129,7 @@ class AzureManager:
             logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
 
             # DB UPDATE: VM details
+            db_scan.vm_exist = 1
             db_scan.vm_ip_address = public_ip_info.ip_address
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
             db.commit()
@@ -488,6 +489,7 @@ class AzureManager:
         except Exception as e:
             logger.error(f"Error listing VMs: {str(e)}")
             return []
+        
 
     def stop_and_delete_vm(self, vm_name: str) -> bool:
         """Stop and delete a VM and all its resources"""

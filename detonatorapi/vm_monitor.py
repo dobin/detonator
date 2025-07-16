@@ -96,20 +96,9 @@ class VMMonitorTask:
                 continue
             connector: ConnectorBase = connectors.get(scan.profile.connector)
 
-            # Try cleanup old:
-            #   error
-            #   non-finished older than 5 minutes
-            #if status in [ "error" ] or (status not in [ "finished" ] and (datetime.utcnow() - scan.created_at) > timedelta(minutes=VM_DESTROY_AFTER)):
-            #    vm_name = scan.vm_instance_name
-            #    if vm_name and vm_name != "":
-            #        azure_vm_status = self.azure_manager.get_vm_status(vm_name)
-            #        if azure_vm_status in [ "running" ]:
-            #            logger.info(f"Scan {scan_id} is in error state but VM {vm_name} running: stopping VM")
-            #            db_change_status(self.db, scan, "stop")
-            #
-            #        elif azure_vm_status in [ "stopped" ]:
-            #            logger.info(f"Scan {scan_id} is in error state but VM {vm_name} exist: removing VM")
-            #            db_change_status(self.db, scan, "remove")
+            # cleanup failed
+            if status == "error" and scan.vm_exist == 1:
+                db_change_status(self.db, scan, "killing")
 
             # State Machine
             match status:
@@ -147,6 +136,10 @@ class VMMonitorTask:
                 case "removed":
                     db_change_status(self.db, scan, "finished")
 
+                case "kill":
+                    db_change_status(self.db, scan, "killing")
+                    connector.kill(self.db, scan)
+                
 
 # Global VM monitor instance
 vm_monitor = VMMonitorTask()

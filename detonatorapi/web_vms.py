@@ -6,6 +6,7 @@ from .connectors.azure_manager import get_azure_manager
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 @router.get("/vms")
 async def get_vms():
     """Get all VMs in the resource group"""

@@ -25,13 +25,12 @@ def db_change_status(db, db_scan: Scan, status: str, log_message: str = ""):
     db.commit()
 
 
-def db_scan_add_log(db, db_scan, log_messages: List[str]):
-    for log_message in log_messages:
-        if log_message is None or log_message == "":
-            continue
-        log = f"[{datetime.utcnow().isoformat()}] {log_message}"
-        logger.info(log_message)
-        db_scan.detonator_srv_logs += log + "\n"
+def db_scan_add_log(db, db_scan, log_message: str):
+    if log_message is None or log_message == "":
+        return
+    log = f"[{datetime.utcnow().isoformat()}] {log_message}"
+    logger.info(log_message)
+    db_scan.detonator_srv_logs += log + "\n"
 
     db.commit()
 

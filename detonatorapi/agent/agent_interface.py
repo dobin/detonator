@@ -33,17 +33,17 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
         try:
             response = requests.get(url, timeout=3)
             if response.status_code == 200:
-                db_scan_add_log(db, db_scan, [f"Connected to agent at {url} on attempt {attempt + 1}"])
+                db_scan_add_log(db, db_scan, f"Connected to agent at {url} on attempt {attempt + 1}")
                 return True
             else:
-                #db_scan_add_log(db, db_scan, [f"Attempt {attempt + 1}: Failed to connect to agent at {url}: {response.status_code}"])
+                #db_scan_add_log(db, db_scan, f"Attempt {attempt + 1}: Failed to connect to agent at {url}: {response.status_code}")
                 pass
         except requests.RequestException as e:
-            db_scan_add_log(db, db_scan, [f"Attempt {attempt + 1}: Error connecting to agent at {url}: {str(e)}"])
+            db_scan_add_log(db, db_scan, f"Attempt {attempt + 1}: Error connecting to agent at {url}: {str(e)}")
         
         time.sleep(1)
 
-    db_scan_add_log(db, db_scan, [f"Failed to connect to agent at {url} after 10 attempts"])
+    db_scan_add_log(db, db_scan, f"Failed to connect to agent at {url} after 10 attempts")
     return False
 
 
@@ -66,19 +66,19 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agentApi = AgentApi(agent_ip, agent_port)
 
     if not agentApi.StartTrace(filename):
-        db_scan_add_log(thread_db, db_scan, [f"Could not start trace on Agent"])
+        db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
         return False
-    db_scan_add_log(thread_db, db_scan, [f"Started trace for file {filename} on Agent at {agent_ip}"])
+    db_scan_add_log(thread_db, db_scan, f"Started trace for file {filename} on Agent at {agent_ip}")
     time.sleep(1.0)  # let RedEdr boot it up
 
     if not agentApi.ExecFile(filename, file_content):
-        db_scan_add_log(thread_db, db_scan, [f"Could not exec file on Agent"])
+        db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
         return False
-    db_scan_add_log(thread_db, db_scan, [f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds"])
+    db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
     thread_db.commit()
     time.sleep(runtime)
 
-    db_scan_add_log(thread_db, db_scan, [f"Runtime of {runtime} seconds completed, gathering results"])
+    db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
     thread_db.commit()
     rededr_events = agentApi.GetRedEdrEvents()
     agent_logs = agentApi.GetAgentLogs()
@@ -88,14 +88,14 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     if agent_logs is None:
         agent_logs = "No logs available"
-        db_scan_add_log(thread_db, db_scan, ["could not get logs from Agent"])
+        db_scan_add_log(thread_db, db_scan, "could not get logs from Agent")
     if rededr_events is None:
         rededr_events = "No results available"
-        db_scan_add_log(thread_db, db_scan, ["could not get results from Agent"])
+        db_scan_add_log(thread_db, db_scan, "could not get results from Agent")
     if edr_logs is None:
         is_detected = "N/A"
         edr_logs = ""
-        db_scan_add_log(thread_db, db_scan, ["could not get EDR logs from Agent"])
+        db_scan_add_log(thread_db, db_scan, "could not get EDR logs from Agent")
     else:
         # EDR logs summary
         if db_scan.profile.edr_collector == "defender":
@@ -112,10 +112,10 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
             edr_summary = defenderParser.get_summary()
             if defenderParser.is_detected():
                 is_detected = "detected"
-                db_scan_add_log(thread_db, db_scan, ["EDR logs indicate suspicious activity detected"])
+                db_scan_add_log(thread_db, db_scan, "EDR logs indicate suspicious activity detected")
             else:
                 is_detected = "clean"
-                db_scan_add_log(thread_db, db_scan, ["EDR logs indicate clean"])
+                db_scan_add_log(thread_db, db_scan, "EDR logs indicate clean")
                 
     db_scan.edr_logs = edr_logs
     db_scan.edr_summary = edr_summary

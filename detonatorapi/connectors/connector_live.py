@@ -52,3 +52,8 @@ class ConnectorLive(ConnectorBase):
     def remove(self, db, db_scan: Scan):
         # nothing todo here, VM keeps running
         db_change_status(db, db_scan, "finished")
+
+
+    def kill(self, db, db_scan: Scan):
+        # nothing todo here, VM keeps running
+        db_change_status(db, db_scan, "finished")
