@@ -29,7 +29,8 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
             port=profile_config.get('port', 80),
             edr_collector=profile_config.get('edr_collector', ''),
             data=profile_config.get('data', {}),
-            comment=profile_config.get('comment', '')
+            comment=profile_config.get('comment', ''),
+            hidden=profile_config.get('hidden', 0)
         )
         logger.info(f"Initialized profile '{profile_name}' from YAML")
 

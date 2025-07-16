@@ -20,6 +20,9 @@ async def get_profiles(db: Session = Depends(get_db)):
     # Convert to dict format similar to old templates
     result = {}
     for profile in profiles:
+        if profile.hidden != 0:
+            continue
+
         result[profile.name] = {
             "id": profile.id,
             "connector": profile.connector,

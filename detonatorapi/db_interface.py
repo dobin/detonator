@@ -54,7 +54,7 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = "", hidden: int = 0):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
@@ -62,7 +62,8 @@ def db_create_profile(db, name: str, connector: str, port: int, edr_collector: s
         port=port,
         edr_collector=edr_collector,
         comment=comment,
-        data=data
+        data=data,
+        hidden=hidden
     )
     db.add(db_profile)
     db.commit()
