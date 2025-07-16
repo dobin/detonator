@@ -29,9 +29,25 @@ def parse_windows_event(event):
 
 
 class DefenderParser(EdrParser):
-    def __init__(self, edr_data):
-        self.edr_data: str = edr_data
+    def __init__(self):
+        self.edr_data = ""
         self.events: List[Dict] = []  # by self.parse()
+
+
+    def load(self, edr_logs: str):
+        xml_events: str = ""
+        try:
+            edr_logs_obj: Dict = json.loads(edr_logs)
+            xml_events = edr_logs_obj.get("xml_events", "")
+        except Exception as e:
+            logger.error(edr_logs)
+            logger.error(f"Error parsing Defender XML logs: {e}")
+
+        self.edr_data = xml_events
+
+
+    def is_relevant(self) -> bool:
+        return 'http://schemas.microsoft.com/win/2004/08/events/event' in self.edr_data
 
 
     def parse(self) -> bool:

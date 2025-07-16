@@ -2,8 +2,15 @@ from typing import List, Dict
 
 
 class EdrParser:
-    def __init__(self, edr_data: str):
-        self.edr_data: str = edr_data
+    def __init__(self):
+        self.edr_data: str = ""
+
+    def load(self, edr_logs: str):
+        self.edr_data = edr_logs
+        self.events = []
+
+    def is_relevant(self) -> bool:
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def parse(self) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
