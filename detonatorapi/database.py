@@ -13,15 +13,16 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = "profiles"
-    
     id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
     name = Column(String(100), nullable=False, unique=True, index=True)
     connector = Column(String(50), nullable=False)
     port = Column(Integer, nullable=False)
     edr_collector = Column(String(100), nullable=False)
     comment = Column(Text, nullable=True)
     data = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    hidden = Column(Integer, default=0, nullable=False)
     
     # Relationship
     scans = relationship("Scan", back_populates="profile")
@@ -70,9 +71,9 @@ class Scan(Base):
     result = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure
+    vm_exist = Column(Integer, default=0, nullable=False)
     vm_instance_name = Column(String(100), nullable=True)
     vm_ip_address = Column(String(15), nullable=True)
-    vm_status = Column(String(20), default="unknown", nullable=False)
 
     # META
     created_at = Column(DateTime, default=datetime.utcnow)

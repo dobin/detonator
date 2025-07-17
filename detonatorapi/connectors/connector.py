@@ -16,6 +16,9 @@ class ConnectorBase:
     def __init__(self,):
         pass
 
+    def init(self) -> bool:
+        raise NotImplementedError("This method should be overridden by subclasses")
+
     def get_description(self) -> str:
         """Return a description of what this connector does"""
         return "Base connector class"

@@ -16,6 +16,7 @@ app.register_blueprint(get_bp)
 
 # Reduce Flask/Werkzeug HTTP request logging verbosity
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 if READ_ONLY_MODE:

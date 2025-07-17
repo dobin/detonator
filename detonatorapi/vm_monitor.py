@@ -29,11 +29,6 @@ class VMMonitorTask:
         self.db = None
 
 
-    def init(self):
-        """Initialize the VM monitor task"""
-        pass
-    
-
     def start_monitoring(self):
         if self.running:
             return

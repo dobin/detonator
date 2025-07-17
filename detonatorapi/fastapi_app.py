@@ -62,9 +62,8 @@ async def startup_event():
     try:
         # Start VM monitoring
         start_vm_monitoring()
-        logger.info("VM monitoring started")
     except Exception as e:
-        logger.error(f"Error during startup: {str(e)}")
+        logger.error(f"Error during starting vm_monitoring: {str(e)}")
 
 
 @app.on_event("shutdown")

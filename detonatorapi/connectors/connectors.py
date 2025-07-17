@@ -27,7 +27,7 @@ class Connectors:
         return self.connectors.get(name, None)
     
     
-    def get_all(self) -> dict:
+    def get_all(self) -> dict[str, ConnectorBase]:
         """Get all available connectors"""
         return self.connectors
 

@@ -4,6 +4,7 @@ from typing import List
 from datetime import datetime
 import logging
 
+from detonatorapi.db_interface import db_change_status
 from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan
 from .connectors.azure_manager import get_azure_manager
@@ -78,26 +79,8 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     
-    if not db_scan.vm_instance_name:
-        raise HTTPException(status_code=400, detail="No VM associated with this scan")
-    
-    try:
-        azure_manager = get_azure_manager()
-        if not azure_manager:
-            return {"message": "Azure not configured"}
-        shutdown_success = azure_manager.shutdown_vm(db_scan.vm_instance_name)
-        
-        if shutdown_success:
-            db_scan.detonator_srv_logs += f"Manual VM shutdown initiated\n"
-        else:
-            db_scan.detonator_srv_logs += f"Manual VM shutdown failed\n"
-        db.commit()
-        
-        return {"message": "VM shutdown initiated" if shutdown_success else "VM shutdown failed"}
-        
-    except Exception as e:
-        logger.error(f"Error shutting down VM for scan {scan_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to shutdown VM: {str(e)}")
+    db_change_status(db, db_scan, "instantiate")
+    return {"message": "VM shutdown initiated"}
 
 
 @router.delete("/scans/{scan_id}")
@@ -106,15 +89,6 @@ async def delete_scan(scan_id: int, db: Session = Depends(get_db)):
     db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
-    
-    # If scan has a VM running, attempt to shut it down first
-    if db_scan.vm_instance_name and db_scan.status == "running":
-        try:
-            azure_manager = get_azure_manager()
-            if azure_manager:
-                azure_manager.shutdown_vm(db_scan.vm_instance_name)
-        except Exception as e:
-            logger.warning(f"Failed to shutdown VM {db_scan.vm_instance_name} when deleting scan {scan_id}: {str(e)}")
     
     db.delete(db_scan)
     db.commit()

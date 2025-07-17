@@ -14,6 +14,9 @@ class ConnectorLive(ConnectorBase):
     def __init__(self):
         pass
 
+    def init(self) -> bool:
+        return True
+
     def get_description(self) -> str:
         """Return a description of what this connector does"""
         return "Connects to already running virtual machine"

@@ -11,8 +11,11 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 from detonatorapi.utils import mylog, scanid_to_vmname
 import uuid
+from dotenv import load_dotenv
 
 from detonatorapi.database import Scan
+from detonatorapi.settings import AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION
+
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
@@ -48,6 +51,7 @@ unattend_xml_stuff = '''
     </SynchronousCommand>
 </FirstLogonCommands>
 '''
+
 
 
 class AzureManager:
@@ -503,11 +507,15 @@ class AzureManager:
 azure_manager: Optional[AzureManager] = None
 
 
-def initialize_azure_manager(subscription_id: str, resource_group: str, location: str = "East US"):
+def initialize_azure_manager():
     """Initialize the global VM manager instance"""
     global azure_manager
-    azure_manager = AzureManager(subscription_id, resource_group, location)
-    return azure_manager
+    if not AZURE_SUBSCRIPTION_ID or AZURE_SUBSCRIPTION_ID == "":
+        logger.info("Azure subscription ID is not configured.")
+        return True
+
+    azure_manager = AzureManager(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION)
+    return True
 
 
 def get_azure_manager() -> AzureManager|None:

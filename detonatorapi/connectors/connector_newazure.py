@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from detonatorapi.database import get_db_for_thread, Scan
 from detonatorapi.utils import mylog, scanid_to_vmname
 from detonatorapi.db_interface import db_change_status, db_scan_add_log
+from detonatorapi.connectors.azure_manager import initialize_azure_manager
 
 from .azure_manager import get_azure_manager
 from .connector import ConnectorBase
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 class ConnectorNewAzure(ConnectorBase):
     def __init__(self):
         pass
+
+    def init(self) -> bool:
+        return initialize_azure_manager()
 
     def get_description(self) -> str:
         """Return a description of what this connector does"""
