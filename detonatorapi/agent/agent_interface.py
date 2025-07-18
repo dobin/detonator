@@ -89,7 +89,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agent_logs = agentApi.GetAgentLogs()
     edr_logs = agentApi.GetEdrLogs()
     edr_summary = ""
-    is_detected = ""
+    result_is_detected = ""
 
     if agent_logs is None:
         agent_logs = "No logs available"
@@ -98,7 +98,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         rededr_events = "No results available"
         db_scan_add_log(thread_db, db_scan, "could not get results from Agent")
     if edr_logs is None:
-        is_detected = "N/A"
+        result_is_detected = "N/A"
         edr_logs = ""
         db_scan_add_log(thread_db, db_scan, "could not get EDR logs from Agent")
     else:
@@ -110,10 +110,10 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
                 if parser.parse():
                     edr_summary = parser.get_summary()
                     if parser.is_detected():
-                        is_detected = "detected"
+                        result_is_detected = "detected"
                         db_scan_add_log(thread_db, db_scan, "EDR logs indicate suspicious activity detected")
                     else:
-                        is_detected = "clean"
+                        result_is_detected = "clean"
                         db_scan_add_log(thread_db, db_scan, "EDR logs indicate clean")
                 else:
                     db_scan_add_log(thread_db, db_scan, "EDR logs could not be parsed")
@@ -123,7 +123,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     db_scan.edr_summary = edr_summary
     db_scan.agent_logs = agent_logs
     db_scan.rededr_events = rededr_events
-    db_scan.result = is_detected
+    db_scan.result = result_is_detected
     db_scan.completed_at = datetime.utcnow()
     thread_db.commit()
 

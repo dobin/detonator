@@ -12,7 +12,7 @@ def reparse_edr_logs():
         edr_logs = scan.edr_logs
 
         edr_summary = ""
-        is_detected = ""
+        result_is_detected = ""
 
         # Check with all parsers
         for parser in parsers:
@@ -21,16 +21,16 @@ def reparse_edr_logs():
                 if parser.parse():
                     edr_summary = parser.get_summary()
                     if parser.is_detected():
-                        is_detected = "detected"
+                        result_is_detected = "detected"
                     else:
-                        is_detected = "clean"
+                        result_is_detected = "clean"
                 break
 
-        print(f"Reparsed scan {scan.id}: {is_detected}")
-        print(f"  {edr_summary}")
+        print(f"Reparsed scan {scan.id}: {result_is_detected}")
+        #print(f"  {edr_summary}")
 
         scan.edr_summary = edr_summary
-        scan.is_detected = is_detected
+        scan.result = result_is_detected
         db.commit()
 
     db.close()

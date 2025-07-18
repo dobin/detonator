@@ -35,6 +35,9 @@ class DefenderParser(EdrParser):
 
 
     def load(self, edr_logs: str):
+        self.edr_data = ""
+        self.events = []
+
         xml_events: str = ""
         try:
             edr_logs_obj: Dict = json.loads(edr_logs)
@@ -47,7 +50,8 @@ class DefenderParser(EdrParser):
 
 
     def is_relevant(self) -> bool:
-        return 'http://schemas.microsoft.com/win/2004/08/events/event' in self.edr_data
+        #return 'http://schemas.microsoft.com/win/2004/08/events/event' in self.edr_data
+        return '<Events>' in self.edr_data
 
 
     def parse(self) -> bool:
