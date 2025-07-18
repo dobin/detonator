@@ -11,7 +11,7 @@ Detonate your MalDev payload in a VM.
 
 ```yaml
 myfirstvm:
-  type: running
+  type: live
   edr_collector: defender
   rededr: true
   comment: My First Detonator VM
@@ -21,16 +21,22 @@ myfirstvm:
 
 4) Load the profiles from `profiles.yaml` into the DB:
 ```
-$ poetry run python3 migrate_to_profiles.py
+
 ```
 
 Run the server:
 ```bash
+# Install Deps
+$ apt install python3-poetry
+
+# Create DB
+$ poetry run python3 migrate_to_profiles.py
+
 # Install dependencies
 $ poetry install
 
 # Run both servers
-$ poetry run python -m detonator both
+$ poetry run python -m detonator
 ```
 
 Access the web interface on `http://localhost:5000`.
