@@ -1,6 +1,6 @@
 {% if scan %}
 <div class="space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div><strong>Scan ID:</strong> {{ scan.id }}</div>
         <div><strong>File ID:</strong> {{ scan.file_id }}</div>
         {% if scan.file and scan.file.comment %}
@@ -17,29 +17,93 @@
         <div><strong>Result:</strong> {{ scan.result or '' }}</div>
     </div>
     
-    {% if scan.detonator_srv_logs %}
-    <div>
-        <strong>Detonator Server Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ scan.detonator_srv_logs }}</pre>
+    <!-- Logs Tabs -->
+    {% if scan.detonator_srv_logs or log or scan.edr_summary %}
+    <div class="w-full">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                {% if scan.detonator_srv_logs %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" data-tab="detonator-logs" onclick="showTab('detonator-logs', this)">
+                    Detonator Server Logs
+                </button>
+                {% endif %}
+                {% if log %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="execution-logs" onclick="showTab('execution-logs', this)">
+                    Execution Logs
+                </button>
+                {% endif %}
+                {% if scan.edr_summary %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="edr-summary" onclick="showTab('edr-summary', this)">
+                    EDR Summary
+                </button>
+                {% endif %}
+                {% if scan.edr_summary %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="edr-logs" onclick="showTab('edr-logs', this)">
+                    EDR Raw
+                </button>
+                {% endif %}
+            </nav>
+        </div>
+        
+        <div class="mt-4">
+            {% if scan.detonator_srv_logs %}
+            <div id="detonator-logs" class="tab-content">
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom>{{ scan.detonator_srv_logs }}</pre>
+            </div>
+            {% endif %}
+            
+            {% if log %}
+            <div id="execution-logs" class="tab-content hidden">
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                >{{ log }}
+                  
+
+                  {{ output }}
+                </pre>
+            </div>
+            {% endif %}
+            
+            {% if scan.edr_summary %}
+            <div id="edr-summary" class="tab-content hidden">
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom>{{ scan.edr_summary }}</pre>
+            </div>
+            {% endif %}
+
+            {% if scan.edr_logs %}
+            <div id="edr-logs" class="tab-content hidden">
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
+                    >{{ scan.edr_logs }}</pre>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% endif %}
     
-    {% if log %}
-    <div>
-        <strong>Execution Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{ log }}
-{{ output }}
-        </pre>
-    </div>
-    {% endif %}
-    
-    {% if scan.edr_summary %}
-    <div>
-        <strong>EDR Logs:</strong>
-        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
-        >{{ scan.edr_summary }}
-        </pre>
-    </div>
+    <script>
+        function showTab(tabId, clickedButton) {
+            // Hide all tab contents
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active styles from all buttons
+            const allButtons = document.querySelectorAll('.tab-button');
+            allButtons.forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show target tab
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+            }
+            
+            // Style active button
+            clickedButton.classList.remove('border-transparent', 'text-gray-500');
+            clickedButton.classList.add('border-blue-500', 'text-blue-600');
+        }
+    </script>
     {% endif %}
     
     <div class="text-sm text-gray-500">
@@ -51,13 +115,6 @@
     </div>
 </div>
 
-<script>
-// Auto-scroll log containers to bottom
-const logContainers = document.querySelectorAll('[data-scroll-bottom]');
-logContainers.forEach(container => {
-    container.scrollTop = container.scrollHeight;
-});
-</script>
 {% else %}
 <div class="text-center text-red-500">
     <p>Error: Could not load scan details.</p>

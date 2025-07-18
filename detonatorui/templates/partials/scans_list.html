@@ -55,12 +55,12 @@
                     <div class="col-span-9">
                         {% if scan.result %}
                         <strong>EDR Logs:</strong>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" onload="this.scrollTop = this.scrollHeight;" data-scroll-bottom
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
                          >{{scan.edr_summary}}
                         </pre>
                         {% else %}
                         <strong>Detonator Server Logs:</strong>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" onload="this.scrollTop = this.scrollHeight;" data-scroll-bottom
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
                         >{{scan.detonator_srv_logs}}
                         </pre>
                         {% endif %}
@@ -83,22 +83,6 @@
 </div>
 
 <script>
-// Auto-scroll log containers to bottom
-document.addEventListener('DOMContentLoaded', function() {
-    const logContainers = document.querySelectorAll('[data-scroll-bottom]');
-    logContainers.forEach(container => {
-        container.scrollTop = container.scrollHeight;
-    });
-});
-
-// Also scroll when HTMX content is swapped
-document.body.addEventListener('htmx:afterSwap', function() {
-    const logContainers = document.querySelectorAll('[data-scroll-bottom]');
-    logContainers.forEach(container => {
-        container.scrollTop = container.scrollHeight;
-    });
-});
-
 // Define deleteScan function globally if not already defined
 if (typeof deleteScan === 'undefined') {
     window.deleteScan = function(scanId) {
