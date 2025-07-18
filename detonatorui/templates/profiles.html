@@ -200,7 +200,7 @@ function loadConnectors() {
 }
 
 // Update connector comment display when selection changes
-function updateConnectorComment() {
+function updateConnectorComment(autoFillData = true) {
     const connectorSelect = document.getElementById('connector');
     const commentDiv = document.getElementById('connector-comment');
     const dataField = document.getElementById('data');
@@ -219,8 +219,8 @@ function updateConnectorComment() {
             commentDiv.style.display = 'none';
         }
         
-        // Update data field with sample data
-        if (sampleData && Object.keys(sampleData).length > 0) {
+        // Update data field with sample data only if autoFillData is true
+        if (autoFillData && sampleData && Object.keys(sampleData).length > 0) {
             dataField.value = JSON.stringify(sampleData, null, 2);
             
             // Brief visual feedback that the field was auto-filled
@@ -278,7 +278,7 @@ function editProfile(profileName, profileData) {
         document.getElementById('profile-id').value = profileData.id;
         
         // Update connector comment display after form is populated
-        updateConnectorComment();
+        updateConnectorComment(false);
     }).catch(error => {
         console.error('Error loading connectors for edit:', error);
         // Fallback: populate form anyway
