@@ -1,7 +1,6 @@
 *.pyc
 *.db
 service-account-key.json
-tools/
 bak/
 *.bak
 config.env
