@@ -54,12 +54,12 @@
                     </div>
                     <div class="col-span-9">
                         {% if scan.result %}
-                        <strong>EDR Logs:</strong>
+                        <strong>EDR Summary:</strong>
                         <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
                          >{{scan.edr_summary}}
                         </pre>
                         {% else %}
-                        <strong>Detonator Server Logs:</strong>
+                        <strong>Detonator Logs:</strong>
                         <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
                         >{{scan.detonator_srv_logs}}
                         </pre>

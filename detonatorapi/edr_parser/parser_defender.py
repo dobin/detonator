@@ -65,7 +65,7 @@ class DefenderParser(EdrParser):
             event_data = parsed_event.get("EventData", {})
 
             # Make sure we have a detection
-            if not 'Thread ID' in event_data:
+            if not 'Threat ID' in event_data:
                 continue
 
             category_name = event_data.get("Category Name", "Unknown")
@@ -95,8 +95,11 @@ class DefenderParser(EdrParser):
                 "type_name": type_name,
                 "path": path,
             }
-            self.events.append(event)
 
+            # check if we didnt already have this event in self.events
+            if not any(e.get('threat_name') == threat_name for e in self.events):
+                self.events.append(event)
+                                                                 
         return True
     
 
