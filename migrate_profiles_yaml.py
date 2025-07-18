@@ -5,6 +5,7 @@ Migration script to convert profiles_init.yaml to database profiles
 
 import yaml
 import logging
+import os
 
 from detonatorapi.database import get_db_for_thread
 from detonatorapi.db_interface import db_create_profile, db_get_profile_by_name
@@ -41,12 +42,17 @@ def load_yaml_config(file_path: str) -> dict:
         return yaml.safe_load(file)
 
 def main():
+    # check if the file exists
+    if not os.path.exists('profiles_init.yaml'):
+        print("Error: profiles_init.yaml not found")
+        print("Copy profiles_init.yaml.example to profiles_init.yaml and edit it")
+        return
+
     # Load the YAML data
     yaml_data = load_yaml_config('profiles_init.yaml')
     
     # Get database session
     db = get_db_for_thread()
-    
     try:
         # Initialize profiles from YAML
         initialize_profiles_from_yaml(db, yaml_data)
