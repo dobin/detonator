@@ -64,6 +64,10 @@ class DefenderParser(EdrParser):
             parsed_event: Dict = parse_windows_event(xml_event)
             event_data = parsed_event.get("EventData", {})
 
+            # Make sure we have a detection
+            if not 'Thread ID' in event_data:
+                continue
+
             category_name = event_data.get("Category Name", "Unknown")
             detection_time = event_data.get("Detection Time", "Unknown")
             engine_version = event_data.get("Engine Version", "Unknown")
