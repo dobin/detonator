@@ -94,6 +94,9 @@ def upload_file_and_scan():
             
         if 'profile_name' in request.form:
             data['profile'] = request.form['profile_name']
+            
+        if 'password' in request.form:
+            data['password'] = request.form['password']
         
         data['runtime'] = 12
         response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)

@@ -79,9 +79,10 @@ class FileResponse(FileBase):
 class FileCreateScan(BaseModel):
     # file_id comes from path parameter
     project: Optional[str] = None
-    profile_name: Optional[str] = None
+    profile_name: str
     runtime: Optional[int] = 10
     comment: Optional[str] = None
+    password: Optional[str] = None
 
 # update_scan() request
 class ScanUpdate(BaseModel):

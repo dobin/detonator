@@ -9,6 +9,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -46,6 +47,13 @@
                         <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
                     {% else %}
                         <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    {% if template.require_password %}
+                        <div class="text-sm text-gray-900">Yes</div>
+                    {% else %}
+                        <span class="text-gray-400">No</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">

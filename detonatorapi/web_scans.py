@@ -8,7 +8,7 @@ from detonatorapi.db_interface import db_change_status
 from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan
 from .connectors.azure_manager import get_azure_manager
-from .db_interface import db_create_scan
+from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -54,6 +54,15 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     db_file = db.query(File).filter(File.id == file_id).first()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
+    
+    # Check if allowed
+    profile = db_get_profile_by_name(db, scan_data.profile)
+    if not profile:
+        raise HTTPException(status_code=400, detail="Profile not found")
+    
+    if len(scan_data.password) > 0:
+        if not password or password != scan_data.password:
+            raise HTTPException(status_code=400, detail="Invalid password for profile")
     
     # Extract data with defaults
     profile_name = scan_data.profile_name or ""

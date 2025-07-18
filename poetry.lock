@@ -966,6 +966,18 @@ msal = ">=1.29,<2"
 portalocker = ["portalocker (>=1.4,<4)"]
 
 [[package]]
+name = "proxmoxer"
+version = "2.2.0"
+description = "Python Wrapper for the Proxmox 2.x API (HTTP and SSH)"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "proxmoxer-2.2.0-py3-none-any.whl", hash = "sha256:7e4431fd38e1a9321eedf6d860ddc373fc2b29ce1845fa8b072d7580d99f6b90"},
+    {file = "proxmoxer-2.2.0.tar.gz", hash = "sha256:3ed63a58e5c0822841afdb3801f9d913a4996955c1c54f7319b5842ba2615006"},
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 description = "C parser in Python"
@@ -1809,4 +1821,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "07a0d3b5a29bd779c340264f2225f3242df6234957e937c6f8ab4689ee7fc9ab"
+content-hash = "c7c8230d43a3175555a8331ccc4ec5e8f9928d9244c84e7ab5a9a0d8adbca554"

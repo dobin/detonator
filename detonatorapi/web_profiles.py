@@ -17,19 +17,19 @@ logger = logging.getLogger(__name__)
 async def get_profiles(db: Session = Depends(get_db)):
     """Get available profiles"""
     profiles = db_list_profiles(db)
+
     # Convert to dict format similar to old templates
     result = {}
     for profile in profiles:
-        if profile.hidden != 0:
-            continue
-
+        requires_password: bool = len(profile.password) > 0
         result[profile.name] = {
             "id": profile.id,
             "connector": profile.connector,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
             "comment": profile.comment,
-            "data": profile.data
+            "data": profile.data,
+            "require_password": requires_password,
         }
     return result
 
@@ -41,6 +41,7 @@ async def create_profile(
     port: int = Form(...),
     edr_collector: Optional[str] = Form(""),
     comment: Optional[str] = Form(""),
+    password: Optional[str] = Form(""),
     data: str = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -65,7 +66,8 @@ async def create_profile(
             port=port,
             edr_collector=edr_collector or "",
             data=data_dict,
-            comment=comment or ""
+            comment=comment or "",
+            password=password or ""
         )
         
         # Return the created profile
@@ -139,6 +141,7 @@ async def update_profile(
     edr_collector: str = Form(...),
     comment: str = Form(""),
     data: str = Form(...),
+    password: Optional[str] = Form(""),
     db: Session = Depends(get_db)
 ):
     """Update a profile"""
@@ -179,6 +182,7 @@ async def update_profile(
             "edr_collector": profile.edr_collector,
             "comment": profile.comment,
             "data": profile.data,
+            "password": password or "",
             "created_at": profile.created_at
         }
         

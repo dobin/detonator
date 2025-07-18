@@ -53,7 +53,7 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = "", hidden: int = 0):
+def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, comment: str = "", password: str = ""):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
@@ -62,7 +62,7 @@ def db_create_profile(db, name: str, connector: str, port: int, edr_collector: s
         edr_collector=edr_collector,
         comment=comment,
         data=data,
-        hidden=hidden
+        password=password
     )
     db.add(db_profile)
     db.commit()
@@ -94,7 +94,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10) -> int:
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, password: str = "") -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:

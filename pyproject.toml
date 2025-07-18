@@ -19,7 +19,8 @@ dependencies = [
     "azure-mgmt-compute>=30.0.0",
     "azure-mgmt-network>=25.0.0",
     "azure-mgmt-resource>=23.0.0",
-    "python-dotenv (>=1.1.1,<2.0.0)"
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "proxmoxer (>=2.2.0,<3.0.0)"
 ]
 
 

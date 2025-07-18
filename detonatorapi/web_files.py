@@ -5,7 +5,7 @@ import logging
 
 from .database import get_db, File, Scan
 from .schemas import FileResponse, FileWithScans, NewScanResponse
-from .db_interface import db_create_file, db_create_scan
+from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -40,25 +40,31 @@ async def upload_file_and_scan(
     scan_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
     profile: str = Form(None),
+    password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
     
+    # Check if allowed
+    profile = db_get_profile_by_name(db, profile)
+    if not profile:
+        raise HTTPException(status_code=400, detail="Profile not found")
+    
+    if len(profile.password) > 0:
+        if not password or password != profile.password:
+            raise HTTPException(status_code=400, detail="Invalid password for profile")
+
     # DB: Create File
     actual_filename = file.filename
     if not actual_filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     logger.info(f"Uploading file: {actual_filename}")
-
-    content = await file.read()
-    file_id = db_create_file(db, actual_filename, content, source_url or "", file_comment or "")
+    file_content = await file.read()
+    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "")
 
     # DB: Create scan record (auto-scan)
-    if profile:
-        scan_id = db_create_scan(db, file_id, profile, scan_comment or "", project or "", runtime or 10)
-    else:
-        raise HTTPException(status_code=400, detail="Profile is required")
+    scan_id = db_create_scan(db, file_id, profile, scan_comment or "", project or "", runtime or 10)
 
     data = { 
         "file_id": file_id,

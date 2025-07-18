@@ -2,6 +2,7 @@ live_rededr:
   connector: Live
   comment: win10 defender rededr
   ip: 192.168.1.1
+  password: secret
 
 new_defender:
   connector: NewAzure

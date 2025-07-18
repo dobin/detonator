@@ -130,9 +130,11 @@ def scan_details_template(scan_id):
     log = ""
     output = ""
     if scan:
-        agent_logs: Dict = json.loads(scan.get("agent_logs", ""))
-        log = "\n".join(agent_logs.get("log", []))
-        output = agent_logs.get("output", "")
+        agent_logs = scan.get("agent_logs", "")
+        if len(agent_logs) > 0:
+            agent_logs: Dict = json.loads(agent_logs)
+            log = "\n".join(agent_logs.get("log", []))
+            output = agent_logs.get("output", "")
         
     return render_template("partials/scan_details.html", 
                            scan=scan,

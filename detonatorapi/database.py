@@ -22,7 +22,7 @@ class Profile(Base):
     edr_collector = Column(String(100), nullable=False)
     comment = Column(Text, nullable=True)
     data = Column(JSON, nullable=False)
-    hidden = Column(Integer, default=0, nullable=False)
+    password = Column(String(255), default="", nullable=False)
     
     # Relationship
     scans = relationship("Scan", back_populates="profile")

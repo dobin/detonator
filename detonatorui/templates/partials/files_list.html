@@ -1,13 +1,5 @@
 {% if files|length == 0 %}
 <div class="text-center ray-500 py-8">
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        onclick="createScan({{ file.id }})"
-                        class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                    >
-                        Create Scan
-                    </button>
-                {% endif %}
     No files uploaded yet. <a href="/upload" class="text-blue-500 hover:underline">Upload your first file</a>.
 </div>
 {% else %}
