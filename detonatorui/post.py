@@ -93,7 +93,7 @@ def upload_file_and_scan():
             data['project'] = request.form['project']
             
         if 'profile_name' in request.form:
-            data['profile'] = request.form['profile_name']
+            data['profile_name'] = request.form['profile_name']
             
         if 'password' in request.form:
             data['password'] = request.form['password']

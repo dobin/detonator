@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 import logging
 
-from .database import get_db, File, Scan
+from .database import get_db, File, Scan, Profile
 from .schemas import FileResponse, FileWithScans, NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 
@@ -39,7 +39,7 @@ async def upload_file_and_scan(
     file_comment: Optional[str] = Form(None),
     scan_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
-    profile: str = Form(None),
+    profile_name: str = Form(...),
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
     db: Session = Depends(get_db),
@@ -47,10 +47,9 @@ async def upload_file_and_scan(
     """Upload a file and automatically create a scan with Azure VM"""
     
     # Check if allowed
-    profile = db_get_profile_by_name(db, profile)
+    profile: Profile = db_get_profile_by_name(db, profile_name)
     if not profile:
-        raise HTTPException(status_code=400, detail="Profile not found")
-    
+        raise HTTPException(status_code=400, detail=f"Profile not found: {profile_name}")
     if len(profile.password) > 0:
         if not password or password != profile.password:
             raise HTTPException(status_code=400, detail="Invalid password for profile")
@@ -64,7 +63,7 @@ async def upload_file_and_scan(
     file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "")
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, file_id, profile, scan_comment or "", project or "", runtime or 10)
+    scan_id = db_create_scan(db, file_id, profile_name, scan_comment or "", project or "", runtime or 10)
 
     data = { 
         "file_id": file_id,
