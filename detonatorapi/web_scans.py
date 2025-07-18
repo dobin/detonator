@@ -56,11 +56,11 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
         raise HTTPException(status_code=404, detail="File not found")
     
     # Check if allowed
-    profile = db_get_profile_by_name(db, scan_data.profile)
+    profile = db_get_profile_by_name(db, scan_data.profile_name)
     if not profile:
         raise HTTPException(status_code=400, detail="Profile not found")
     
-    if len(scan_data.password) > 0:
+    if scan_data.password and len(scan_data.password) > 0:
         if not password or password != scan_data.password:
             raise HTTPException(status_code=400, detail="Invalid password for profile")
     
