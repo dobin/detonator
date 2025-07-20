@@ -54,6 +54,7 @@ app.jinja_env.globals.update(get_scan_status_color=get_scan_status_color)
 
 
 # Add datetime formatting filter
+@app.template_filter('strftime')
 def strftime_filter(value, format='%Y-%m-%d %H:%M:%S'):
     """Format datetime objects in templates"""
     if isinstance(value, str):
@@ -63,7 +64,21 @@ def strftime_filter(value, format='%Y-%m-%d %H:%M:%S'):
             return value
     return value.strftime(format)
 
-app.jinja_env.filters['strftime'] = strftime_filter
+# decode JSON strings in templates
+@app.template_filter('from_json')
+def from_json_filter(s):
+    import json
+    return json.loads(s)
+
+# Pretty print JSON in templates
+@app.template_filter('pretty_json')
+def pretty_json_filter(s):
+    import json
+    try:
+        obj = json.loads(s)
+        return json.dumps(obj, indent=4)
+    except Exception:
+        return s  # fallback: return original string if invalid
 
 
 # Serve the static files

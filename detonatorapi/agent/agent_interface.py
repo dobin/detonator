@@ -85,40 +85,55 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
     thread_db.commit()
+
     rededr_events = agentApi.GetRedEdrEvents()
     agent_logs = agentApi.GetAgentLogs()
+    execution_logs = agentApi.GetExecutionLogs()
     edr_logs = agentApi.GetEdrLogs()
-    edr_summary = ""
-    result_is_detected = ""
+    edr_summary = ""  # will be generated
+    result_is_detected = ""  # will be generated
 
     if agent_logs is None:
-        agent_logs = "No logs available"
-        db_scan_add_log(thread_db, db_scan, "could not get logs from Agent")
+        agent_logs = "No Agent logs available"
+        db_scan_add_log(thread_db, db_scan, "could not get Agent logs from Agent")
     if rededr_events is None:
-        rededr_events = "No results available"
-        db_scan_add_log(thread_db, db_scan, "could not get results from Agent")
+        rededr_events = "No RedEdr logs available"
+        db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent")
+    if execution_logs is None:
+        execution_logs = "No Execution logs available"
+        db_scan_add_log(thread_db, db_scan, "could not get Execution logs from Agent")
     if edr_logs is None:
         result_is_detected = "N/A"
         edr_logs = ""
-        db_scan_add_log(thread_db, db_scan, "could not get EDR logs from Agent")
+        db_scan_add_log(thread_db, db_scan, "No EDR logs from Agent")
     else:
-        # EDR logs summary
-        for parser in parsers:
-            parser.load(edr_logs)
-            if parser.is_relevant():
-                db_scan_add_log(thread_db, db_scan, f"Using parser {parser.__class__.__name__} for EDR logs")
-                if parser.parse():
-                    edr_summary = parser.get_summary()
-                    if parser.is_detected():
-                        result_is_detected = "detected"
-                        db_scan_add_log(thread_db, db_scan, "EDR logs indicate suspicious activity detected")
-                    else:
-                        result_is_detected = "clean"
-                        db_scan_add_log(thread_db, db_scan, "EDR logs indicate clean")
-                else:
-                    db_scan_add_log(thread_db, db_scan, "EDR logs could not be parsed")
-                break
+        # get the actual EDR log
+        edr_plugin_log: str = ""
+        try:
+            edr_plugin_log = json.loads(edr_logs).get("edr_logs", "")
 
+            # EDR logs summary
+            for parser in parsers:
+                parser.load(edr_plugin_log)
+                if parser.is_relevant():
+                    db_scan_add_log(thread_db, db_scan, f"Using parser {parser.__class__.__name__} for EDR logs")
+                    if parser.parse():
+                        edr_summary = parser.get_summary()
+                        if parser.is_detected():
+                            result_is_detected = "detected"
+                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate suspicious activity detected")
+                        else:
+                            result_is_detected = "clean"
+                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate clean")
+                    else:
+                        db_scan_add_log(thread_db, db_scan, "EDR logs could not be parsed")
+                    break
+
+        except Exception as e:
+            logger.error(edr_logs)
+            logger.error(f"Error parsing Defender XML logs: {e}")
+
+    db_scan.execution_logs = execution_logs
     db_scan.edr_logs = edr_logs
     db_scan.edr_summary = edr_summary
     db_scan.agent_logs = agent_logs

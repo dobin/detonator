@@ -23,22 +23,41 @@
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                 {% if scan.detonator_srv_logs %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" data-tab="detonator-logs" onclick="showTab('detonator-logs', this)">
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" 
+                    data-tab="detonator-logs" onclick="showTab('detonator-logs', this)"
+                >
                     Detonator Server Logs
                 </button>
                 {% endif %}
-                {% if log %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="execution-logs" onclick="showTab('execution-logs', this)">
+
+                {% if scan.agent_logs %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="agent-logs" onclick="showTab('agent-logs', this)"
+                >
+                    Agent Logs
+                </button>
+                {% endif %}
+
+                {% if scan.execution_logs %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="execution-logs" onclick="showTab('execution-logs', this)"
+                >
                     Execution Logs
                 </button>
                 {% endif %}
+
                 {% if scan.edr_summary %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="edr-summary" onclick="showTab('edr-summary', this)">
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="edr-summary" onclick="showTab('edr-summary', this)"
+                >
                     EDR Summary
                 </button>
                 {% endif %}
+
                 {% if scan.edr_logs %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="edr-logs" onclick="showTab('edr-logs', this)">
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="edr-logs" onclick="showTab('edr-logs', this)"
+                >
                     EDR Raw
                 </button>
                 {% endif %}
@@ -48,31 +67,38 @@
         <div class="mt-4">
             {% if scan.detonator_srv_logs %}
             <div id="detonator-logs" class="tab-content">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom>{{ scan.detonator_srv_logs }}</pre>
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                >{{ scan.detonator_srv_logs }}</pre>
+            </div>
+            {% endif %}
+
+            {% if scan.agent_logs %}
+            <div id="agent-logs" class="tab-content hidden">
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                >{{ scan.agent_logs|pretty_json }}
+                </pre>
             </div>
             {% endif %}
             
-            {% if log %}
+            {% if scan.execution_logs %}
             <div id="execution-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
-                >{{ log }}
-                  
-
-                  {{ output }}
+                >{{ scan.execution_logs|pretty_json }}
                 </pre>
             </div>
             {% endif %}
             
             {% if scan.edr_summary %}
             <div id="edr-summary" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom>{{ scan.edr_summary }}</pre>
+                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                >{{ scan.edr_summary }}</pre>
             </div>
             {% endif %}
 
             {% if scan.edr_logs %}
             <div id="edr-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
-                    >{{ scan.edr_logs }}</pre>
+                    >{{ scan.edr_logs|pretty_json }}</pre>
             </div>
             {% endif %}
         </div>

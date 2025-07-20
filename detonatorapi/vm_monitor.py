@@ -52,7 +52,6 @@ class VMMonitorTask:
         # IN-thread initialization
         self.db = get_db_for_thread()
 
-
         while self.running:
             try:
                 self.check_all_scans()

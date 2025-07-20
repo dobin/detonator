@@ -120,26 +120,8 @@ def scan_details_template(scan_id):
     except requests.RequestException:
         scan = None
 
-    # Convert execution logs
-    # {
-    #    "rededr_events": {
-    #        "log": ["log line 1", "log line 2"],
-    #        "output": "command output here"
-    #    }
-    # }
-    log = ""
-    output = ""
-    if scan:
-        agent_logs = scan.get("agent_logs", "")
-        if len(agent_logs) > 0:
-            agent_logs: Dict = json.loads(agent_logs)
-            log = "\n".join(agent_logs.get("log", []))
-            output = agent_logs.get("output", "")
-        
     return render_template("partials/scan_details.html", 
-                           scan=scan,
-                           log=log,
-                           output=output)
+                           scan=scan)
 
 @get_bp.route("/templates/vms")
 def vms_template():

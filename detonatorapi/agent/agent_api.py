@@ -1,4 +1,5 @@
 import requests
+from typing import List, Optional, Dict
 import json
 import logging
 
@@ -53,8 +54,8 @@ class AgentApi:
             return False
         
 
-    def GetRedEdrEvents(self):
-        url = self.agent_url + "/api/events"
+    def GetRedEdrEvents(self) -> Optional[str]:
+        url = self.agent_url + "/api/logs/rededr"
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -68,8 +69,8 @@ class AgentApi:
             return None
 
 
-    def GetAgentLogs(self):
-        url = self.agent_url + "/api/log"
+    def GetAgentLogs(self) -> Optional[str]:
+        url = self.agent_url + "/api/logs/agent"
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -83,8 +84,23 @@ class AgentApi:
             return None
         
 
-    def GetEdrLogs(self):
-        url = self.agent_url + "/api/edr_result"
+    def GetEdrLogs(self) -> Optional[str]:
+        url = self.agent_url + "/api/logs/edr"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.text
+                return data
+            else:
+                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                return None
+        except requests.exceptions.RequestException as e:
+            logging.warning("Agent HTTP response error: ", e)
+            return None
+
+
+    def GetExecutionLogs(self) -> Optional[str]:
+        url = self.agent_url + "/api/logs/execution"
         try:
             response = requests.get(url)
             if response.status_code == 200:

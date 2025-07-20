@@ -35,18 +35,8 @@ class DefenderParser(EdrParser):
 
 
     def load(self, edr_logs: str):
-        self.edr_data = ""
         self.events = []
-
-        xml_events: str = ""
-        try:
-            edr_logs_obj: Dict = json.loads(edr_logs)
-            xml_events = edr_logs_obj.get("xml_events", "")
-        except Exception as e:
-            logger.error(edr_logs)
-            logger.error(f"Error parsing Defender XML logs: {e}")
-
-        self.edr_data = xml_events
+        self.edr_data = edr_logs
 
 
     def is_relevant(self) -> bool:

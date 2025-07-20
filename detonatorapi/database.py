@@ -64,6 +64,7 @@ class Scan(Base):
     status = Column(String(20), default="fresh", nullable=False)
 
     # OUT
+    execution_logs = Column(Text, default="", nullable=False)
     agent_logs = Column(Text, default="", nullable=False)
     rededr_events = Column(Text, default="", nullable=False)
     edr_logs = Column(Text, default="", nullable=False)

@@ -103,19 +103,25 @@ class ScanResponse(BaseModel):
     profile_id: int
     project: Optional[str] = None
     comment: Optional[str] = None
+    runtime: Optional[int] = None
+
     detonator_srv_logs: Optional[str] = None
+    status: str
+
     agent_logs: Optional[str] = None
+    execution_logs: Optional[str] = None
     rededr_events: Optional[str] = None
     edr_logs: Optional[str] = None
     edr_summary: Optional[str] = None
     result: Optional[str] = None
-    status: str
+
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
-    runtime: Optional[int] = None
+    
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
+
     file: Optional[FileResponse] = None
     profile: Optional[ProfileResponse] = None
     

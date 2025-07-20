@@ -1,6 +1,11 @@
+import json
+import logging
 
 from detonatorapi.database import get_db_for_thread, Scan
 from detonatorapi.agent.agent_interface import parsers
+
+
+logger = logging.getLogger(__name__)
 
 
 def reparse_edr_logs():
@@ -14,17 +19,26 @@ def reparse_edr_logs():
         edr_summary = ""
         result_is_detected = ""
 
-        # Check with all parsers
-        for parser in parsers:
-            parser.load(edr_logs)
-            if parser.is_relevant():
-                if parser.parse():
-                    edr_summary = parser.get_summary()
-                    if parser.is_detected():
-                        result_is_detected = "detected"
-                    else:
-                        result_is_detected = "clean"
-                break
+        edr_plugin_log: str = ""
+        try:
+            edr_plugin_log = json.loads(edr_logs).get("edr_logs", "")
+
+            # EDR logs summary
+            for parser in parsers:
+                parser.load(edr_plugin_log)
+                if parser.is_relevant():
+                    if parser.parse():
+                        edr_summary = parser.get_summary()
+                        if parser.is_detected():
+                            result_is_detected = "detected"
+                        else:
+                            result_is_detected = "clean"
+                    break
+
+        except Exception as e:
+            logger.error(edr_logs)
+            logger.error(f"Error parsing Defender XML logs: {e}")
+
 
         print(f"Reparsed scan {scan.id}: {result_is_detected}")
         #print(f"  {edr_summary}")
