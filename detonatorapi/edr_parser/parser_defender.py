@@ -103,6 +103,10 @@ class DefenderParser(EdrParser):
 
     def get_summary(self) -> str:
         edr_summary: List[str] = []
+
+        if len(self.events) == 0:
+            return "No EDR events. It should be clean."
+
         for event in self.events:
             e = f"{event.get('threat_name', '?')}: {event.get('severity_name', '?')}"
             edr_summary.append(e)
