@@ -5,18 +5,32 @@
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
     <h2 class="text-2xl font-bold mb-4">Welcome to Detonator</h2>
-    <p class="text-gray-600 mb-6">A modern web application for file analysis with FastAPI backend and Flask + HTMX frontend.</p>
+    <p class="text-gray-600 mb-6">
+        Scan your RedTeam tools against various VMs. For easy and reproducible MalDev analysis.
+    </p>
+
+    <p class="text-gray-600 mb-6">
+        See the detection surface with RedEdr. 
+    </p>
     
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Quick Actions -->
         <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
             <h3 class="text-lg font-semibold text-blue-800 mb-3">Start Analysis</h3>
-            <p class="text-blue-700 text-sm mb-4">Upload a file and automatically start malware analysis with VM provisioning.</p>
+            <p class="text-blue-700 text-sm mb-4">Upload a file and scan it with a profile. Get the feedback of its installed EDR, and/or the detection surface with RedEdr </p>
             <a href="/newscan" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block">
                 Upload & Scan
             </a>
         </div>
-        
+                
+        <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
+            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Scans</h3>
+            <p class="text-purple-700 text-sm mb-4">Track the progress of your analysis jobs and view detailed results.</p>
+            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
+                View Scans
+            </a>
+        </div>
+
         <div class="bg-green-50 p-6 rounded-lg border border-green-200">
             <h3 class="text-lg font-semibold text-green-800 mb-3">Manage Files</h3>
             <p class="text-green-700 text-sm mb-4">View uploaded files, their associated scans, and manage your file collection.</p>
@@ -25,16 +39,9 @@
             </a>
         </div>
         
-        <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
-            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Scans</h3>
-            <p class="text-purple-700 text-sm mb-4">Track the progress of your analysis jobs and view detailed results.</p>
-            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
-                View Scans
-            </a>
-        </div>
-        
+        {% if not READ_ONLY %}
         <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-            <h3 class="text-lg font-semibold text-yellow-800 mb-3">Storage Only</h3>
+            <h3 class="text-lg font-semibold text-yellow-800 mb-3">Upload Only</h3>
             <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can scan them later).</p>
             <a href="/upload" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 inline-block">
                 Upload Only
@@ -48,12 +55,13 @@
                 View VMs
             </a>
         </div>
+        {% endif %}
         
         <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
-            <h3 class="text-lg font-semibold text-indigo-800 mb-3">EDR Templates</h3>
-            <p class="text-indigo-700 text-sm mb-4">Configure and manage EDR templates for your analysis environments.</p>
-            <a href="/edr-templates" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block">
-                Manage Templates
+            <h3 class="text-lg font-semibold text-indigo-800 mb-3">Profiles</h3>
+            <p class="text-indigo-700 text-sm mb-4">Configure and manage connection profiles for your analysis environments.</p>
+            <a href="/profiles" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block">
+                Manage Profiles
             </a>
         </div>
     </div>

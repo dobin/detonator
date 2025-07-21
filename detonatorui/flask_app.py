@@ -87,3 +87,9 @@ def static_files(filename):
     """Serve static files from the static directory"""
     return app.send_static_file(filename)
 
+
+@app.context_processor
+def inject_global_vars():
+    return {
+        'READ_ONLY': os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
+    }
