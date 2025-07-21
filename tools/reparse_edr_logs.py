@@ -21,7 +21,7 @@ def reparse_edr_logs():
 
         edr_plugin_log: str = ""
         try:
-            edr_plugin_log = json.loads(edr_logs).get("edr_logs", "")
+            edr_plugin_log = json.loads(edr_logs).get("logs", "")
 
             # EDR logs summary
             for parser in parsers:

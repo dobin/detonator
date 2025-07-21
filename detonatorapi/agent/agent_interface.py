@@ -70,22 +70,30 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     runtime = db_scan.runtime
     agentApi = AgentApi(agent_ip, agent_port)
 
+    # Set the process name we gonna trace
     if not agentApi.StartTrace(filename):
         db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
         return False
-    db_scan_add_log(thread_db, db_scan, f"Started trace for file {filename} on Agent at {agent_ip}")
-    time.sleep(1.0)  # let RedEdr boot it up
+    db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename} on Agent at {agent_ip}")
 
+    # let RedEdr boot it up
+    time.sleep(1.0)
+
+    # Execute our malware
     if not agentApi.ExecFile(filename, file_content):
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
         return False
     db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
     thread_db.commit()
-    time.sleep(runtime)
 
+    # process is being executed. 
+    time.sleep(runtime)
+    
+    # enough execution.
     db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
     thread_db.commit()
 
+    # Gather all logs
     rededr_events = agentApi.GetRedEdrEvents()
     agent_logs = agentApi.GetAgentLogs()
     execution_logs = agentApi.GetExecutionLogs()
@@ -93,6 +101,14 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     edr_summary = ""  # will be generated
     result_is_detected = ""  # will be generated
 
+    # kill process (after gathering all logs, so we dont have the shutdown logs)
+    if agentApi.StopTrace():
+        db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
+    else:
+        db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process")
+        # no return, we dont care
+
+    # Preparse all the logs
     if agent_logs is None:
         agent_logs = "No Agent logs available"
         db_scan_add_log(thread_db, db_scan, "could not get Agent logs from Agent")
@@ -110,7 +126,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         # get the actual EDR log
         edr_plugin_log: str = ""
         try:
-            edr_plugin_log = json.loads(edr_logs).get("edr_logs", "")
+            edr_plugin_log = json.loads(edr_logs).get("logs", "")
 
             # EDR logs summary
             for parser in parsers:
@@ -133,6 +149,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
             logger.error(edr_logs)
             logger.error(f"Error parsing Defender XML logs: {e}")
 
+    # write all logs to the database
     db_scan.execution_logs = execution_logs
     db_scan.edr_logs = edr_logs
     db_scan.edr_summary = edr_summary

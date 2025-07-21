@@ -24,15 +24,26 @@ class AgentApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent: StartTrace error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning("Agent: StartTrace error: ", e)
             return False
         
     
     def StopTrace(self) -> bool:
-        return True
+        url = self.agent_url + "/api/kill"
+        try:
+            response = requests.post(url)
+            if response.status_code == 200:
+                #print("Response:", response.json())
+                return True
+            else:
+                logging.warning("Agent: kill error: {} {}".format(response.status_code, response.text))
+                return False
+        except requests.exceptions.RequestException as e:
+            logging.warning("Agent: kill error: ", e)
+            return False
 
 
     def ExecFile(self, filename: str, file_data: bytes) -> bool:
