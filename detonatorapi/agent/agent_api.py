@@ -14,10 +14,24 @@ class AgentApi:
 
 
     def StartTrace(self, target_name: str) -> bool:
+        # Reset any previous trace data
+        url = self.agent_url + "/api/reset"
+        try:
+            response = requests.post(url)
+            if response.status_code == 200:
+                #print("Response:", response.json())
+                pass
+            else:
+                logging.warning("Agent: Reset error: {} {}".format(response.status_code, response.text))
+                return False
+        except requests.exceptions.RequestException as e:
+            logging.warning("Agent: Reset error: ", e)
+            return False
+
+        # Configure trace
         url = self.agent_url + "/api/trace"
         headers = {"Content-Type": "application/json"}
         payload = {"trace": target_name}
-
         try:
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 200:
@@ -49,11 +63,14 @@ class AgentApi:
     def ExecFile(self, filename: str, file_data: bytes) -> bool:
         url = self.agent_url + "/api/exec"
         files = {
-            "file": (filename, file_data)
+            "file": (filename, file_data),
+        }
+        data = {
+            "path": "C:\\Users\\Public\\Downloads\\",
         }
         # multipart form-data
         try:
-            response = requests.post(url, files=files)
+            response = requests.post(url, files=files, data=data)
             if response.status_code == 200:
                 #print("Response:", response.json())
                 return True
