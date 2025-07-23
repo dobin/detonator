@@ -14,6 +14,16 @@ class AgentApi:
 
 
     def StartTrace(self, target_name: str) -> bool:
+        url = self.agent_url + "/api/lock/aquire"
+        try:
+            response = requests.post(url)
+            if response.status_code != 200:
+                logging.warning("Agent: LockAquire failed: {} {}".format(response.status_code, response.text))
+                return False
+        except requests.exceptions.RequestException as e:
+            logging.warning("Agent: LockAquire error: ", e)
+            return False
+
         # Reset any previous trace data
         url = self.agent_url + "/api/reset"
         try:
@@ -46,18 +56,28 @@ class AgentApi:
         
     
     def StopTrace(self) -> bool:
+        # kill running process
         url = self.agent_url + "/api/kill"
         try:
             response = requests.post(url)
-            if response.status_code == 200:
-                #print("Response:", response.json())
-                return True
-            else:
+            if response.status_code != 200:
                 logging.warning("Agent: kill error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
             logging.warning("Agent: kill error: ", e)
             return False
+        
+        url = self.agent_url + "/api/lock/release"
+        try:
+            response = requests.post(url)
+            if response.status_code != 200:
+                # meh we dont care. and should never happen
+                logging.warning("Agent: LockRelease failed: {} {}".format(response.status_code, response.text))
+        except requests.exceptions.RequestException as e:
+            logging.warning("Agent: LockRelease error: ", e)
+            return False
+        
+        return True
 
 
     def ExecFile(self, filename: str, file_data: bytes) -> bool:
