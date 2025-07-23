@@ -61,6 +61,10 @@ def vms_page():
 def profiles_page():
     return render_template("profiles.html")
 
+@get_bp.route("/scans-table")
+def scans_table_page():
+    return render_template("scans_table.html")
+
 
 @get_bp.route("/semidatasieve/<int:scan_id>")
 def semidatasieve(scan_id):
@@ -166,6 +170,28 @@ def profiles_template():
         templates = {}
     
     return render_template("partials/profiles_list.html", templates=templates)
+
+@get_bp.route("/templates/scans-table")
+def scans_table_template():
+    """Template endpoint to render scans table via HTMX"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/scans")
+        if response.status_code == 200:
+            scans = response.json()
+            # Sort scans by ID in descending order (newest first)
+            scans = sorted(scans, key=lambda scan: scan['id'], reverse=True)
+            
+            # Apply filter if specified
+            filter_status = request.args.get('filter')
+            if filter_status and filter_status != 'all':
+                scans = [scan for scan in scans if scan.get('status') == filter_status]
+                
+        else:
+            scans = []
+    except requests.RequestException:
+        scans = []
+    
+    return render_template("partials/scans_table_list.html", scans=scans)
 
 @get_bp.route("/templates/create-scan/<int:file_id>")
 def create_file_scan_template(file_id):

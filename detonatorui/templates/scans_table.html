@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Scans Table{% endblock %}
+
+{% block content %}
+<div class="mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-800">Scans Table</h2>
+            <div class="space-x-3">
+                <button 
+                    onclick="htmx.ajax('GET', '/templates/scans-table', {target: '#scans-table-container', swap: 'innerHTML'})"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    Refresh
+                </button>
+                <a href="/scans" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                    Card View
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scans Table Container -->
+    <div class="bg-white rounded-lg shadow">
+        <div id="scans-table-container" 
+             hx-get="/templates/scans-table" 
+             hx-trigger="load"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="p-6 text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-2 text-gray-500">Loading scans...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter function
+function filterScans() {
+    const filter = document.getElementById('status-filter').value;
+    const url = filter === 'all' ? '/templates/scans-table' : `/templates/scans-table?filter=${filter}`;
+    
+    htmx.ajax('GET', url, {
+        target: '#scans-table-container',
+        swap: 'innerHTML'
+    });
+}
+
+// Define deleteScan function
+function deleteScan(scanId) {
+    if (confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
+        fetch('/api/scans/' + scanId, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error deleting scan: ' + data.error);
+            } else {
+                // Refresh the table
+                filterScans();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to delete scan');
+        });
+    }
+}
+
+// View scan details function
+function viewScanDetails(scanId) {
+    // You can implement a modal or redirect to scan details
+    window.location.href = `/scans?scan=${scanId}`;
+}
+</script>
+{% endblock %}
