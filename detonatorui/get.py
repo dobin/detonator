@@ -164,6 +164,21 @@ def profiles_template():
                 
                 # Add the name to the template for easier access in templates
                 template['name'] = template_name
+
+            # check for lock status for each template
+            for template_name, template in templates.items():
+                lock_url = f"{API_BASE_URL}/api/lock/{template['id']}/lock"
+                try:
+                    lock_response = requests.get(lock_url)
+                    if lock_response.status_code == 200:
+                        template['locked'] = lock_response.json().get('is_locked', 'false')
+                    else:
+                        template['locked'] = "Error"
+                except requests.RequestException:
+                    template['locked'] = "Error"
+                
+                # Add the name to the template for easier access in templates
+                template['name'] = template_name
         else:
             templates = {}
     except requests.RequestException:

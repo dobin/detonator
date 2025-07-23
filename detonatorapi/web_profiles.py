@@ -8,6 +8,7 @@ import requests
 from .database import get_db, Profile, Scan
 from .schemas import ProfileResponse, ProfileStatusResponse
 from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by_id
+from .agent.agent_api import AgentApi
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -105,30 +106,34 @@ async def get_profile(profile_id: int, db: Session = Depends(get_db)):
 @router.get("/profiles/{profile_id}/status", response_model=ProfileStatusResponse)
 async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     """Get status which checks if the profile's IP and port are reachable"""
-    db_profile = db_get_profile_by_id(db, profile_id)
+    db_profile: Profile = db_get_profile_by_id(db, profile_id)
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
     is_available = ""
+    is_in_use = False
 
-    ip = db_profile.data.get('ip', '')
-    port = db_profile.port
+    ip: str = db_profile.data.get('ip', '')
+    port: int = db_profile.port
     if ip == "" or port == 0:
         is_available = ""
     else:
-        port = db_profile.port
-        try:
-            url = f"http://{ip}:{port}"
-            test_response = requests.get(url, timeout=0.5)
-            is_available = "true"
-        except:
-            is_available = "false"
+        agentApi: AgentApi = AgentApi(ip, port)
+
+        if agentApi.IsReachable():
+            if agentApi.IsInUse():
+                is_available = "In use"
+            else:
+                is_available = "Reachable"
+        else:
+            is_available = "Not reachable"
+
 
     return {
         "id": db_profile.id,
         "ip": ip,
         "port": port,
-        "is_available": is_available
+        "is_available": is_available,
     }
 
 
