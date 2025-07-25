@@ -85,22 +85,18 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
         return False
-    if scanResult == ScanResult.VIRUS:
+    elif scanResult == ScanResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
-        db_scan.result = "virus"
-        db_scan.completed_at = datetime.utcnow()
+    elif scanResult == ScanResult.OK:
+        db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
         thread_db.commit()
-        return True
 
-    db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
-    thread_db.commit()
-
-    # process is being executed. 
-    time.sleep(runtime)
-    
-    # enough execution.
-    db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
-    thread_db.commit()
+        # process is being executed. 
+        time.sleep(runtime)
+        
+        # enough execution.
+        db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
+        thread_db.commit()
 
     # Gather all logs
     rededr_events = agentApi.GetRedEdrEvents()

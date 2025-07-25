@@ -114,4 +114,4 @@ class DefenderParser(EdrParser):
 
 
     def is_detected(self) -> bool:
-        return 'Suspicious' in self.edr_data
+        return 'Suspicious' in self.edr_data or 'Threat ID' in self.edr_data
