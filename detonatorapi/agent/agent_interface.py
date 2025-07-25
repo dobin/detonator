@@ -82,11 +82,17 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     # Execute our malware
     scanResult: ScanResult = agentApi.ExecFile(filename, file_content)
+    is_malware = False
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
         return False
     elif scanResult == ScanResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
+        is_malware = True
+
+        # give some time for windows to deliver the virus ETW alert
+        time.sleep(3.0)
+
     elif scanResult == ScanResult.OK:
         db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
         thread_db.commit()
@@ -153,6 +159,11 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         except Exception as e:
             logger.error(edr_logs)
             logger.error(f"Error parsing Defender XML logs: {e}")
+
+    # if its already detected as malware, make sure the status is set
+    # as we might not have any EDR logs
+    if is_malware:
+        result_is_detected = "virus"
 
     # write all logs to the database
     db_scan.execution_logs = execution_logs
