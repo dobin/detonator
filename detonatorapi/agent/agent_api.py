@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DO_LOCKING = False
 
 class ScanResult(Enum):
     OK = 0,
@@ -52,16 +53,17 @@ class AgentApi:
 
 
     def StartTrace(self, target_name: str) -> bool:
-        # Acquire lock
-        url = self.agent_url + "/api/lock/acquire"
-        try:
-            response = requests.post(url)
-            if response.status_code != 200:
-                logging.warning("Agent: LockAcquire failed: {} {}".format(response.status_code, response.text))
+        if DO_LOCKING:
+            # Acquire lock
+            url = self.agent_url + "/api/lock/acquire"
+            try:
+                response = requests.post(url)
+                if response.status_code != 200:
+                    logging.warning("Agent: LockAcquire failed: {} {}".format(response.status_code, response.text))
+                    return False
+            except requests.exceptions.RequestException as e:
+                logging.warning("Agent: LockAcquire error: ", e)
                 return False
-        except requests.exceptions.RequestException as e:
-            logging.warning("Agent: LockAcquire error: ", e)
-            return False
 
         # Reset any previous trace data
         url = self.agent_url + "/api/reset"
@@ -105,17 +107,18 @@ class AgentApi:
         except requests.exceptions.RequestException as e:
             logging.warning("Agent: kill error: ", e)
             return False
-        
-        # Release lock
-        url = self.agent_url + "/api/lock/release"
-        try:
-            response = requests.post(url)
-            if response.status_code != 200:
-                # meh we dont care. and should never happen
-                logging.warning("Agent: LockRelease failed: {} {}".format(response.status_code, response.text))
-        except requests.exceptions.RequestException as e:
-            logging.warning("Agent: LockRelease error: ", e)
-            return False
+
+        if DO_LOCKING:        
+            # Release lock
+            url = self.agent_url + "/api/lock/release"
+            try:
+                response = requests.post(url)
+                if response.status_code != 200:
+                    # meh we dont care. and should never happen
+                    logging.warning("Agent: LockRelease failed: {} {}".format(response.status_code, response.text))
+            except requests.exceptions.RequestException as e:
+                logging.warning("Agent: LockRelease error: ", e)
+                return False
         
         return True
 
