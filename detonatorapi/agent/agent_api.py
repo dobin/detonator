@@ -46,14 +46,14 @@ class AgentApi:
 
     def StartTrace(self, target_name: str) -> bool:
         # Acquire lock
-        url = self.agent_url + "/api/lock/aquire"
+        url = self.agent_url + "/api/lock/acquire"
         try:
             response = requests.post(url)
             if response.status_code != 200:
-                logging.warning("Agent: LockAquire failed: {} {}".format(response.status_code, response.text))
+                logging.warning("Agent: LockAcquire failed: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: LockAquire error: ", e)
+            logging.warning("Agent: LockAcquire error: ", e)
             return False
 
         # Reset any previous trace data
