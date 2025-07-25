@@ -1,29 +1,10 @@
-
-New-Item -ItemType Directory -Path "C:\RedEdr" -Force
-
-# RedEdr Download & Extract
-
-# Define the URL of the ZIP file and the destination folder
-$zipUrl = "https://detonator1.blob.core.windows.net/scripts/rededr.zip"
-$zipPath = "C:\RedEdr\rededr_download.zip"
-$extractPath = "C:\RedEdr"
 $exePath = "C:\RedEdr\RedEdr.exe"
 
-# Create the destination directory if it doesn't exist
-if (-Not (Test-Path -Path $extractPath)) {
-    New-Item -ItemType Directory -Path $extractPath -Force
-}
+New-Item -ItemType Directory -Path "C:\RedEdr" -Force
 
 # Exclude for defender
 Add-MpPreference -ExclusionPath "C:\RedEdr"
 Set-MpPreference -SubmitSamplesConsent 2  # 2 = never send
-
-# Download the ZIP file
-Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
-# Extract the ZIP file
-Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
-# Optionally remove the ZIP after extraction
-Remove-Item $zipPath
 
 # Allow RedEdr through Windows Firewall
 New-NetFirewallRule -DisplayName "Allow RedEdr (80, 8080)" `
@@ -34,7 +15,6 @@ New-NetFirewallRule -DisplayName "Allow RedEdr (80, 8080)" `
                     -Profile Any `
                     -Enabled True
 
-                    
 # This disables the "first logon animation" and suppresses OOBE experience
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -Value 0 -Type DWord -Force
 # (Optional) Mark OOBE as complete (used in Sysprep/unattended deployments)
@@ -59,9 +39,9 @@ if (-not (Get-LocalUser -Name $user -ErrorAction SilentlyContinue)) {
 
 
 # Enable autologin for this user
-#New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "AutoAdminLogon" -Value "1" -PropertyType String -Force
-#New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultUsername" -Value $user -PropertyType String -Force
-#New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultPassword" -Value $password -PropertyType String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "AutoAdminLogon" -Value "1" -PropertyType String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultUsername" -Value $user -PropertyType String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultPassword" -Value $password -PropertyType String -Force
 
 
 # RedEdr start
@@ -76,6 +56,8 @@ $action = New-ScheduledTaskAction -Execute $exePath -Argument $myargs
 # Run at startup
 # -AtLogOn
 $trigger = New-ScheduledTaskTrigger -AtStartup
+#$trigger = New-ScheduledTaskTrigger -AtLogOn
+
 
 # Run as SYSTEM
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest

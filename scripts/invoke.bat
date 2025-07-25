@@ -1,0 +1,1 @@
+powershell.exe -ExecutionPolicy Bypass -NoProfile -File "update_rededr.ps1"

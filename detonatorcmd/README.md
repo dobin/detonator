@@ -19,14 +19,14 @@ python -m detonatorcmd list-profiles
 ### Scan a file
 
 ```bash
-python -m detonatorcmd scan /path/to/malware.exe --profile running_defender
+python -m detonatorcmd scan /path/to/malware.exe --profile live_defender
 ```
 
 ### Scan with additional options
 
 ```bash
 python -m detonatorcmd scan /path/to/malware.exe \
-    --profile running_defender \
+    --profile live_defender \
     --comment "Testing new payload" \
     --project "research_2025" \
     --source-url "https://github.com/user/repo" \
@@ -35,7 +35,7 @@ python -m detonatorcmd scan /path/to/malware.exe \
 
 ## Options
 
-- `--profile, -p`: Profile to use (default: running_defender)
+- `--profile, -p`: Profile to use (default: live_defender)
 - `--comment, -c`: Comment for the scan
 - `--project, -j`: Project name for the scan
 - `--source-url, -s`: Source URL of the file
@@ -56,7 +56,7 @@ python -m detonatorcmd scan malware.exe -p new_defender
 
 # Scan with full options
 python -m detonatorcmd scan malware.exe \
-    -p running_defender \
+    -p live_defender \
     -c "Testing obfuscated payload" \
     -j "evasion_research" \
     -s "https://malware-samples.com/sample123" \
