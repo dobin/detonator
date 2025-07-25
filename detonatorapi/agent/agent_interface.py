@@ -11,6 +11,7 @@ from detonatorapi.database import Scan
 from detonatorapi.db_interface import db_change_status, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
+from detonatorapi.agent.agent_api import ScanResult
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +81,17 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     time.sleep(1.0)
 
     # Execute our malware
-    if not agentApi.ExecFile(filename, file_content):
+    scanResult: ScanResult = agentApi.ExecFile(filename, file_content)
+    if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
         return False
+    if scanResult == ScanResult.VIRUS:
+        db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
+        db_scan.result = "virus"
+        db_scan.completed_at = datetime.utcnow()
+        thread_db.commit()
+        return True
+
     db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
     thread_db.commit()
 

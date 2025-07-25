@@ -1,9 +1,16 @@
+from enum import Enum
 import requests
 from typing import List, Optional, Dict
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class ScanResult(Enum):
+    OK = 0,
+    ERROR = 1,
+    VIRUS = 2
 
 
 # Note: Copy from https://github.com/dobin/AgentUi/blob/main/rededrapi.py
@@ -113,7 +120,7 @@ class AgentApi:
         return True
 
 
-    def ExecFile(self, filename: str, file_data: bytes) -> bool:
+    def ExecFile(self, filename: str, file_data: bytes) -> ScanResult:
         url = self.agent_url + "/api/exec"
         files = {
             "file": (filename, file_data),
@@ -125,14 +132,18 @@ class AgentApi:
         try:
             response = requests.post(url, files=files, data=data)
             if response.status_code == 200:
+                j = response.json()
+                if j.get("status", "") == "virus" :
+                    logging.info(f"Agent: File {filename} is detected as malware")
+                    return ScanResult.VIRUS
                 #print("Response:", response.json())
-                return True
+                return ScanResult.OK
             else:
                 logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
-                return False
+                return ScanResult.ERROR
         except requests.exceptions.RequestException as e:
             logging.warning("Agent HTTP response error: ", e)
-            return False
+            return ScanResult.ERROR
         
     
     def GetLockStatus(self) -> bool:
