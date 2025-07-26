@@ -19,6 +19,10 @@ parsers: List[EdrParser] = [
     DefenderParser(),
 ]
 
+SLEEP_TIME_REDEDR_WARMUP = 3.0
+SLEEP_TIME_POST_SCAN = 30.0
+
+
 # Attempt to connect to the agent port to see if its up and running
 def connect_to_agent(db, db_scan: Scan) -> bool:
     agent_ip = None
@@ -77,8 +81,8 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         return False
     db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename} on Agent at {agent_ip}")
 
-    # let RedEdr boot it up
-    time.sleep(1.0)
+    # let RedEdr boot up
+    time.sleep(SLEEP_TIME_REDEDR_WARMUP)
 
     # Execute our malware
     scanResult: ScanResult = agentApi.ExecFile(filename, file_content)
@@ -89,10 +93,6 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     elif scanResult == ScanResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
         is_malware = True
-
-        # give some time for windows to deliver the virus ETW alert
-        time.sleep(3.0)
-
     elif scanResult == ScanResult.OK:
         db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
         thread_db.commit()
@@ -103,6 +103,9 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         # enough execution.
         db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
         thread_db.commit()
+
+    # give some time for windows to scan, deliver the virus ETW alert events n stuff
+    time.sleep(SLEEP_TIME_POST_SCAN)
 
     # Gather all logs
     rededr_events = agentApi.GetRedEdrEvents()
