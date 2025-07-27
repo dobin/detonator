@@ -19,8 +19,8 @@ parsers: List[EdrParser] = [
     DefenderParser(),
 ]
 
-SLEEP_TIME_REDEDR_WARMUP = 30.0
-SLEEP_TIME_POST_SCAN = 30.0
+SLEEP_TIME_REDEDR_WARMUP = 3.0
+SLEEP_TIME_POST_SCAN = 10.0
 
 
 # Attempt to connect to the agent port to see if its up and running
