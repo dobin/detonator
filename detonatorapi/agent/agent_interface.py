@@ -19,7 +19,7 @@ parsers: List[EdrParser] = [
     DefenderParser(),
 ]
 
-SLEEP_TIME_REDEDR_WARMUP = 3.0
+SLEEP_TIME_REDEDR_WARMUP = 30.0
 SLEEP_TIME_POST_SCAN = 30.0
 
 
@@ -75,11 +75,14 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     runtime = db_scan.runtime
     agentApi = AgentApi(agent_ip, agent_port)
 
+    # remove file extension for trace
+    filename_trace = filename.rsplit('.', 1)[0]
+
     # Set the process name we gonna trace
-    if not agentApi.StartTrace(filename):
+    if not agentApi.StartTrace(filename_trace):
         db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
         return False
-    db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename} on Agent at {agent_ip}")
+    db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
 
     # let RedEdr boot up
     time.sleep(SLEEP_TIME_REDEDR_WARMUP)
