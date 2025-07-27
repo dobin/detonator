@@ -60,10 +60,11 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     if not profile:
         raise HTTPException(status_code=400, detail="Profile not found")
     
-    if scan_data.password and len(scan_data.password) > 0:
-        if not password or password != scan_data.password:
-            raise HTTPException(status_code=400, detail="Invalid password for profile")
-    
+    logger.info("Passwords: {}   {}".format(profile.password, scan_data.password))
+    if len(profile.password) > 0:
+        if not scan_data.password or scan_data.password != profile.password:
+            raise HTTPException(status_code=403, detail="Invalid password for profile")
+
     # Extract data with defaults
     profile_name = scan_data.profile_name or ""
     comment = scan_data.comment or ""
