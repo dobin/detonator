@@ -296,3 +296,15 @@ def get_connectors():
     except requests.RequestException:
         return {"error": "Could not fetch connectors"}, 500
 
+@get_bp.route("/api/profiles/<int:profile_id>/release_lock", methods=['POST'])
+def release_profile_lock(profile_id):
+    """Proxy endpoint to release lock for a profile"""
+    try:
+        response = requests.post(f"{API_BASE_URL}/api/profiles/{profile_id}/release_lock")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Could not release lock"}, response.status_code
+    except requests.RequestException:
+        return {"error": "Could not release lock"}, 500
+

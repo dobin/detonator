@@ -113,8 +113,8 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     is_available = ""
     is_in_use = False
 
-    ip: str = db_profile.data.get('ip', '')
-    port: int = db_profile.port
+    ip = db_profile.data.get('ip', '')
+    port = db_profile.port
     if ip == "" or port == 0:
         is_available = ""
     else:
@@ -213,3 +213,32 @@ async def delete_profile(profile_id: int, db: Session = Depends(get_db)):
     db.delete(db_profile)
     db.commit()
     return {"message": f"Profile '{db_profile.name}' deleted successfully"}
+
+
+@router.post("/profiles/{profile_id}/release_lock")
+async def release_profile_lock(profile_id: int, db: Session = Depends(get_db)):
+    """Release lock for a profile"""
+    db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Get IP and port from profile data
+    # As this is usually just used by Live, take it from profile data
+    ip = db_profile.data.get('ip', '')
+    port = db_profile.port
+    
+    if not ip or not port:
+        raise HTTPException(status_code=400, detail="Profile does not have IP or port configured")
+    
+    try:
+        # Create agent API instance and release lock
+        agentApi = AgentApi(ip, port)
+        if agentApi.ReleaseLock():
+            logger.info(f"Successfully released lock for profile {profile_id} ({db_profile.name}) at {ip}:{port}")
+            return {"message": f"Lock released successfully for profile '{db_profile.name}'"}
+        else:
+            logger.warning(f"Failed to release lock for profile {profile_id} ({db_profile.name}) at {ip}:{port}")
+            raise HTTPException(status_code=500, detail="Failed to release lock on agent")
+    except Exception as e:
+        logger.error(f"Error releasing lock for profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error releasing lock: {str(e)}")
