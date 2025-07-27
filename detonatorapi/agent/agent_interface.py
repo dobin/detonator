@@ -58,7 +58,6 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
     return False
 
 
-
 def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agent_ip = None
     # IP in template?
@@ -78,14 +77,25 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agentApi = AgentApi(agent_ip, agent_port)
 
     if DO_LOCKING:
-        # TODO try a few times
-
-        if agentApi.IsInUse():
-            db_scan_add_log(thread_db, db_scan, f"Agent at {agent_ip} is currently in use")
-            return False
+        # Try to acquire lock 4 times with 30 second intervals
+        lock_acquired = False
+        attempts = 6
+        for attempt in range(attempts):
+            if agentApi.IsInUse():
+                db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Agent at {agent_ip} is currently in use")
+            elif agentApi.AcquireLock():
+                db_scan_add_log(thread_db, db_scan, f"Successfully acquired lock on Agent at {agent_ip} on attempt {attempt + 1}")
+                lock_acquired = True
+                break
+            else:
+                db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not lock Agent at {agent_ip}")
+            
+            if attempt < attempts - 1:  # Don't sleep after the last attempt
+                db_scan_add_log(thread_db, db_scan, f"Waiting 30 seconds before retry...")
+                time.sleep(30)
         
-        if not agentApi.AcquireLock():
-            db_scan_add_log(thread_db, db_scan, f"Could not lock Agent at {agent_ip}")
+        if not lock_acquired:
+            db_scan_add_log(thread_db, db_scan, f"Failed to acquire lock on Agent at {agent_ip} after 4 attempts")
             return False
 
     # remove file extension for trace
