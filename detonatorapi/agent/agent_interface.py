@@ -21,6 +21,7 @@ parsers: List[EdrParser] = [
 
 SLEEP_TIME_REDEDR_WARMUP = 3.0
 SLEEP_TIME_POST_SCAN = 10.0
+DO_LOCKING = True
 
 
 # Attempt to connect to the agent port to see if its up and running
@@ -57,6 +58,7 @@ def connect_to_agent(db, db_scan: Scan) -> bool:
     return False
 
 
+
 def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agent_ip = None
     # IP in template?
@@ -75,12 +77,24 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     runtime = db_scan.runtime
     agentApi = AgentApi(agent_ip, agent_port)
 
+    if DO_LOCKING:
+        # TODO try a few times
+
+        if agentApi.IsInUse():
+            db_scan_add_log(thread_db, db_scan, f"Agent at {agent_ip} is currently in use")
+            return False
+        
+        if not agentApi.AcquireLock():
+            db_scan_add_log(thread_db, db_scan, f"Could not lock Agent at {agent_ip}")
+            return False
+
     # remove file extension for trace
     filename_trace = filename.rsplit('.', 1)[0]
 
     # Set the process name we gonna trace
     if not agentApi.StartTrace(filename_trace):
         db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
+        agentApi.ReleaseLock()  # no check, we just release the lock
         return False
     db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
 
@@ -92,6 +106,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     is_malware = False
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
+        agentApi.ReleaseLock()  # no check, we just release the lock
         return False
     elif scanResult == ScanResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
@@ -124,6 +139,13 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     else:
         db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process")
         # no return, we dont care
+
+    # we finished 
+    if DO_LOCKING:
+        if not agentApi.ReleaseLock():
+            db_scan_add_log(thread_db, db_scan, f"Could not release lock on Agent at {agent_ip}")
+        else:
+            db_scan_add_log(thread_db, db_scan, f"Released lock on Agent at {agent_ip}")
 
     # Preparse all the logs
     if agent_logs is None:
