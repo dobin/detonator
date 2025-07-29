@@ -1,143 +1,68 @@
 import os
 import sys
-import time
-import requests
 import argparse
 
-from detonatorapi.utils import filename_randomizer
+from .ui_client import DetonatorClientUi
+from .api_client import DetonatorClientApi
+from .client import DetonatorClient
 
 
-# Default API base URL. Getting overwritten by the command line argument.
-API_BASE_URL = "http://localhost:8000"
-DEBUG = False
-
-def get_profiles():
-    try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles")
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Error fetching profiles: {e}")
-        return {}
-
-
-def upload_file(filename, source_url="", comment="", randomize_filename=False):
-    try:
-        if not os.path.exists(filename):
-            print(f"Error: File {filename} does not exist")
-            return None
-
-        upload_filename = os.path.basename(filename)
-        if randomize_filename:
-            upload_filename = filename_randomizer(upload_filename)
-
-        with open(filename, "rb") as f:
-            files = {"file": (upload_filename, f, "application/octet-stream")}
-            data = {
-                "source_url": source_url,
-                "comment": comment
-            }
-            response = requests.post(f"{API_BASE_URL}/api/files", files=files, data=data)
-            response.raise_for_status()
-            return response.json()
-    except requests.RequestException as e:
-        print(f"Error uploading file: {e}")
-        return None
-
-
-def create_scan(file_id, profile_name, comment="", project=""):
-    try:
-        data = {
-            "project": project,
-            "profile_name": profile_name,
-            "comment": comment,
-            
-        }
-        response = requests.post(f"{API_BASE_URL}/api/files/{file_id}/createscan", json=data)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Error creating scan: {e}")
-        return None
-
-
-def get_scan_status(scan_id):
-    try:
-        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}")
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Error getting scan status: {e}")
-        return None
-
-
-def wait_for_scan_completion(scan_id, timeout=3600):
-    #print(f"Waiting for scan {scan_id} to complete...")
-    start_time = time.time()
-    
-    while time.time() - start_time < timeout:
-        scan = get_scan_status(scan_id)
-        if not scan:
-            print("Error: Could not get scan status")
-            return None
-            
-        #print(f"Scan {scan_id} status: {scan['status']}")
-        sys.stdout.write(f".")
-        sys.stdout.flush()
-        
-        if scan['status'] in ["finished", "error", "stopping", "removing" ]:
-            print("")
-            return scan
-        elif DEBUG:
-            print(f"Scan {scan_id} status: {scan['status']}")
-            
-        time.sleep(1)
-    
-    print(f"Timeout waiting for scan {scan_id} to complete")
-    return None
-
-
-def print_profiles():
-    profiles = get_profiles()
-    if profiles:
-        #print("Available profiles:")
-        for profile_name, profile in profiles.items():
-            print(f"Profile: {profile_name}")
-            print(f"    Connector: {profile.get('connector', '')}")
-            print(f"    EDR Collector: {profile.get('edr_collector', '')}")
-            print(f"    Port: {profile.get('port', '')}")
-            if profile.get('comment'):
-                print(f"    Comment: {profile.get('comment', '')}")
-            if profile.get('data', {}).get('image_reference'):
-                image_reference_name = profile.get('data', {}).get('image_reference', '').split("/")[-1]  # Last part
-                print(f"    Image Reference: {image_reference_name}")
-            if profile.get('data', {}).get('ip'):
-                print(f"    IP: {profile.get('data', {}).get('ip')}")
-    else:
+def print_profiles(profiles):
+    if not profiles:
         print("No profiles available or error fetching profiles")
+        return
+
+    for profile_name, profile in profiles.items():
+        print("")
+        print(f"Profile: {profile_name}")
+        print(f"    Connector: {profile.get('connector', '')}")
+        print(f"    EDR Collector: {profile.get('edr_collector', '')}")
+        print(f"    Port: {profile.get('port', '')}")
+        if profile.get('comment'):
+            print(f"    Comment: {profile.get('comment', '')}")
+        if profile.get('data', {}).get('image_reference'):
+            image_reference_name = profile.get('data', {}).get('image_reference', '').split("/")[-1]  # Last part
+            print(f"    Image Reference: {image_reference_name}")
+        if profile.get('data', {}).get('ip'):
+            print(f"    IP: {profile.get('data', {}).get('ip')}")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
-    parser.add_argument("command", choices=["scan", "list-profiles"], help="Command to execute")
+    parser.add_argument("mode", choices=["ui", "api"], help="Accessing \"ui\" for web UI or \"api\" for API mode")
+    parser.add_argument("command", choices=["scan", "profiles"], help="Command to execute")
     parser.add_argument("filename", nargs="?", help="File to scan")
-    parser.add_argument("--profile", "-p", default="live_defender", help="Profile to use")
-    parser.add_argument("--comment", "-c", default="", help="Comment for the scan")
+
+    # Connection related
+    parser.add_argument("--url", default="http://localhost:8000", help="API base URL")
+    parser.add_argument("--password", default="", help="Password for the profile (if required)")
+    parser.add_argument("--token", default="", help="Token (if you have one)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+
+    # Scan related
+    parser.add_argument("--profile", "-p", default="", help="Profile to use")
+    parser.add_argument("--file-comment", "-c", default="", help="Comment for the file")
+    parser.add_argument("--scan-comment", "-sc", default="", help="Comment for the scan")
     parser.add_argument("--project", "-j", default="", help="Project name for the scan")
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
-    parser.add_argument("--api-url", default="http://localhost:8000", help="API base URL")
-    parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
-    parser.add_argument("--randomize-filename", action="store_true", help="Randomize filename before upload")
+    #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
+    parser.add_argument("--runtime", type=int, default=10, help="Runtime in seconds")
+    parser.add_argument("--no-randomize-filename", action="store_true", default=False, help="Randomize filename before upload")
     
     args = parser.parse_args()
     
-    global API_BASE_URL
-    API_BASE_URL = args.api_url
-    
-    if args.command == "list-profiles":
-        print_profiles()
-        return
+    detClient: DetonatorClient
+    if args.mode == "ui":
+        detClient = DetonatorClientUi(args.url, args.token, args.debug)
+    elif args.mode == "api":
+        detClient = DetonatorClientApi(args.url, args.token, args.debug)
+    else:
+        print("Invalid mode. Use 'ui' or 'api'.")
+        sys.exit(1)
+
+    if args.command == "profiles":
+        profiles = detClient.get_profiles()
+        print_profiles(profiles)
     
     elif args.command == "scan":
         if not args.filename:
@@ -145,51 +70,30 @@ def main():
             parser.print_help()
             return
             
-        filename = args.filename
-        profile_name = args.profile
-        
-        # Check if file exists
-        if not os.path.exists(filename):
-            print(f"Error: File {filename} does not exist")
+        # Check: if file exists
+        if not os.path.exists(args.filename):
+            print(f"Error: File {args.filename} does not exist")
             return
         
-        # Get available profiles to validate
-        profiles = get_profiles()
-        profile_names = list(profiles.keys()) if profiles else []
-        if profile_name not in profile_names:
-            print(f"Error: Profile '{profile_name}' not found")
+        # Check: Profile
+        if not detClient.valid_profile(args.profile):
+            print(f"Error: Profile '{args.profile}' not found")
             print("Available profiles:")
-            print_profiles()
+            print_profiles(detClient.get_profiles())
             return
         
-        #print(f"> Scanning file {filename} with profile {profile_name}")
+        detClient.scan_file(
+                args.filename,
+                args.source_url,
+                args.file_comment,
+                args.scan_comment,
+                args.project,
+                args.profile,
+                args.password,
+                args.runtime,
+                not args.no_randomize_filename
+            )
         
-        # Upload file
-        file_info = upload_file(filename, args.source_url, f"CLI {args.comment}", randomize_filename=args.randomize_filename)
-        if not file_info:
-            print("Failed to upload file")
-            return
-        file_id = file_info['id']
-        #print(f"File uploaded successfully with ID: {file_id}")
-        
-        # Create scan
-        scan_info = create_scan(file_id, profile_name, args.comment, args.project)
-        if not scan_info:
-            print("Failed to create scan")
-            return
-        scan_id = scan_info['id']
-        #print(f"Scan created successfully with ID: {scan_id}")
-        
-        # Wait for completion
-        final_scan = wait_for_scan_completion(scan_id, args.timeout)
-        if final_scan:
-            if final_scan.get('edr_logs'):
-                pass
-
-            if final_scan.get('result'):
-                print(f"Result: {final_scan['result']}")
-        else:
-            print("Scan did not complete successfully")
 
 if __name__ == "__main__":
     main()
