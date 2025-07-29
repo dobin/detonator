@@ -27,7 +27,6 @@ class AgentApi:
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
-                print("Agent: CheckLock response:", data)
                 if "in_use" not in data:
                     logging.warning("Agent: CheckLock response missing 'in_use' key")
                     return False

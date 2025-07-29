@@ -97,8 +97,15 @@ def upload_file_and_scan():
             
         if 'password' in request.form:
             data['password'] = request.form['password']
+
+        if 'token' in request.form:
+            data['token'] = request.form['token']
         
-        data['runtime'] = 12
+        if 'runtime' in request.form:
+            try:
+                data['runtime'] = int(request.form['runtime'])
+            except ValueError:
+                return {"error": "Invalid runtime value"}, 400
         response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)
         return handle_api_response(response, "file upload and scan")
     except requests.RequestException as e:

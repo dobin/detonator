@@ -6,6 +6,7 @@ import logging
 from .database import get_db, File, Scan, Profile
 from .schemas import FileResponse, FileWithScans, NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
+from .token_auth import tokenAuth
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -42,11 +43,17 @@ async def upload_file_and_scan(
     profile_name: str = Form(...),
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
+    token: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Upload a file and automatically create a scan with Azure VM"""
-    
-    # Check if allowed
+
+    # Check if allowed: token
+    permissions = tokenAuth.get_permissions(token)
+    if permissions.is_anonymous:
+        runtime = 12
+
+    # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)
     if not profile:
         raise HTTPException(status_code=400, detail=f"Profile not found: {profile_name}")
