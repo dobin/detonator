@@ -41,17 +41,7 @@ def scan_page():
 
 @get_bp.route("/upload")
 def upload_page():
-    # Fetch profiles list
-    try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles")
-        if response.status_code == 200:
-            profiles = response.json()
-        else:
-            profiles = []
-    except requests.RequestException:
-        profiles = []
-    
-    return render_template("upload.html", profiles=profiles)
+    return render_template("upload.html")
 
 @get_bp.route("/vms")
 def vms_page():
@@ -296,15 +286,18 @@ def get_connectors():
     except requests.RequestException:
         return {"error": "Could not fetch connectors"}, 500
 
-@get_bp.route("/api/profiles/<int:profile_id>/release_lock", methods=['POST'])
-def release_profile_lock(profile_id):
-    """Proxy endpoint to release lock for a profile"""
+@get_bp.route("/api/profiles/<int:profile_id>")
+def get_profile(profile_id):
+    """Proxy endpoint to get a single profile via FastAPI"""
     try:
-        response = requests.post(f"{API_BASE_URL}/api/profiles/{profile_id}/release_lock")
+        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}")
+        
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": "Could not release lock"}, response.status_code
-    except requests.RequestException:
-        return {"error": "Could not release lock"}, 500
-
+            logger.error(f"FastAPI error: {response.status_code} - {response.text}")
+            return {"error": f"FastAPI error: {response.text}"}, response.status_code
+            
+    except requests.RequestException as e:
+        logger.error(f"Request error: {str(e)}")
+        return {"error": f"Could not get profile: {str(e)}"}, 500
