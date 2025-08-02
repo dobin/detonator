@@ -6,5 +6,5 @@ bak/
 config.env
 .env
 .vscode/
-profiles_init.yaml
+*.yaml
 todo.md

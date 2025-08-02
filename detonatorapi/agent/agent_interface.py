@@ -77,6 +77,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     agentApi = AgentApi(agent_ip, agent_port)
 
     if DO_LOCKING:
+        logger.info("Scan: Attempt locking")
         # Try to acquire lock 4 times with 30 second intervals
         lock_acquired = False
         attempts = 6
@@ -102,6 +103,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     filename_trace = filename.rsplit('.', 1)[0]
 
     # Set the process name we gonna trace
+    logger.info("Scan: Attempt StartTrace")
     if not agentApi.StartTrace(filename_trace):
         db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
         agentApi.ReleaseLock()  # no check, we just release the lock
@@ -112,6 +114,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     time.sleep(SLEEP_TIME_REDEDR_WARMUP)
 
     # Execute our malware
+    logger.info("Scan: Attempt Scan")
     scanResult: ScanResult = agentApi.ExecFile(filename, file_content)
     is_malware = False
     if scanResult == ScanResult.ERROR:
@@ -136,6 +139,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     time.sleep(SLEEP_TIME_POST_SCAN)
 
     # Gather all logs
+    logger.info("Scan: Attempt to gather logs from Agent")
     rededr_events = agentApi.GetRedEdrEvents()
     agent_logs = agentApi.GetAgentLogs()
     execution_logs = agentApi.GetExecutionLogs()
@@ -144,6 +148,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     result_is_detected = ""  # will be generated
 
     # kill process (after gathering all logs, so we dont have the shutdown logs)
+    logger.info("Scan: Attempt to stop trace on Agent")
     if agentApi.StopTrace():
         db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
     else:
@@ -152,6 +157,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     # we finished 
     if DO_LOCKING:
+        logger.info("Scan: Attempt to release lock")
         if not agentApi.ReleaseLock():
             db_scan_add_log(thread_db, db_scan, f"Could not release lock on Agent at {agent_ip}")
         else:

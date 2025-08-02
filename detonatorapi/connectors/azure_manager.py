@@ -2,6 +2,10 @@ import asyncio
 import logging
 import time
 import base64
+import os
+import yaml
+import uuid
+
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from azure.identity import DefaultAzureCredential
@@ -9,12 +13,9 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
-from detonatorapi.utils import mylog, scanid_to_vmname
-import uuid
-from dotenv import load_dotenv
 
+from detonatorapi.utils import mylog, scanid_to_vmname
 from detonatorapi.database import Scan
-from detonatorapi.settings import AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION
 
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
@@ -22,6 +23,8 @@ logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(l
 logging.getLogger("azure.identity").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+
+CONFIG_FILE = 'azure.yaml'
 
 
 
@@ -507,14 +510,37 @@ class AzureManager:
 azure_manager: Optional[AzureManager] = None
 
 
+def read_yaml_config() -> Dict[str, Any]:
+    """Read YAML configuration file and return as dictionary"""
+    file_path = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
+    try:
+        with open(file_path, 'r') as file:
+            return yaml.safe_load(file)
+    except Exception as e:
+        logger.error(f"Error reading YAML config {file_path}: {str(e)}")
+        return {}
+
+
 def initialize_azure_manager():
     """Initialize the global VM manager instance"""
     global azure_manager
-    if not AZURE_SUBSCRIPTION_ID or AZURE_SUBSCRIPTION_ID == "":
-        logger.info("Azure subscription ID is not configured.")
+
+    # check if config exists
+    if not os.path.exists(CONFIG_FILE):
+        logger.info(f"Azure configuration file {CONFIG_FILE} not found. Azure not activated.")
         return True
 
-    azure_manager = AzureManager(AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION)
+    config = read_yaml_config()
+    required_keys = ['subscription_id', 'resource_group', 'location']
+    if not all(key in config for key in required_keys):
+        logger.error(f"Azure configuration file {CONFIG_FILE} is missing required keys: {required_keys}")
+        return False
+
+    azure_manager = AzureManager(
+        subscription_id=config['subscription_id'],
+        resource_group=config['resource_group'],
+        location=config['location']
+    )
     return True
 
 

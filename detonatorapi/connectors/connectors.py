@@ -2,12 +2,16 @@
 from .connector import ConnectorBase
 from .connector_newazure import ConnectorNewAzure
 from .connector_live import ConnectorLive
+from .connector_proxmox import ConnectorProxmox
 
 
 connectors_init = {
     "NewAzure": ConnectorNewAzure(),
     "Live": ConnectorLive(),
+    "Proxmox": ConnectorProxmox(),
 }
+
+connectors_init["Proxmox"].init()
 
 
 class Connectors:
