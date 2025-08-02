@@ -63,7 +63,7 @@ class ProxmoxManager:
         return True
 
 
-    def WaitForVmStatus(self, vm_id, status, timeout=5):
+    def WaitForVmStatus(self, vm_id, status, timeout=10):
         n = 0
         while self.StatusVm(vm_id) != status:
             if n == timeout:
@@ -71,10 +71,10 @@ class ProxmoxManager:
                 return False
             
             logger.info(f"Waiting for VM {vm_id} to reach status '{status}'... (current: {self.StatusVm(vm_id)})")
-            time.sleep(1)
+            time.sleep(3)
             n += 1
         return True
-
+    
 
     def StatusVm(self, vm_id) -> str:
         try:
@@ -82,6 +82,29 @@ class ProxmoxManager:
         except ResourceException as e:
             return "doesnotexist"
         return vmStatus["status"]
+    
+
+    def StatusVmLock(self, vm_id) -> str:
+        try:
+            vmStatus = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+        except ResourceException as e:
+            return "doesnotexist"
+        return vmStatus.get("lock", "unlocked")
+    
+
+    def WaitForVmUnlock(self, vm_id, timeout=10):
+        n = 0
+        while True:
+            status = self.StatusVmLock(vm_id)
+            if status == "unlocked":
+                return True
+            if n == timeout:
+                logger.error(f"Proxmox WaitForVmUnlock: Wait Failed for VM {vm_id}")
+                return False
+            
+            logger.info(f"Waiting for VM {vm_id} to unlock... (current: {status})")
+            time.sleep(3)
+            n += 1
     
 
     def StartVm(self, vm_id) -> bool:
@@ -102,7 +125,8 @@ class ProxmoxManager:
         task = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).snapshot(vm_snapshot).rollback.post()
         if not self._waitForTask(task):
             return False
-        return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
+        #return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
+        return self.WaitForVmUnlock(vm_id)
 
 
     def SnapshotExists(self, vm_id, snapshot_name) -> bool:
