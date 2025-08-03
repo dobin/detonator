@@ -88,6 +88,7 @@ class ConnectorProxmox(ConnectorBase):
     def stop(self, db, db_scan: Scan):
         if PROXMOX_NO_RESET:
             db_change_status(db, db_scan, "finished")
+            return
 
         def stop_thread(scan_id: int):
             thread_db = get_db_for_thread()
@@ -107,6 +108,7 @@ class ConnectorProxmox(ConnectorBase):
     def remove(self, db, db_scan: Scan):
         if PROXMOX_NO_RESET:
             db_change_status(db, db_scan, "finished")
+            return
 
         def remove_thread(scan_id: int):
             thread_db = get_db_for_thread()
