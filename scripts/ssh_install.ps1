@@ -1,3 +1,9 @@
+# Install SSH on Windows
+# And add a public key for the 'Administrators' group
+# For Detonator remote upgrade for RedEdr
+#
+# https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement
+
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 Start-Service sshd
 Set-Service -Name sshd -StartupType 'Automatic'
