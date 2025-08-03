@@ -37,7 +37,7 @@ class AgentApi:
                 logging.warning("Agent: CheckLock error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: CheckLock error: ", e)
+            logging.warning(f"Agent: CheckLock error: {e}")
             return False
 
 
@@ -59,7 +59,7 @@ class AgentApi:
                 logging.warning("Agent: LockAcquire failed: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: LockAcquire error: ", e)
+            logging.warning(f"Agent: LockAcquire error: {e}")
             return False
         return True
     
@@ -71,9 +71,9 @@ class AgentApi:
             response = requests.post(url)
             if response.status_code != 200:
                 # meh we dont care. and should never happen
-                logging.warning("Agent: LockRelease failed: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent: LockRelease failed: {response.status_code} {response.text}")
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: LockRelease error: ", e)
+            logging.warning(f"Agent: LockRelease error: {e}")
             return False
         return True
     
@@ -87,10 +87,10 @@ class AgentApi:
                 #print("Response:", response.json())
                 pass
             else:
-                logging.warning("Agent: Reset error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent: Reset error: {response.status_code} {response.text}")
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: Reset error: ", e)
+            logging.warning(f"Agent: Reset error: {e}")
             return False
 
         # Configure trace
@@ -103,10 +103,10 @@ class AgentApi:
                 #print("Response:", response.json())
                 return True
             else:
-                logging.warning("Agent: StartTrace error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent: StartTrace error: {response.status_code} {response.text}")
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: StartTrace error: ", e)
+            logging.warning(f"Agent: StartTrace error: {e}")
             return False
         
     
@@ -116,10 +116,10 @@ class AgentApi:
         try:
             response = requests.post(url)
             if response.status_code != 200:
-                logging.warning("Agent: kill error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent: kill error: {response.status_code} {response.text}")
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: kill error: ", e)
+            logging.warning(f"Agent: kill error: {e}")
             return False
         
         return True
@@ -144,10 +144,10 @@ class AgentApi:
                 #print("Response:", response.json())
                 return ScanResult.OK
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return ScanResult.ERROR
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning(f"Agent HTTP response error: {e}")
             return ScanResult.ERROR
         
     
@@ -162,10 +162,10 @@ class AgentApi:
                 else:
                     return False
             else:
-                logging.warning("Agent: CheckLock error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent: CheckLock error: {response.status_code} {response.text}")
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent: CheckLock error: ", e)
+            logging.warning(f"Agent: CheckLock error: {e}")
             return False
         
 
@@ -177,10 +177,10 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning(f"Agent HTTP response error: {e}")
             return None
 
 
@@ -192,10 +192,10 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning(f"Agent HTTP response error: {e}")
             return None
         
 
@@ -207,10 +207,10 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning(f"Agent HTTP response error: {e}")
             return None
 
 
@@ -222,8 +222,8 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning("Agent HTTP response error: {} {}".format(response.status_code, response.text))
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning("Agent HTTP response error: ", e)
+            logging.warning(f"Agent HTTP response error: {e}")
             return None
