@@ -113,21 +113,30 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     is_available = ""
     is_in_use = False
 
-    ip = db_profile.data.get('ip', '')
-    port = db_profile.port
-    if ip == "" or port == 0:
-        is_available = ""
-    else:
-        agentApi: AgentApi = AgentApi(ip, port)
+    ip: str = ""
+    port: int = 0
+    if db_profile.connector == "Live": 
+        ip = db_profile.data.get('ip', '')
+        port = db_profile.port
+    elif db_profile.connector == "Proxmox":
+        ip = db_profile.data.get('vm_ip', '')
+        port = 0
+    elif db_profile.connector == "Azure":
+        return {
+            "id": db_profile.id,
+            "ip": "",
+            "port": 0,
+            "is_available": "N/A",
+        }
 
-        if agentApi.IsReachable():
-            if agentApi.IsInUse():
-                is_available = "In use"
-            else:
-                is_available = "Reachable"
+    agentApi: AgentApi = AgentApi(ip, port)
+    if agentApi.IsReachable():
+        if agentApi.IsInUse():
+            is_available = "In use"
         else:
-            is_available = "Not reachable"
-
+            is_available = "Reachable"
+    else:
+        is_available = "Not reachable"
 
     return {
         "id": db_profile.id,
