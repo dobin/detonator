@@ -69,11 +69,12 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         if not agent_ip:
             logger.error(f"Scan {db_scan.id} has no VM IP address defined")
             return False
-    agent_port = db_scan.profile.port
+    agent_port = db_scan.profile.port  # port is always defined in the profile
 
     filename = db_scan.file.filename
     file_content = db_scan.file.content
     runtime = db_scan.runtime
+    malware_path = db_scan.malware_path
     agentApi = AgentApi(agent_ip, agent_port)
 
     if DO_LOCKING:
@@ -115,7 +116,13 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
 
     # Execute our malware
     logger.info("Scan: Attempt Scan")
-    scanResult: ScanResult = agentApi.ExecFile(filename, file_content)
+
+    # last default if not given until now
+    if not malware_path or malware_path == "":
+        malware_path = "C:\\Users\\Public\\Downloads\\"
+        
+    db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on Agent at {agent_ip} with runtime {runtime} seconds and malware path {malware_path}")
+    scanResult: ScanResult = agentApi.ExecFile(filename, file_content, malware_path)
     is_malware = False
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
@@ -125,7 +132,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
         is_malware = True
     elif scanResult == ScanResult.OK:
-        db_scan_add_log(thread_db, db_scan, f"Executed file {filename} on Agent at {agent_ip} runtime {runtime} seconds")
+        db_scan_add_log(thread_db, db_scan, f"Success executing file {filename}, wait {runtime} seconds")
         thread_db.commit()
 
         # process is being executed. 

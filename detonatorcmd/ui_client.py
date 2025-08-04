@@ -29,7 +29,7 @@ class DetonatorClientUi(DetonatorClient):
         return profile_name in profiles
     
 
-    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, randomize_filename=True):
+    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, malware_path="", randomize_filename=True):
         if not os.path.exists(filename):
             print(f"Error: File {filename} does not exist")
             return None
@@ -51,6 +51,7 @@ class DetonatorClientUi(DetonatorClient):
                 'profile_name': profile_name,
                 'password': password,
                 'runtime': runtime,
+                'malware_path': malware_path,
             }
             response = requests.post(
                 f"{self.baseUrl}/api/upload-and-scan",

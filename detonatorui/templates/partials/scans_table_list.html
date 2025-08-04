@@ -8,6 +8,8 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Comment</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scan Comment</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Runtime</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Malware Path</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -48,6 +50,22 @@
                         {% if scan.profile.edr_collector %}
                             <div class="text-xs text-gray-500">{{ scan.profile.edr_collector }}</div>
                         {% endif %}
+                    {% else %}
+                        <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if scan.runtime %}
+                        <div class="text-sm text-gray-900">{{ scan.runtime }}s</div>
+                    {% else %}
+                        <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    {% if scan.malware_path %}
+                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ scan.malware_path }}">
+                            {{ scan.malware_path }}
+                        </div>
                     {% else %}
                         <span class="text-gray-400">-</span>
                     {% endif %}

@@ -20,6 +20,7 @@ class Profile(Base):
     connector = Column(String(50), nullable=False)
     port = Column(Integer, nullable=False)
     edr_collector = Column(String(100), nullable=False)
+    default_malware_path = Column(String(255), default="", nullable=False)
     comment = Column(Text, nullable=True)
     data = Column(JSON, nullable=False)
     password = Column(String(255), default="", nullable=False)
@@ -58,6 +59,7 @@ class Scan(Base):
     comment = Column(Text, default="", nullable=False)
     project = Column(String(100), default="", nullable=False)
     runtime = Column(Integer, default=10, nullable=False)
+    malware_path = Column(String(255), default="", nullable=False)
 
     # TRACK
     detonator_srv_logs = Column(Text, nullable=False)

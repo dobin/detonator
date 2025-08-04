@@ -34,6 +34,12 @@
                         {% if scan.profile %}
                         <p class="text-gray-600 text-sm">Profile: {{ scan.profile.name }}</p>
                         {% endif %}
+                        {% if scan.runtime %}
+                        <p class="text-gray-600 text-sm">Runtime: {{ scan.runtime }} seconds</p>
+                        {% endif %}
+                        {% if scan.malware_path %}
+                        <p class="text-gray-600 text-sm">Malware Path: {{ scan.malware_path }}</p>
+                        {% endif %}
 
                         {% if scan.vm_ip_address %}
                         <p class="text-gray-600 text-sm">VM IP: {{ scan.vm_ip_address }}</p>

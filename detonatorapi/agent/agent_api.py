@@ -125,13 +125,16 @@ class AgentApi:
         return True
 
 
-    def ExecFile(self, filename: str, file_data: bytes) -> ScanResult:
+    def ExecFile(self, filename: str, file_data: bytes, malware_path: str) -> ScanResult:
         url = self.agent_url + "/api/exec"
         files = {
             "file": (filename, file_data),
         }
+        # add trailing slash just to make sure
+        if not malware_path.endswith("\\"):
+            malware_path += "\\"
         data = {
-            "path": "C:\\Users\\Public\\Downloads\\",
+            "path": malware_path,
         }
         # multipart form-data
         try:

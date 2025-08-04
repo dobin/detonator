@@ -17,6 +17,8 @@ def print_profiles(profiles):
         print(f"Profile: {profile_name}")
         print(f"    Connector: {profile.get('connector', '')}")
         print(f"    EDR Collector: {profile.get('edr_collector', '')}")
+        if profile.get('default_malware_path'):
+            print(f"    Default Malware Path: {profile.get('default_malware_path', '')}")
         print(f"    Port: {profile.get('port', '')}")
         if profile.get('comment'):
             print(f"    Comment: {profile.get('comment', '')}")
@@ -38,6 +40,7 @@ def main():
     parser.add_argument("--password", default="", help="Password for the profile (if required)")
     parser.add_argument("--token", default="", help="Token (if you have one)")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--malware-path", default="", help="Path to save malware files")
 
     # Scan related
     parser.add_argument("--profile", "-p", default="", help="Profile to use")
@@ -91,6 +94,7 @@ def main():
                 args.profile,
                 args.password,
                 args.runtime,
+                args.malware_path,
                 not args.no_randomize_filename
             )
         

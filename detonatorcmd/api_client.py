@@ -29,12 +29,12 @@ class DetonatorClientApi(DetonatorClient):
         return profile_name in profiles
     
 
-    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, randomize_filename=True):
+    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, malware_path, randomize_filename=True):
         file_info = self._upload_file(
             filename, 
             source_url, 
             file_comment,
-            randomize_filename
+            randomize_filename,
         )
         if not file_info:
             print("Failed to upload file")
@@ -49,7 +49,8 @@ class DetonatorClientApi(DetonatorClient):
             scan_comment, 
             project,
             password,
-            runtime
+            runtime,
+            malware_path
         )
         if not scan_info:
             print("Failed to create scan")
@@ -92,13 +93,14 @@ class DetonatorClientApi(DetonatorClient):
             return None
 
 
-    def _create_scan(self, file_id, profile_name, comment="", project="", password="", runtime=10):
+    def _create_scan(self, file_id, profile_name, comment="", project="", password="", runtime=10, malware_path=""):
         try:
             data = {
                 "project": project,
                 "profile_name": profile_name,
                 "runtime": runtime,
                 "comment": comment,
+                "malware_path": malware_path
             }
             if password != "":
                 data["password"] = password
