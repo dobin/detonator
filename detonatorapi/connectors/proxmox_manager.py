@@ -44,21 +44,28 @@ class ProxmoxManager:
 
         # read config
         config = read_yaml_config(config_filepath)
-        required_keys = ['ip', 'name', 'user', 'password']
+        required_keys = ['ip', 'name' ]
         if not all(key in config for key in required_keys):
             logger.error(f"Proxmox configuration file {CONFIG_FILE} is missing required keys: {required_keys}")
             return False
         self.proxmox_ip = config['ip']
         self.proxmox_node_name = config['name']
-        self.user = config['user']
-        self.password = config['password']
-        
-        # connect to Proxmox
-        self.prox = ProxmoxAPI(
-            self.proxmox_ip, 
-            user=self.user, 
-            password=self.password, 
-            verify_ssl=False)
+
+        if 'token_id' in config and 'token_value' in config:
+            self.prox = ProxmoxAPI(
+                self.proxmox_ip, 
+                token_name=config['token_id'],
+                token_value=config['token_value'],
+                verify_ssl=False)            
+        elif 'user' in config and 'password' in config:
+            self.prox = ProxmoxAPI(
+                self.proxmox_ip, 
+                user=config['user'], 
+                password=config['password'],
+                verify_ssl=False)
+        else:
+            logger.error(f"Proxmox configuration file {CONFIG_FILE} must contain either 'token_id' and 'token_value' or 'user' and 'password'")
+            return False
         
         return True
 
