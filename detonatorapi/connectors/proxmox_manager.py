@@ -88,6 +88,7 @@ class ProxmoxManager:
         try:
             vmStatus = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
         except ResourceException as e:
+            logger.error(f"Proxmox StatusVm: Error getting status for VM {vm_id}: {e}")
             return "doesnotexist"
         return vmStatus["status"]
     
@@ -96,6 +97,7 @@ class ProxmoxManager:
         try:
             vmStatus = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
         except ResourceException as e:
+            logger.error(f"Proxmox StatusVmLock: Error getting lock status for VM {vm_id}: {e}")
             return "doesnotexist"
         return vmStatus.get("lock", "unlocked")
     
