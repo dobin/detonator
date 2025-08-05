@@ -52,6 +52,7 @@ class ProxmoxManager:
         self.proxmox_node_name = config['name']
 
         if 'token_id' in config and 'token_value' in config:
+            logger.info(f"Using Proxmox token authentication with token_id: {config['token_id']}")
             self.prox = ProxmoxAPI(
                 self.proxmox_ip, 
                 token_name=config['token_id'],
