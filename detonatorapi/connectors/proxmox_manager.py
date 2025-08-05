@@ -29,8 +29,6 @@ class ProxmoxManager:
     def __init__(self):
         self.proxmox_ip = None
         self.proxmox_node_name = None
-        self.user = None
-        self.password = None
         self.prox: ProxmoxAPI = None
 
 
@@ -54,7 +52,8 @@ class ProxmoxManager:
         if 'token_id' in config and 'token_value' in config:
             logger.info(f"Using Proxmox token authentication with token_id: {config['token_id']}")
             self.prox = ProxmoxAPI(
-                self.proxmox_ip, 
+                self.proxmox_ip,
+                user=config['user'],
                 token_name=config['token_id'],
                 token_value=config['token_value'],
                 verify_ssl=False)            
@@ -66,6 +65,15 @@ class ProxmoxManager:
                 verify_ssl=False)
         else:
             logger.error(f"Proxmox configuration file {CONFIG_FILE} must contain either 'token_id' and 'token_value' or 'user' and 'password'")
+            return False
+
+        # Test authentication
+        try:
+            # Simple API call to test authentication
+            version = self.prox.version.get()
+            logger.info(f"Proxmox authentication successful. Version: {version.get('version', 'unknown')}")
+        except Exception as e:
+            logger.error(f"Proxmox authentication failed: {e}")
             return False
         
         return True
