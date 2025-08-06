@@ -144,7 +144,7 @@ class ProxmoxManager:
         if not self._waitForTask(task):
             return False
         #return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
-        return self.WaitForVmUnlock(vm_id)
+        return self.WaitForVmUnlock(vm_id, timeout=20)
 
 
     def SnapshotExists(self, vm_id, snapshot_name) -> bool:
