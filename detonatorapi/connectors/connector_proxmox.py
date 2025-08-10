@@ -131,11 +131,16 @@ class ConnectorProxmox(ConnectorBase):
                 return
 
             # TODO cleanup()?
-            time.sleep(2) # or we get "Error: VM is locked (rollback)". Damn Proxmox.
+            time.sleep(2) # or we get "Error: VM is locked (rollback)"
             if self.proxmox_manager.StartVm(vm_id):
                 db_scan_add_log(thread_db, db_scan, "VM successfully started")
             else:
                 db_scan_add_log(thread_db, db_scan, "VM failed starting")
+
+            # we give it some time to start up
+            # it may be important, when the user immediately tries to start a new scan
+            # with ETW/ETW-TI which needs some warmup
+            time.sleep(20)
 
             db_change_status(thread_db, db_scan, "removed")
             thread_db.close()
