@@ -145,22 +145,24 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SCAN)
 
-    # Gather all logs
-    logger.info("Scan: Attempt to gather logs from Agent")
+    # Gather EDR logs
+    # we dont want to have the process killing in it
+    logger.info("Scan: Gather EDR logs from Agent")
     rededr_events = agentApi.GetRedEdrEvents()
-    agent_logs = agentApi.GetAgentLogs()
-    execution_logs = agentApi.GetExecutionLogs()
     edr_logs = agentApi.GetEdrLogs()
-    edr_summary = ""  # will be generated
-    result_is_detected = ""  # will be generated
 
-    # kill process (after gathering all logs, so we dont have the shutdown logs)
+    # kill process (after gathering EDR logs, so we dont have the shutdown logs)
     logger.info("Scan: Attempt to stop trace on Agent")
     if agentApi.StopTrace():
         db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
     else:
         db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process")
         # no return, we dont care
+
+    # Gather logs from Agent
+    # After stopping the trace, so we have all the Agent logs (including the process killing)
+    agent_logs = agentApi.GetAgentLogs()
+    execution_logs = agentApi.GetExecutionLogs()
 
     # we finished 
     if DO_LOCKING:
@@ -171,6 +173,8 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
             db_scan_add_log(thread_db, db_scan, f"Released lock on Agent at {agent_ip}")
 
     # Preparse all the logs
+    edr_summary = ""  # will be generated
+    result_is_detected = ""  # will be generated
     if agent_logs is None:
         agent_logs = "No Agent logs available"
         db_scan_add_log(thread_db, db_scan, "could not get Agent logs from Agent")
@@ -199,10 +203,10 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
                         edr_summary = parser.get_summary()
                         if parser.is_detected():
                             result_is_detected = "detected"
-                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate suspicious activity detected")
+                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate: detected")
                         else:
-                            result_is_detected = "clean"
-                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate clean")
+                            result_is_detected = "not_detected"
+                            db_scan_add_log(thread_db, db_scan, "EDR logs indicate: not detected")
                     else:
                         db_scan_add_log(thread_db, db_scan, "EDR logs could not be parsed")
                     break
@@ -214,7 +218,7 @@ def scan_file_with_agent(thread_db, db_scan: Scan) -> bool:
     # if its already detected as malware, make sure the status is set
     # as we might not have any EDR logs
     if is_malware:
-        result_is_detected = "virus"
+        result_is_detected = "file_detected"
 
     # write all logs to the database
     db_scan.execution_logs = execution_logs
