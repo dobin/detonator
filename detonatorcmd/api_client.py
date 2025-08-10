@@ -29,7 +29,7 @@ class DetonatorClientApi(DetonatorClient):
         return profile_name in profiles
     
 
-    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, malware_path, randomize_filename=True):
+    def scan_file(self, filename, source_url, file_comment, scan_comment, project, profile_name, password, runtime, malware_path="", randomize_filename=True):
         file_info = self._upload_file(
             filename, 
             source_url, 
@@ -111,8 +111,6 @@ class DetonatorClientApi(DetonatorClient):
             return response.json()
         except requests.RequestException as e:
             print(f"Error creating scan: {e}")
-            if response and response.text:
-                print(f"Response: {response.text}")
             return None
 
 
