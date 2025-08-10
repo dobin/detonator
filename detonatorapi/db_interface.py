@@ -2,15 +2,26 @@ from typing import Optional, List
 from datetime import datetime
 import logging
 
-from .database import Scan, File, Profile
+from .database import Scan, File, Profile, get_db_for_thread
 from .utils import mylog
 
 logger = logging.getLogger(__name__)
 
 
-def db_change_status(db, db_scan: Scan, status: str, log_message: str = ""):
-    #db.refresh(db_scan)
+#
+def db_scan_change_status(scan_id: int, status: str, log_message: str = ""):
+    thread_db = get_db_for_thread()
+    db_scan = thread_db.get(Scan, scan_id)
 
+    return db_scan_change_status_quick(thread_db, db_scan, status, log_message)
+
+
+# Change the status of a scan in the database
+# Only use this when you know what you are doing:
+# - as a shortcut
+# - and not use the db_scan after this
+# - or before this
+def db_scan_change_status_quick(db, db_scan: Scan, status: str, log_message: str = ""):
     log = f"Scan {db_scan.id} status change from {db_scan.status} to {status}"
     logger.info(log)
 

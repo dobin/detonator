@@ -29,7 +29,7 @@ class ProxmoxManager:
     def __init__(self):
         self.proxmox_ip = None
         self.proxmox_node_name = None
-        self.prox: ProxmoxAPI = None
+        self.proxmoxApi: ProxmoxAPI
 
 
     def Init(self) -> bool:
@@ -51,14 +51,14 @@ class ProxmoxManager:
 
         if 'token_id' in config and 'token_value' in config:
             logger.info(f"Using Proxmox token authentication with token_id: {config['token_id']}")
-            self.prox = ProxmoxAPI(
+            self.proxmoxApi = ProxmoxAPI(
                 self.proxmox_ip,
                 user=config['user'],
                 token_name=config['token_id'],
                 token_value=config['token_value'],
                 verify_ssl=False)            
         elif 'user' in config and 'password' in config:
-            self.prox = ProxmoxAPI(
+            self.proxmoxApi = ProxmoxAPI(
                 self.proxmox_ip, 
                 user=config['user'], 
                 password=config['password'],
@@ -70,7 +70,10 @@ class ProxmoxManager:
         # Test authentication
         try:
             # Simple API call to test authentication
-            version = self.prox.version.get()
+            version = self.proxmoxApi.version.get()
+            if not version:
+                logger.error("Proxmox authentication failed: No version information returned")
+                return False
             logger.info(f"Proxmox authentication successful. Version: {version.get('version', 'unknown')}")
         except Exception as e:
             logger.error(f"Proxmox authentication failed: {e}")
@@ -94,20 +97,26 @@ class ProxmoxManager:
 
     def StatusVm(self, vm_id) -> str:
         try:
-            vmStatus = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            if not vmStatus:
+                logger.error(f"Proxmox StatusVm: VM {vm_id} does not exist or is not running")
+                return "doesnotexist"
+            return vmStatus["status"]
         except ResourceException as e:
             logger.error(f"Proxmox StatusVm: Error getting status for VM {vm_id}: {e}")
             return "doesnotexist"
-        return vmStatus["status"]
     
 
     def StatusVmLock(self, vm_id) -> str:
         try:
-            vmStatus = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            if not vmStatus:
+                logger.error(f"Proxmox StatusVmLock: VM {vm_id} does not exist or is not running")
+                return "doesnotexist"
+            return vmStatus.get("lock", "unlocked")
         except ResourceException as e:
             logger.error(f"Proxmox StatusVmLock: Error getting lock status for VM {vm_id}: {e}")
             return "doesnotexist"
-        return vmStatus.get("lock", "unlocked")
     
 
     def WaitForVmUnlock(self, vm_id, timeout=10):
@@ -126,21 +135,21 @@ class ProxmoxManager:
     
 
     def StartVm(self, vm_id) -> bool:
-        task = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.start.post()
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.start.post()
         if not self._waitForTask(task):
             return False
         return self.WaitForVmStatus(vm_id, "running", timeout=10)
 
 
     def StopVm(self, vm_id) -> bool:
-        task = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).status.stop.post()
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.stop.post()
         if not self._waitForTask(task):
             return False
         return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
 
 
     def RevertVm(self, vm_id, vm_snapshot) -> bool:
-        task = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).snapshot(vm_snapshot).rollback.post()
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot(vm_snapshot).rollback.post()
         if not self._waitForTask(task):
             return False
         #return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
@@ -149,7 +158,7 @@ class ProxmoxManager:
 
     def SnapshotExists(self, vm_id, snapshot_name) -> bool:
         try:
-            snapshots = self.prox.nodes(self.proxmox_node_name).qemu(vm_id).snapshot.get()
+            snapshots = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot.get()
             if not snapshots:
                 return False
             snapshot_exists = any(snapshot['name'] == snapshot_name for snapshot in snapshots)
@@ -177,7 +186,7 @@ class ProxmoxManager:
                 return False
             
             try:
-                task_status = self.prox.nodes(self.proxmox_node_name).tasks(task_id).status.get()
+                task_status = self.proxmoxApi.nodes(self.proxmox_node_name).tasks(task_id).status.get()
                 
                 if task_status and task_status['status'] == 'stopped':
                     if task_status['exitstatus'] == 'OK':

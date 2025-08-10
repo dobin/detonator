@@ -3,6 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import hashlib
+from sqlalchemy.orm import Mapped
+from sqlalchemy import String, Integer, DateTime, Text, JSON
+from typing import List, Optional
+
 
 # SQLite database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./detonator.db"
@@ -13,36 +17,36 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = "profiles"
-    id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    name = Column(String(100), nullable=False, unique=True, index=True)
-    connector = Column(String(50), nullable=False)
-    port = Column(Integer, nullable=False)
-    edr_collector = Column(String(100), nullable=False)
-    default_malware_path = Column(String(255), default="", nullable=False)
-    comment = Column(Text, nullable=True)
-    data = Column(JSON, nullable=False)
-    password = Column(String(255), default="", nullable=False)
-    
+    name: Mapped[str] = Column(String(100), nullable=False, unique=True, index=True)
+    connector: Mapped[str] = Column(String(50), nullable=False)
+    port: Mapped[int] = Column(Integer, nullable=False)
+    edr_collector: Mapped[str] = Column(String(100), nullable=False)
+    default_malware_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    comment: Mapped[str] = Column(Text, nullable=True)
+    data: Mapped[dict] = Column(JSON, nullable=False)
+    password: Mapped[str] = Column(String(255), default="", nullable=False)
+
     # Relationship
-    scans = relationship("Scan", back_populates="profile")
+    scans: Mapped[List["Scan"]] = relationship("Scan", back_populates="profile")
 
 
 class File(Base):
     __tablename__ = "files"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    content = Column(LargeBinary, nullable=False)
-    filename = Column(String(255), nullable=False)
-    file_hash = Column(String(64), nullable=False, index=True)
-    source_url = Column(String(500), nullable=True)
-    comment = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    content: Mapped[bytes] = Column(LargeBinary, nullable=False)
+    filename: Mapped[str] = Column(String(255), nullable=False)
+    file_hash: Mapped[str] = Column(String(64), nullable=False, index=True)
+    source_url: Mapped[str] = Column(String(500), nullable=True)
+    comment: Mapped[str] = Column(Text, nullable=True)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     
     # Relationship
-    scans = relationship("Scan", back_populates="file")
-    
+    scans: Mapped[List["Scan"]] = relationship("Scan", back_populates="file")
+
     @classmethod
     def calculate_hash(cls, content: bytes) -> str:
         """Calculate SHA256 hash of file content"""
@@ -53,39 +57,39 @@ class Scan(Base):
     __tablename__ = "scans"
     
     # IN
-    id = Column(Integer, primary_key=True, index=True)
-    file_id = Column(Integer, ForeignKey("files.id"), nullable=False)
-    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
-    comment = Column(Text, default="", nullable=False)
-    project = Column(String(100), default="", nullable=False)
-    runtime = Column(Integer, default=10, nullable=False)
-    malware_path = Column(String(255), default="", nullable=False)
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    file_id: Mapped[int] = Column(Integer, ForeignKey("files.id"), nullable=False)
+    profile_id: Mapped[int] = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    comment: Mapped[str] = Column(Text, default="", nullable=False)
+    project: Mapped[str] = Column(String(100), default="", nullable=False)
+    runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
+    malware_path: Mapped[str] = Column(String(255), default="", nullable=False)
 
     # TRACK
-    detonator_srv_logs = Column(Text, nullable=False)
-    status = Column(String(20), default="fresh", nullable=False)
+    detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)
+    status: Mapped[str] = Column(String(20), default="fresh", nullable=False)
 
     # OUT
-    execution_logs = Column(Text, default="", nullable=False)
-    agent_logs = Column(Text, default="", nullable=False)
-    rededr_events = Column(Text, default="", nullable=False)
-    edr_logs = Column(Text, default="", nullable=False)
-    edr_summary = Column(Text, default="", nullable=False)
-    result = Column(Text, default="", nullable=False)
+    execution_logs: Mapped[str] = Column(Text, default="", nullable=False)
+    agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
+    rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
+    edr_logs: Mapped[str] = Column(Text, default="", nullable=False)
+    edr_summary: Mapped[str] = Column(Text, default="", nullable=False)
+    result: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure
-    vm_exist = Column(Integer, default=0, nullable=False)
-    vm_instance_name = Column(String(100), nullable=True)
-    vm_ip_address = Column(String(15), nullable=True)
+    vm_exist: Mapped[int] = Column(Integer, default=0, nullable=False)
+    vm_instance_name: Mapped[str] = Column(String(100), nullable=True)
+    vm_ip_address: Mapped[str] = Column(String(15), nullable=True)
 
     # META
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
-    
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at: Mapped[datetime] = Column(DateTime, nullable=True)
+
     # Relationships
-    file = relationship("File", back_populates="scans")
-    profile = relationship("Profile", back_populates="scans")
+    file: Mapped[File] = relationship("File", back_populates="scans")
+    profile: Mapped[Profile] = relationship("Profile", back_populates="scans")
 
 
 # Create tables

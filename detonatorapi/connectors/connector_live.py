@@ -3,7 +3,7 @@ import threading
 from typing import Dict, List, Optional
 
 from detonatorapi.database import get_db_for_thread, Scan
-from detonatorapi.db_interface import db_change_status, db_scan_add_log
+from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
 
 from .connector import ConnectorBase
 
@@ -32,31 +32,31 @@ class ConnectorLive(ConnectorBase):
         }
 
 
-    def instantiate(self, db, db_scan: Scan):
+    def instantiate(self, scan_id: int):
         # nothing todo here, the VM is already running
-        db_change_status(db, db_scan, "connect")
+        db_scan_change_status(scan_id, "connect")
 
 
-    def connect(self, db, db_scan: Scan):
+    def connect(self, scan_id: int):
         # default agent connect
-        super().connect(db, db_scan)
+        super().connect(scan_id)
 
 
-    def scan(self, db, db_scan: Scan, pre_wait: int = 0):
+    def scan(self, scan_id: int, pre_wait: int = 0):
         # default agent scan
-        super().scan(db, db_scan, pre_wait=pre_wait)
+        super().scan(scan_id, pre_wait=pre_wait)
 
 
-    def stop(self, db, db_scan: Scan):
+    def stop(self, scan_id: int):
         # nothing todo here, VM keeps running
-        db_change_status(db, db_scan, "finished")
+        db_scan_change_status(scan_id, "finished")
 
 
-    def remove(self, db, db_scan: Scan):
+    def remove(self, scan_id: int):
         # nothing todo here, VM keeps running
-        db_change_status(db, db_scan, "finished")
+        db_scan_change_status(scan_id, "finished")
 
 
-    def kill(self, db, db_scan: Scan):
+    def kill(self, scan_id: int):
         # nothing todo here, VM keeps running
-        db_change_status(db, db_scan, "finished")
+        db_scan_change_status(scan_id, "finished")

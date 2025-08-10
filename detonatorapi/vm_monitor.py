@@ -7,7 +7,7 @@ import time
 import threading
 
 from .database import get_db_for_thread, Scan
-from .db_interface import db_change_status
+from .db_interface import db_scan_change_status_quick
 from .utils import mylog
 from .settings import *
 
@@ -26,7 +26,7 @@ class VMMonitorTask:
     def __init__(self):
         self.running = False
         self.task = None
-        self.db = None
+        self.db: Session = Session()
 
 
     def start_monitoring(self):
@@ -81,58 +81,58 @@ class VMMonitorTask:
             # get responsible VM manager, based on the profile->connector
             if not scan.profile.connector:
                 logger.error(f"Scan {scan_id} has no profile connector")
-                db_change_status(self.db, scan, "error")
+                db_scan_change_status_quick(self.db, scan, "error")
                 continue
-            if not connectors.has(scan.profile.connector):
+            connector: ConnectorBase|None = connectors.get(scan.profile.connector)
+            if not connector:
                 logger.error(f"Scan {scan_id} has no valid VM manager defined for profile connector: {scan.profile.connector}")
                 logger.error(f"VM Managers: {list(connectors.get_all().keys())}")
-                db_change_status(self.db, scan, "error")
+                db_scan_change_status_quick(self.db, scan, "error")
                 continue
-            connector: ConnectorBase = connectors.get(scan.profile.connector)
 
             # cleanup failed
             if status == "error" and scan.vm_exist == 1:
-                db_change_status(self.db, scan, "killing")
+                db_scan_change_status_quick(self.db, scan, "killing")
 
             # State Machine
             match status:
                 case "fresh":
                     # Start the process with instantiating the VM
-                    db_change_status(self.db, scan, "instantiate")
+                    db_scan_change_status_quick(self.db, scan, "instantiate")
 
                 case "instantiate":
-                    db_change_status(self.db, scan, "instantiating")
-                    connector.instantiate(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "instantiating")
+                    connector.instantiate(scan_id)
                 case "instantiated":
-                    db_change_status(self.db, scan, "connect")
+                    db_scan_change_status_quick(self.db, scan, "connect")
 
                 case "connect":
-                    db_change_status(self.db, scan, "connecting")
-                    connector.connect(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "connecting")
+                    connector.connect(scan_id)
                 case "connected":
-                    db_change_status(self.db, scan, "scan")
+                    db_scan_change_status_quick(self.db, scan, "scan")
 
                 case "scan":
-                    db_change_status(self.db, scan, "scanning")
-                    connector.scan(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "scanning")
+                    connector.scan(scan_id)
                 case "scanned":
-                    db_change_status(self.db, scan, "stop")
+                    db_scan_change_status_quick(self.db, scan, "stop")
 
                 case "stop":
-                    db_change_status(self.db, scan, "stopping")
-                    connector.stop(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "stopping")
+                    connector.stop(scan_id)
                 case "stopped":
-                    db_change_status(self.db, scan, "remove")
+                    db_scan_change_status_quick(self.db, scan, "remove")
 
                 case "remove":
-                    db_change_status(self.db, scan, "removing")
-                    connector.remove(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "removing")
+                    connector.remove(scan_id)
                 case "removed":
-                    db_change_status(self.db, scan, "finished")
+                    db_scan_change_status_quick(self.db, scan, "finished")
 
                 case "kill":
-                    db_change_status(self.db, scan, "killing")
-                    connector.kill(self.db, scan)
+                    db_scan_change_status_quick(self.db, scan, "killing")
+                    connector.kill(scan_id)
                 
 
 # Global VM monitor instance

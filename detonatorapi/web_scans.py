@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 import logging
 
-from detonatorapi.db_interface import db_change_status
+from detonatorapi.db_interface import db_scan_change_status_quick
 from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan
 from .connectors.azure_manager import get_azure_manager
@@ -90,7 +90,7 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
     
-    db_change_status(db, db_scan, "instantiate")
+    db_scan_change_status_quick(db, db_scan, "stop")
     return {"message": "VM shutdown initiated"}
 
 
