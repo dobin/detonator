@@ -1,0 +1,40 @@
+{% if templates %}
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connector</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for template_name, template in templates.items() %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ template_name }}</div>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">{{ template.connector }}</div>
+                </td>
+                <td class="px-4 py-2">
+                    {% if template.comment %}
+                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
+                    {% else %}
+                        <span class="text-gray-400 text-sm">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-8">
+    <div class="text-gray-400 text-4xl mb-2">🛡️</div>
+    <p class="text-gray-500 text-sm">No profiles configured yet.</p>
+    <a href="/profiles" class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block">
+        Create your first profile →
+    </a>
+</div>
+{% endif %}

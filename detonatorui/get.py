@@ -176,6 +176,23 @@ def profiles_template():
     
     return render_template("partials/profiles_list.html", templates=templates)
 
+@get_bp.route("/templates/profiles-overview")
+def profiles_overview_template():
+    """Template endpoint to render profiles overview for index page via HTMX"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/profiles")
+        if response.status_code == 200:
+            templates = response.json()
+            # Add the name to each template for easier access in templates
+            for template_name, template in templates.items():
+                template['name'] = template_name
+        else:
+            templates = {}
+    except requests.RequestException:
+        templates = {}
+    
+    return render_template("partials/profiles_overview.html", templates=templates)
+
 @get_bp.route("/templates/scans-table")
 def scans_table_template():
     """Template endpoint to render scans table via HTMX"""

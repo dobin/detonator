@@ -49,12 +49,14 @@
                 {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
+                {% if not READ_ONLY_MODE %}
                 <button 
                     onclick="createScan({{ file.id }})"
                     class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                 >
                     Create Scan
                 </button>
+                {% endif %}
                 {% if not READ_ONLY_MODE %}
                     <button 
                         onclick="deleteFile({{ file.id }})"

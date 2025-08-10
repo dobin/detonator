@@ -4,15 +4,30 @@
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-4">Welcome to Detonator</h2>
+    <h2 class="text-2xl font-bold mb-4">Detonator - MalDev scanning made easy</h2>
     <p class="text-gray-600 mb-6">
-        Scan your RedTeam tools against various VMs. For easy and reproducible MalDev analysis.
+        Scan your RedTeam tools (like C2 loader) against various EDR's installed in VMs. For easy and reproducible MalDev analysis.
     </p>
 
-    <p class="text-gray-600 mb-6">
-        See the detection surface with RedEdr. 
-    </p>
-    
+    <!-- Profiles Overview -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-gray-800">Available EDR Profiles</h3>
+            <a href="/profiles" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View All →
+            </a>
+        </div>
+        <div id="profiles-overview" 
+             hx-get="/templates/profiles-overview" 
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="text-center py-4">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <p class="mt-2 text-gray-600 text-sm">Loading profiles...</p>
+            </div>
+        </div>
+    </div>
+
     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Quick Actions -->
         <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">

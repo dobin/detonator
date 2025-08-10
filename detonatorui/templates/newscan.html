@@ -13,13 +13,17 @@
             hx-encoding="multipart/form-data"
             hx-target="#upload-result"
             hx-indicator="#loading"
-            class="space-y-4"
+            class="space-y-6"
         >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="file" class="block text-sm font-medium text-gray-700 mb-1">
-                        Select File for Analysis *
-                    </label>
+            <!-- File Selection -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Select File for Analysis *</h3>
+                    <p class="text-sm text-gray-500">
+                        Choose the payload file you want to analyze. The file will be uploaded to the analysis environment and executed in a VM.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
                     <input 
                         type="file" 
                         id="file" 
@@ -27,26 +31,18 @@
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                    <div class="mt-2">
-                        <label class="flex items-center">
-                            <input 
-                                type="checkbox" 
-                                id="randomize_filename" 
-                                name="randomize_filename" 
-                                checked
-                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            >
-                            <span class="ml-2 text-sm text-gray-700">Randomize Filename</span>
-                        </label>
-                        <p class="mt-1 text-xs text-gray-500">
-                            Prepends random characters to the filename. Note that processes based with that filename will be observed, so avoid explorer.exe and similar.
-                        </p>
-                    </div>
                 </div>
-                <div>
-                    <label for="source_url" class="block text-sm font-medium text-gray-700 mb-1">
-                        File Source URL (optional)
-                    </label>
+            </div>
+
+            <!-- File Source URL -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">File Source URL</h3>
+                    <p class="text-sm text-gray-500">
+                        Optional URL which points to more information about the payload.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
                     <input 
                         type="url" 
                         id="source_url" 
@@ -56,49 +52,72 @@
                     >
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="file_comment" class="block text-sm font-medium text-gray-700 mb-1">
-                        File Comment (optional)
-                    </label>
+            <!-- File Comment -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">File Comment</h3>
+                    <p class="text-sm text-gray-500">
+                        Optional description of the payload file itself. 
+                        For example include properties of your loader, and the C2 payload config. 
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
                     <textarea 
                         id="file_comment" 
                         name="file_comment" 
-                        rows="2"
-                        placeholder="e.g., fiber based shc loader with Metasploit winhttp payload"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    ></textarea>
-                </div>
-                <div>
-                    <label for="scan_comment" class="block text-sm font-medium text-gray-700 mb-1">
-                        Scan Comment (optional)
-                    </label>
-                    <textarea 
-                        id="scan_comment" 
-                        name="scan_comment" 
-                        rows="2"
-                        placeholder="e.g., Check if sgn works against elastic"
+                        rows="3"
+                        placeholder="fiber based shc loader with Metasploit winhttp payload"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     ></textarea>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="project" class="block text-sm font-medium text-gray-700 mb-1">
-                        Scan Project (optional)
-                    </label>
+
+            <!-- Scan Comment -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Comment</h3>
+                    <p class="text-sm text-gray-500">
+                        Optional description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
+                    <textarea 
+                        id="scan_comment" 
+                        name="scan_comment" 
+                        rows="3"
+                        placeholder="Check if sgn works against MDE"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    ></textarea>
+                </div>
+            </div>
+            <!-- Project -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Project</h3>
+                    <p class="text-sm text-gray-500">
+                        Optional project name to group related scans together.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
                     <input 
                         type="text" 
                         id="project" 
                         name="project" 
-                        placeholder="e.g., metasploit_1 research"
+                        placeholder="metasploit research A"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                 </div>
-                <div>
-                    <label for="profile_name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Profile
-                    </label>
+            </div>
+
+            <!-- Profile -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Analysis Profile *</h3>
+                    <p class="text-sm text-gray-500">
+                        Select the analysis environment profile that defines which virtual machine, EDR system, and analysis tools will be used for this malware analysis.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
                     <select 
                         id="profile_name" 
                         name="profile_name"
@@ -121,38 +140,48 @@
             </div>
             
             <!-- Password field - initially hidden -->
-            <div id="password_field" class="hidden">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                    Password
-                </label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Enter profile password"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                <p class="mt-1 text-xs text-gray-500">This profile requires a password for authentication</p>
+            <div id="password_field" class="grid grid-cols-1 lg:grid-cols-3 gap-4 hidden">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Profile Password</h3>
+                    <p class="text-sm text-gray-500">
+                        This analysis profile requires password authentication. Enter the password to proceed with the analysis.
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter profile password"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
             </div>
             
+            {% if not READ_ONLY_MODE %}
             <!-- Malware path field -->
-            <div>
-                <label for="malware_path" class="block text-sm font-medium text-gray-700 mb-1">
-                    Malware Path (optional)
-                </label>
-                <input 
-                    type="text" 
-                    id="malware_path" 
-                    name="malware_path"
-                    placeholder="C:\Users\Public\Downloads\"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                <p class="mt-1 text-xs text-gray-500">
-                    Specify the target path where the malware should be executed on the VM. 
-                    Default is <code>C:\Users\Public\Downloads\</code>. 
-                    To execute it whitelisted use <code>C:\RedEdr\data\</code>.
-                </p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-1">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Malware Execution Path</h3>
+                    <p class="text-sm text-gray-500">
+                        Specify the target directory path where the malware should be placed and executed on the virtual machine. 
+                    </p>
+                </div>
+                <div class="lg:col-span-2">
+                    <input 
+                        type="text" 
+                        id="malware_path" 
+                        name="malware_path"
+                        placeholder="C:\Users\Public\Downloads\"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <p class="mt-2 text-xs text-gray-500">
+                        <strong>Default:</strong> <code>C:\Users\Public\Downloads\</code><br>
+                        <strong>Whitelisted execution:</strong> <code>C:\RedEdr\data\</code>
+                    </p>
+                </div>
             </div>
+            {% endif %}
             <div class="flex space-x-4">
                 <button 
                     type="submit" 
