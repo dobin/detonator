@@ -33,54 +33,6 @@ async def upload_file(
     return db_file
 
 
-@router.post("/files/upload-and-scan", response_model=NewScanResponse)
-async def upload_file_and_scan(
-    file: UploadFile = FastAPIFile(...),
-    source_url: Optional[str] = Form(None),
-    file_comment: Optional[str] = Form(None),
-    scan_comment: Optional[str] = Form(None),
-    project: Optional[str] = Form(None),
-    profile_name: str = Form(...),
-    password: Optional[str] = Form(None),
-    runtime: Optional[int] = Form(None),
-    malware_path: Optional[str] = Form(None),
-    token: Optional[str] = Form(None),
-    db: Session = Depends(get_db),
-):
-    """Upload a file and automatically create a scan with Azure VM"""
-
-    # Check if allowed: token
-    permissions = tokenAuth.get_permissions(token)
-    if permissions.is_anonymous:
-        runtime = 12
-
-    # Check if allowed: profile password
-    profile: Profile = db_get_profile_by_name(db, profile_name)
-    if not profile:
-        raise HTTPException(status_code=400, detail=f"Profile not found: {profile_name}")
-    if len(profile.password) > 0:
-        if not password or password != profile.password:
-            raise HTTPException(status_code=400, detail="Invalid password for profile")
-
-    # DB: Create File
-    actual_filename = file.filename
-    if not actual_filename:
-        raise HTTPException(status_code=400, detail="Filename cannot be empty")
-    logger.info(f"Uploading file: {actual_filename}")
-    file_content = await file.read()
-    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "")
-
-    # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, file_id, profile_name, scan_comment or "", project or "", runtime or 10, malware_path or "")
-
-    data = { 
-        "file_id": file_id,
-        "scan_id": scan_id,
-    }
-
-    return data
-
-
 @router.get("/files", response_model=List[FileWithScans])
 async def get_files(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all files with their scans"""

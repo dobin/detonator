@@ -108,7 +108,8 @@ def upload_file_and_scan():
         
         if 'malware_path' in request.form:
             data['malware_path'] = request.form['malware_path']
-        response = requests.post(f"{API_BASE_URL}/api/files/upload-and-scan", files=files, data=data)
+            
+        response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data)
         return handle_api_response(response, "file upload and scan")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500

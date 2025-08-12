@@ -2,8 +2,6 @@ import os
 import sys
 import argparse
 
-from .ui_client import DetonatorClientUi
-from .api_client import DetonatorClientApi
 from .client import DetonatorClient
 
 
@@ -54,14 +52,7 @@ def main():
     
     args = parser.parse_args()
     
-    detClient: DetonatorClient
-    if args.mode == "ui":
-        detClient = DetonatorClientUi(args.url, args.token, args.debug)
-    elif args.mode == "api":
-        detClient = DetonatorClientApi(args.url, args.token, args.debug)
-    else:
-        print("Invalid mode. Use 'ui' or 'api'.")
-        sys.exit(1)
+    detClient = DetonatorClient(args.url, args.token, args.debug)
 
     if args.command == "profiles":
         profiles = detClient.get_profiles()
