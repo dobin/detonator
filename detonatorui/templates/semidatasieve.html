@@ -79,7 +79,15 @@
         }
         
         .log-key:hover {
-            background-color: #ddf4ff;
+            background-color: #fff8c5;
+            box-shadow: 0 0 0 1px #0969da;
+            border-radius: 3px;
+        }
+        
+        .log-key.hover-active {
+            background-color: #ffeaa7;
+            box-shadow: 0 0 0 2px #0969da;
+            border-radius: 3px;
         }
         
         .log-value {
@@ -91,6 +99,14 @@
         
         .log-value:hover {
             background-color: #fff8c5;
+            box-shadow: 0 0 0 1px #0969da;
+            border-radius: 3px;
+        }
+        
+        .log-value.hover-active {
+            background-color: #ffeaa7;
+            box-shadow: 0 0 0 2px #0969da;
+            border-radius: 3px;
         }
         
         .log-header {
@@ -286,7 +302,7 @@
     </div>
 
     <!-- Popup Windows (one for key, value) -->
-    <div class="popup" id="popup_key" onmouseenter="cancelHidePopup()" onmouseleave="hidePopup()">
+    <div class="popup" id="popup_key" onmouseenter="cancelHidePopup()" onmouseleave="scheduleHidePopup()">
         Key:
         <button id="action-button-key-include">Include</button>
         <button id="action-button-key-exclude">Exclude</button>
@@ -294,7 +310,7 @@
         <button id="action-button-key-header">Header</button>
         <button id="action-button-key-important">Important</button>
     </div>
-    <div class="popup" id="popup_value" onmouseenter="cancelHidePopup()" onmouseleave="hidePopup()">
+    <div class="popup" id="popup_value" onmouseenter="cancelHidePopup()" onmouseleave="scheduleHidePopup()">
         Value:
         <button id="action-button-value-include">Include</button>
         <button id="action-button-value-exclude">Exclude</button>
@@ -366,12 +382,18 @@
             { type: "key", action: "hide", key: "event_id", value: "" },
         ]
 
-        // Popup menu data uargh
+        // Popup menu data
         let currentLogEntry = null;
         let currentKey = null;
         let currentValue = null;
+        let showTimeout = null;
         let hideTimeout = null;
         let popupShown = false;
+        let hoveredElement = null;
+        
+        // Timing constants for popup behavior
+        const POPUP_SHOW_DELAY = 500; // milliseconds to wait before showing popup
+        const POPUP_HIDE_DELAY = 300; // milliseconds to wait before hiding popup
 
 
         // Click on non-popups
@@ -382,7 +404,7 @@
         function HidePopups() {
             document.getElementById("settings").style.display = "none";
             document.getElementById("storage").style.display = "none";
-            // Note: no key/value popup hide atm (time based)
+            hidePopupImmediately();
         }
 
 
@@ -793,13 +815,14 @@
                         keySpan.textContent = key + ": ";
                         keySpan.dataset.logIndex = logIndex;
                         keySpan.dataset.key = key;
-                        keySpan.onmouseenter = () => {
-                            keySpan.style.border = "1px solid red";
+                        keySpan.onmouseenter = (event) => {
+                            keySpan.classList.add("hover-active");
+                            scheduleShowPopup(event, "key");
                         };
                         keySpan.onmouseleave = () => {
-                            keySpan.style.border = "";
+                            keySpan.classList.remove("hover-active");
+                            scheduleHidePopup();
                         };
-                        keySpan.onclick = showPopupKey;
 
                         const toggleButton = document.createElement("button");
                         toggleButton.textContent = `Show (${value.length} items)`;
@@ -872,13 +895,14 @@
                         keySpan.textContent = key + ": ";
                         keySpan.dataset.logIndex = logIndex;
                         keySpan.dataset.key = key;
-                        keySpan.onmouseenter = () => {
-                            keySpan.style.border = "1px solid red";
+                        keySpan.onmouseenter = (event) => {
+                            keySpan.classList.add("hover-active");
+                            scheduleShowPopup(event, "key");
                         };
                         keySpan.onmouseleave = () => {
-                            keySpan.style.border = "";
+                            keySpan.classList.remove("hover-active");
+                            scheduleHidePopup();
                         };
-                        keySpan.onclick = showPopupKey;
                         
                         const valueSpan = document.createElement("span");
                         valueSpan.classList.add("log-value");
@@ -886,13 +910,14 @@
                         valueSpan.dataset.logIndex = logIndex;
                         valueSpan.dataset.key = key;
                         valueSpan.dataset.value = value;
-                        valueSpan.onmouseenter = () => {
-                            valueSpan.style.border = "1px solid red";
+                        valueSpan.onmouseenter = (event) => {
+                            valueSpan.classList.add("hover-active");
+                            scheduleShowPopup(event, "value");
                         };
                         valueSpan.onmouseleave = () => {
-                            valueSpan.style.border = ""; // Reset border on mouse leave
+                            valueSpan.classList.remove("hover-active");
+                            scheduleHidePopup();
                         };
-                        valueSpan.onclick = showPopupValue;
 
                         const log_kv = document.createElement("div");
                         log_kv.classList.add("log-kv");
@@ -930,76 +955,91 @@
         function popupInit() {
             document.getElementById("action-button-key-include").addEventListener("click", () => {
                 addFilter("key", "include", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
             document.getElementById("action-button-key-exclude").addEventListener("click", () => {
                 addFilter("key", "exclude", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
             document.getElementById("action-button-value-include").addEventListener("click", () => {
                 addFilter("value", "include", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
             document.getElementById("action-button-value-exclude").addEventListener("click", () => {
                 addFilter("value", "exclude", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
 
             document.getElementById("action-button-key-hide").addEventListener("click", () => {
                 addVisibility("key", "hide", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
             document.getElementById("action-button-key-header").addEventListener("click", () => {
                 addVisibility("key", "header", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
             document.getElementById("action-button-key-important").addEventListener("click", () => {
                 addVisibility("key", "important", currentLogEntry, currentKey, currentValue);
+                hidePopupImmediately();
             });
         }
 
-        function showPopupKey(event) {
-            showPopup(event, "key");
-        }
-        function showPopupValue(event) {
-            showPopup(event, "value");
+        function scheduleShowPopup(event, type) {
+            // Clear any existing timeouts
+            clearTimeout(showTimeout);
+            clearTimeout(hideTimeout);
+            
+            // Store the event data
+            currentLogEntry = event.target.dataset.logIndex;
+            currentKey = event.target.dataset.key;
+            currentValue = event.target.dataset.value || "";
+            hoveredElement = event.target;
+            
+            // Schedule the popup to show after a delay
+            showTimeout = setTimeout(() => {
+                showPopup(event, type);
+            }, POPUP_SHOW_DELAY);
         }
 
         function showPopup(event, type) {
-            if (popupShown) {
-                realHidePopup();
-                cancelHidePopup();
-                popupShown = false;
-            }
+            // Hide any existing popup first
+            hidePopupImmediately();
             
-            clearTimeout(hideTimeout);
-            popupName = "popup_" + type
+            const popupName = "popup_" + type;
             const popup = document.getElementById(popupName);
             popup.style.left = `${event.pageX + 5}px`;
             popup.style.top = `${event.pageY + 5}px`;
             popup.style.display = "block";
             
-            currentLogEntry = event.target.dataset.logIndex;
-            currentKey = event.target.dataset.key;
-            currentValue = event.target.dataset.value || "";
-
             popupShown = true;
-
-            hideTimeout = setTimeout(() => {
-                document.getElementById("popup_key").style.display = "none";
-                document.getElementById("popup_value").style.display = "none";
-                popupShown = false;
-            }, 1500);
         }
 
-        function hidePopup() {
-            hideTimeout = setTimeout(() => {
-                realHidePopup();
-                popupShown = false;
-            }, 1000);
+        function scheduleHidePopup() {
+            // Clear any pending show timeout
+            clearTimeout(showTimeout);
+            
+            // Only schedule hide if we're not already hiding
+            if (popupShown && !hideTimeout) {
+                hideTimeout = setTimeout(() => {
+                    hidePopupImmediately();
+                }, POPUP_HIDE_DELAY);
+            }
         }
 
-        function realHidePopup() {
+        function hidePopupImmediately() {
+            clearTimeout(showTimeout);
+            clearTimeout(hideTimeout);
+            showTimeout = null;
+            hideTimeout = null;
+            
             document.getElementById("popup_key").style.display = "none";
             document.getElementById("popup_value").style.display = "none";
+            popupShown = false;
         }
 
         function cancelHidePopup() {
             clearTimeout(hideTimeout);
+            hideTimeout = null;
         }
 
 
