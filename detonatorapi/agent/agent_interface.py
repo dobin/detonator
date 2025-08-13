@@ -95,12 +95,14 @@ def scan_file_with_agent(scan_id: int) -> bool:
         for attempt in range(attempts):
             if agentApi.IsInUse():
                 db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Agent at {agent_ip} is currently in use")
-            elif agentApi.AcquireLock():
-                db_scan_add_log(thread_db, db_scan, f"Successfully acquired lock on Agent at {agent_ip} on attempt {attempt + 1}")
-                lock_acquired = True
-                break
             else:
-                db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not lock Agent at {agent_ip}")
+                lock_result = agentApi.AcquireLock()
+                if lock_result:
+                    db_scan_add_log(thread_db, db_scan, f"Successfully acquired lock on Agent at {agent_ip} on attempt {attempt + 1}")
+                    lock_acquired = True
+                    break
+                else:
+                    db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not lock Agent at {agent_ip}: {lock_result.error_message}")
             
             if attempt < attempts - 1:  # Don't sleep after the last attempt
                 db_scan_add_log(thread_db, db_scan, f"Waiting 30 seconds before retry...")
@@ -115,9 +117,12 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     # Set the process name we gonna trace
     logger.info("Scan: Attempt StartTrace")
-    if not agentApi.StartTrace(filename_trace):
-        db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent")
-        agentApi.ReleaseLock()  # no check, we just release the lock
+    trace_result = agentApi.StartTrace(filename_trace)
+    if not trace_result:
+        db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent: {trace_result.error_message}")
+        release_result = agentApi.ReleaseLock()  # no check, we just release the lock
+        if not release_result:
+            db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
         return False
     db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
 
@@ -136,7 +141,9 @@ def scan_file_with_agent(scan_id: int) -> bool:
     is_malware = False
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
-        agentApi.ReleaseLock()  # no check, we just release the lock
+        release_result = agentApi.ReleaseLock()  # no check, we just release the lock
+        if not release_result:
+            db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
         return False
     elif scanResult == ScanResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
@@ -163,10 +170,11 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     # kill process (after gathering EDR logs, so we dont have the shutdown logs)
     logger.info("Scan: Attempt to stop trace on Agent")
-    if agentApi.StopTrace():
+    stop_result = agentApi.StopTrace()
+    if stop_result:
         db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
     else:
-        db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process")
+        db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process: {stop_result.error_message}")
         # no return, we dont care
 
     # Gather logs from Agent
@@ -177,8 +185,9 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # we finished 
     if DO_LOCKING:
         logger.info("Scan: Attempt to release lock")
-        if not agentApi.ReleaseLock():
-            db_scan_add_log(thread_db, db_scan, f"Could not release lock on Agent at {agent_ip}")
+        release_result = agentApi.ReleaseLock()
+        if not release_result:
+            db_scan_add_log(thread_db, db_scan, f"Could not release lock on Agent at {agent_ip}: {release_result.error_message}")
         else:
             db_scan_add_log(thread_db, db_scan, f"Released lock on Agent at {agent_ip}")
 

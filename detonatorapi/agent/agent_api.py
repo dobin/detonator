@@ -3,6 +3,7 @@ import requests
 from typing import List, Optional, Dict
 import json
 import logging
+from .result import Result
 
 logger = logging.getLogger(__name__)
 
@@ -50,35 +51,39 @@ class AgentApi:
             return False
         
 
-    def AcquireLock(self) -> bool:
+    def AcquireLock(self) -> Result[None]:
         # Acquire lock
         url = self.agent_url + "/api/lock/acquire"
         try:
             response = requests.post(url)
             if response.status_code != 200:
-                logging.warning("Agent: LockAcquire failed: {} {}".format(response.status_code, response.text))
-                return False
+                error_msg = f"LockAcquire failed: {response.status_code} {response.text}"
+                logging.warning(f"Agent: {error_msg}")
+                return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: LockAcquire error: {e}")
-            return False
-        return True
+            error_msg = f"LockAcquire error: {e}"
+            logging.warning(f"Agent: {error_msg}")
+            return Result.error(error_msg)
+        return Result.ok()
     
 
-    def ReleaseLock(self) -> bool:
+    def ReleaseLock(self) -> Result[None]:
         # Release lock
         url = self.agent_url + "/api/lock/release"
         try:
             response = requests.post(url)
             if response.status_code != 200:
-                # meh we dont care. and should never happen
-                logging.warning(f"Agent: LockRelease failed: {response.status_code} {response.text}")
+                error_msg = f"LockRelease failed: {response.status_code} {response.text}"
+                logging.warning(f"Agent: {error_msg}")
+                return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: LockRelease error: {e}")
-            return False
-        return True
+            error_msg = f"LockRelease error: {e}"
+            logging.warning(f"Agent: {error_msg}")
+            return Result.error(error_msg)
+        return Result.ok()
     
 
-    def StartTrace(self, target_name: str) -> bool:
+    def StartTrace(self, target_name: str) -> Result[None]:
         # Reset any previous trace data
         url = self.agent_url + "/api/reset"
         try:
@@ -87,11 +92,13 @@ class AgentApi:
                 #print("Response:", response.json())
                 pass
             else:
-                logging.warning(f"Agent: Reset error: {response.status_code} {response.text}")
-                return False
+                error_msg = f"Reset error: {response.status_code} {response.text}"
+                logging.warning(f"Agent: {error_msg}")
+                return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: Reset error: {e}")
-            return False
+            error_msg = f"Reset error: {e}"
+            logging.warning(f"Agent: {error_msg}")
+            return Result.error(error_msg)
 
         # Configure trace
         url = self.agent_url + "/api/trace"
@@ -101,28 +108,32 @@ class AgentApi:
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 200:
                 #print("Response:", response.json())
-                return True
+                return Result.ok()
             else:
-                logging.warning(f"Agent: StartTrace error: {response.status_code} {response.text}")
-                return False
+                error_msg = f"StartTrace error: {response.status_code} {response.text}"
+                logging.warning(f"Agent: {error_msg}")
+                return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: StartTrace error: {e}")
-            return False
+            error_msg = f"StartTrace error: {e}"
+            logging.warning(f"Agent: {error_msg}")
+            return Result.error(error_msg)
         
     
-    def StopTrace(self) -> bool:
+    def StopTrace(self) -> Result[None]:
         # kill running process
         url = self.agent_url + "/api/kill"
         try:
             response = requests.post(url)
             if response.status_code != 200:
-                logging.warning(f"Agent: kill error: {response.status_code} {response.text}")
-                return False
+                error_msg = f"kill error: {response.status_code} {response.text}"
+                logging.warning(f"Agent: {error_msg}")
+                return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: kill error: {e}")
-            return False
+            error_msg = f"kill error: {e}"
+            logging.warning(f"Agent: {error_msg}")
+            return Result.error(error_msg)
         
-        return True
+        return Result.ok()
 
 
     def ExecFile(self, filename: str, file_data: bytes, malware_path: str) -> ScanResult:
