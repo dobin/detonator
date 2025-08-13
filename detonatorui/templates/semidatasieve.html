@@ -825,7 +825,7 @@
                         };
 
                         const toggleButton = document.createElement("button");
-                        toggleButton.textContent = `Show (${value.length} items)`;
+                        toggleButton.textContent = `Show (${value.length})`;
                         toggleButton.style.marginLeft = "5px";
                         toggleButton.style.fontSize = "12px";
                         toggleButton.style.padding = "2px 5px";
@@ -870,10 +870,10 @@
                         toggleButton.onclick = () => {
                             if (arrayContent.style.display === "none") {
                                 arrayContent.style.display = "block";
-                                toggleButton.textContent = `Hide Array (${value.length} items)`;
+                                toggleButton.textContent = `Hide (${value.length})`;
                             } else {
                                 arrayContent.style.display = "none";
-                                toggleButton.textContent = `Show Array (${value.length} items)`;
+                                toggleButton.textContent = `Show (${value.length})`;
                             }
                         };
 
