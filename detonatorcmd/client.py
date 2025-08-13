@@ -4,7 +4,6 @@ import os
 import sys
 
 from detonatorapi.utils import filename_randomizer
-from .client import DetonatorClient
 
 
 class DetonatorClient:
