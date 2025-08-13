@@ -724,52 +724,139 @@
                 const entryDiv = document.createElement("div");
                 entryDiv.classList.add("log-entry");
 
+                const arrayEntryDiv = document.createElement("div");
+                arrayEntryDiv.classList.add("log-entry");
+
                 Object.entries(log).forEach(([key, value]) => {
                     // check if key is in visibility
                     if (visibility.some(filter => filter.key === key && filter.action === "hide")) {
                         return;
                     }
 
-                    const keySpan = document.createElement("span");
-                    keySpan.classList.add("log-key");
-                    keySpan.textContent = key + ": ";
-                    keySpan.dataset.logIndex = logIndex;
-                    keySpan.dataset.key = key;
-                    keySpan.onmouseenter = () => {
-                        keySpan.style.border = "1px solid red";
-                    };
-                    keySpan.onmouseleave = () => {
-                        keySpan.style.border = "";
-                    };
-                    keySpan.onclick = showPopupKey;
-                    
-                    const valueSpan = document.createElement("span");
-                    valueSpan.classList.add("log-value");
-                    valueSpan.textContent = hexify(value);
-                    valueSpan.dataset.logIndex = logIndex;
-                    valueSpan.dataset.key = key;
-                    valueSpan.dataset.value = value;
-                    valueSpan.onmouseenter = () => {
-                        valueSpan.style.border = "1px solid red";
-                    };
-                    valueSpan.onmouseleave = () => {
-                        valueSpan.style.border = ""; // Reset border on mouse leave
-                    };
-                    valueSpan.onclick = showPopupValue;
+                    // Check if value is an array
+                    if (Array.isArray(value)) {
+                        const arrayContainer = document.createElement("div");
+                        arrayContainer.classList.add("log-kv");
 
-                    const log_kv = document.createElement("div");
-                    log_kv.classList.add("log-kv");
-                    log_kv.appendChild(keySpan);
-                    log_kv.appendChild(valueSpan);
-                    
-                    if (visibility.some(filter => filter.key === key && filter.action === "header")) {
-                        entryDivHeader.appendChild(log_kv);
-                    } else if (visibility.some(filter => filter.key === key && filter.action === "important")) {
-                        entryDivImportant.appendChild(log_kv);
+                        const keySpan = document.createElement("span");
+                        keySpan.classList.add("log-key");
+                        keySpan.textContent = key + ": ";
+                        keySpan.dataset.logIndex = logIndex;
+                        keySpan.dataset.key = key;
+                        keySpan.onmouseenter = () => {
+                            keySpan.style.border = "1px solid red";
+                        };
+                        keySpan.onmouseleave = () => {
+                            keySpan.style.border = "";
+                        };
+                        keySpan.onclick = showPopupKey;
+
+                        const toggleButton = document.createElement("button");
+                        toggleButton.textContent = `Show (${value.length} items)`;
+                        toggleButton.style.marginLeft = "5px";
+                        toggleButton.style.fontSize = "12px";
+                        toggleButton.style.padding = "2px 5px";
+                        
+                        const arrayContent = document.createElement("div");
+                        arrayContent.style.display = "none";
+                        arrayContent.style.marginLeft = "20px";
+                        arrayContent.style.marginTop = "5px";
+                        arrayContent.style.border = "1px solid #ccc";
+                        arrayContent.style.padding = "5px";
+                        arrayContent.style.backgroundColor = "#f9f9f9";
+
+                        value.forEach((item, arrayIndex) => {
+                            const itemDiv = document.createElement("div");
+                            itemDiv.style.marginBottom = "3px";
+                            itemDiv.style.padding = "2px";
+                            itemDiv.style.borderBottom = "1px solid #eee";
+
+                            if (typeof item === 'object' && item !== null) {
+                                // If array item is an object, display key-value pairs horizontally
+                                const itemEntries = Object.entries(item);
+                                itemEntries.forEach(([itemKey, itemValue], entryIndex) => {
+                                    const itemKeySpan = document.createElement("span");
+                                    itemKeySpan.textContent = itemKey + ": ";
+                                    itemKeySpan.style.fontWeight = "bold";
+                                    itemKeySpan.style.marginRight = "5px";
+
+                                    const itemValueSpan = document.createElement("span");
+                                    itemValueSpan.textContent = hexify(itemValue);
+                                    itemValueSpan.style.marginRight = "15px";
+
+                                    itemDiv.appendChild(itemKeySpan);
+                                    itemDiv.appendChild(itemValueSpan);
+                                });
+                            } else {
+                                // If array item is a primitive, just display it
+                                itemDiv.textContent = `[${arrayIndex}]: ${hexify(item)}`;
+                            }
+                            arrayContent.appendChild(itemDiv);
+                        });
+
+                        toggleButton.onclick = () => {
+                            if (arrayContent.style.display === "none") {
+                                arrayContent.style.display = "block";
+                                toggleButton.textContent = `Hide Array (${value.length} items)`;
+                            } else {
+                                arrayContent.style.display = "none";
+                                toggleButton.textContent = `Show Array (${value.length} items)`;
+                            }
+                        };
+
+                        arrayContainer.appendChild(keySpan);
+                        arrayContainer.appendChild(toggleButton);
+                        arrayContainer.appendChild(arrayContent);
+
+                        if (visibility.some(filter => filter.key === key && filter.action === "header")) {
+                            entryDivHeader.appendChild(arrayContainer);
+                        } else if (visibility.some(filter => filter.key === key && filter.action === "important")) {
+                            entryDivImportant.appendChild(arrayContainer);
+                        } else {
+                            arrayEntryDiv.appendChild(arrayContainer);
+                        }
                     } else {
-                        entryDiv.appendChild(log_kv);
-                    }
+                        // Handle non-array values as before
+                        const keySpan = document.createElement("span");
+                        keySpan.classList.add("log-key");
+                        keySpan.textContent = key + ": ";
+                        keySpan.dataset.logIndex = logIndex;
+                        keySpan.dataset.key = key;
+                        keySpan.onmouseenter = () => {
+                            keySpan.style.border = "1px solid red";
+                        };
+                        keySpan.onmouseleave = () => {
+                            keySpan.style.border = "";
+                        };
+                        keySpan.onclick = showPopupKey;
+                        
+                        const valueSpan = document.createElement("span");
+                        valueSpan.classList.add("log-value");
+                        valueSpan.textContent = hexify(value);
+                        valueSpan.dataset.logIndex = logIndex;
+                        valueSpan.dataset.key = key;
+                        valueSpan.dataset.value = value;
+                        valueSpan.onmouseenter = () => {
+                            valueSpan.style.border = "1px solid red";
+                        };
+                        valueSpan.onmouseleave = () => {
+                            valueSpan.style.border = ""; // Reset border on mouse leave
+                        };
+                        valueSpan.onclick = showPopupValue;
 
+                        const log_kv = document.createElement("div");
+                        log_kv.classList.add("log-kv");
+                        log_kv.appendChild(keySpan);
+                        log_kv.appendChild(valueSpan);
+                        
+                        if (visibility.some(filter => filter.key === key && filter.action === "header")) {
+                            entryDivHeader.appendChild(log_kv);
+                        } else if (visibility.some(filter => filter.key === key && filter.action === "important")) {
+                            entryDivImportant.appendChild(log_kv);
+                        } else {
+                            entryDiv.appendChild(log_kv);
+                        }
+                    }
                 });
 
                 // append if has children
@@ -780,6 +867,9 @@
                     logDiv.appendChild(entryDivImportant);
                 }
                 logDiv.appendChild(entryDiv);
+                if (arrayEntryDiv.children.length > 0) {
+                    logDiv.appendChild(arrayEntryDiv);
+                }
                 
                 container.appendChild(logDiv);
             });
