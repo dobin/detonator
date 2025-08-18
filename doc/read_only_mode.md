@@ -45,7 +45,7 @@ When read-only mode is enabled, the following operations are blocked:
 
 The following operations remain available in read-only mode:
 
-- **File upload and scan** (`POST /api/files/upload-and-scan`) - This is the primary workflow
+- **File upload and scan** (`POST /api/upload-and-scan`) - This is the primary workflow
 - All GET endpoints (viewing data)
 - VM status monitoring
 - Reading scan results and logs

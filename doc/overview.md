@@ -42,7 +42,7 @@
 
 ### Files
 - `POST /api/files` - Upload file only
-- `POST /api/files/upload-and-scan` - Upload file and create scan with VM
+- `POST /api/upload-and-scan` - Upload file and create scan with VM
 - `GET /api/files` - List all files
 - `GET /api/files/{id}` - Get file details with scans
 - `DELETE /api/files/{id}` - Delete file and scans
