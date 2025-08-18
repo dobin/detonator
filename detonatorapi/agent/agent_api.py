@@ -83,7 +83,7 @@ class AgentApi:
         return Result.ok()
     
 
-    def StartTrace(self, target_name: str) -> Result[None]:
+    def StartTrace(self, target_names: List[str]) -> Result[None]:
         # Reset any previous trace data
         url = self.agent_url + "/api/reset"
         try:
@@ -103,7 +103,7 @@ class AgentApi:
         # Configure trace
         url = self.agent_url + "/api/trace"
         headers = {"Content-Type": "application/json"}
-        payload = {"trace": target_name}
+        payload = {"trace": target_names}
         try:
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 200:

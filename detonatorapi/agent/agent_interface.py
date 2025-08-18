@@ -117,7 +117,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     # Set the process name we gonna trace
     logger.info("Scan: Attempt StartTrace")
-    trace_result = agentApi.StartTrace(filename_trace)
+    trace_result = agentApi.StartTrace([filename_trace])
     if not trace_result:
         db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent: {trace_result.error_message}")
         release_result = agentApi.ReleaseLock()  # no check, we just release the lock
