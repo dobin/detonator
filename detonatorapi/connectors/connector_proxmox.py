@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 
 PROXMOX_NO_RESET = False  # for debugging
 
+# note: 
+# db_scan.vm_exist means "vm_inuse"
+# db_scan.vm_exist = 1 means vm is being used by a user
+# db_scan.vm_exist = 0 means vm is available
+
 
 class ConnectorProxmox(ConnectorBase):
     def __init__(self):
@@ -60,14 +65,29 @@ class ConnectorProxmox(ConnectorBase):
             db_profile: Profile = db_scan.profile
             vm_id = db_profile.data['vm_id']
 
-            status = self.proxmox_manager.StatusVm(vm_id)
-            logger.info(f"Proxmox VM status: {status}")
-            if status != "running":
-                if not self.proxmox_manager.StartVm(vm_id):
-                    db_scan_change_status_quick(thread_db, db_scan, "error", "Could not start VM")
-                    thread_db.close()
-                    return
+            # wait till its not in use anymore
+            if db_scan.vm_exist == 1:
+                while True: 
+                    db_scan = thread_db.get(Scan, scan_id)
+                    if not db_scan:  # check mostly for syntax checker
+                        logger.error(f"Error")
+                        return
+                    if db_scan.vm_exist == 1:
+                        db_scan_add_log(thread_db, db_scan, "VM is already running, waiting for it to finish")
+                        time.sleep(5)
+                    else:
+                        break
 
+            # vm_exist = 0 here
+
+            # if vm is not running, wait for it. 
+            # should be already pass when vm_exists = 0
+            self.proxmox_manager.WaitForVmStatus(vm_id, "running", timeout=10)
+
+            db_scan = thread_db.get(Scan, scan_id)  # get db entry again (may have waited for it)
+            if not db_scan:  # check mostly for syntax checker
+                logger.error(f"Scan {scan_id} not found")
+                return
             db_scan.vm_exist = 1  # Set to 1 to indicate VM is running
             db_scan.vm_ip_address = db_profile.data['vm_ip']
             db_scan_change_status_quick(thread_db, db_scan, "instantiated")
@@ -166,7 +186,7 @@ class ConnectorProxmox(ConnectorBase):
             vm_snapshot = db_profile.data['vm_snapshot']
             vm_name = db_scan.vm_instance_name
 
-            logger.info(f"Killing VM {vm_name} scan {scan_id}")
+            logger.info(f"Proxmox: Killing VM {vm_name} scan {scan_id}")
 
             # Stop if running
             powerState = self.proxmox_manager.StatusVm(vm_id)
@@ -179,7 +199,7 @@ class ConnectorProxmox(ConnectorBase):
             # Always try to revert
             if self.proxmox_manager.RevertVm(vm_id, vm_snapshot):
                 db_scan_add_log(thread_db, db_scan, "VM successfully killed")
-                db_scan.vm_exist = 0  # Set to 0 to indicate VM is removed
+                db_scan.vm_exist = 0  # Set to 0 to indicate VM is available again
             else:
                 db_scan_add_log(thread_db, db_scan, "VM failed deleting")
             
