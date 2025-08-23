@@ -6,7 +6,7 @@ import logging
 
 from detonatorapi.db_interface import db_scan_change_status_quick
 from .database import get_db, File, Scan
-from .schemas import ScanResponse, ScanUpdate, FileCreateScan
+from .schemas import ScanResponse, ScanUpdate, FileCreateScan, ScanResponseShort
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
 
@@ -14,7 +14,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/scans", response_model=List[ScanResponse])
+@router.get("/scans", response_model=List[ScanResponseShort])
 async def get_scans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all scans with file information"""
     scans = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).offset(skip).limit(limit).all()
