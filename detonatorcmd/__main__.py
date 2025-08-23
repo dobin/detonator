@@ -29,8 +29,6 @@ def print_profiles(profiles):
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
-    parser.add_argument("mode", choices=["ui", "api"], help="Accessing \"ui\" for web UI or \"api\" for API mode")
-    parser.add_argument("command", choices=["scan", "profiles"], help="Command to execute")
     parser.add_argument("filename", nargs="?", help="File to scan")
 
     # Connection related
@@ -54,40 +52,35 @@ def main():
     
     detClient = DetonatorClient(args.url, args.token, args.debug)
 
-    if args.command == "profiles":
-        profiles = detClient.get_profiles()
-        print_profiles(profiles)
+    if not args.filename:
+        print("Error: filename is required for scan command")
+        parser.print_help()
+        return
+        
+    # Check: if file exists
+    if not os.path.exists(args.filename):
+        print(f"Error: File {args.filename} does not exist")
+        return
     
-    elif args.command == "scan":
-        if not args.filename:
-            print("Error: filename is required for scan command")
-            parser.print_help()
-            return
-            
-        # Check: if file exists
-        if not os.path.exists(args.filename):
-            print(f"Error: File {args.filename} does not exist")
-            return
-        
-        # Check: Profile
-        if not detClient.valid_profile(args.profile):
-            print(f"Error: Profile '{args.profile}' not found")
-            print("Available profiles:")
-            print_profiles(detClient.get_profiles())
-            return
-        
-        detClient.scan_file(
-                args.filename,
-                args.source_url,
-                args.file_comment,
-                args.scan_comment,
-                args.project,
-                args.profile,
-                args.password,
-                args.runtime,
-                args.malware_path,
-                not args.no_randomize_filename
-            )
+    # Check: Profile
+    if not detClient.valid_profile(args.profile):
+        print(f"Error: Profile '{args.profile}' not found")
+        print("Available profiles:")
+        print_profiles(detClient.get_profiles())
+        return
+    
+    detClient.scan_file(
+            args.filename,
+            args.source_url,
+            args.file_comment,
+            args.scan_comment,
+            args.project,
+            args.profile,
+            args.password,
+            args.runtime,
+            args.malware_path,
+            not args.no_randomize_filename
+        )
         
 
 if __name__ == "__main__":

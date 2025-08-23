@@ -146,6 +146,7 @@ class AgentApi:
             malware_path += "\\"
         data = {
             "path": malware_path,
+            "use_additional_etw": "false",
         }
         # multipart form-data
         try:
