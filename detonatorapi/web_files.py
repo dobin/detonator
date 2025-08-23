@@ -17,6 +17,7 @@ async def upload_file(
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
     comment: Optional[str] = Form(None),
+    fileargs: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """Upload a file without automatically creating a scan"""
@@ -26,7 +27,7 @@ async def upload_file(
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     # Read file content
     content = await file.read()
-    file_id = db_create_file(db, actual_filename, content, source_url or "", comment or "")
+    file_id = db_create_file(db, actual_filename, content, source_url or "", comment or "", fileargs or "")
 
     db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans)).first()
     

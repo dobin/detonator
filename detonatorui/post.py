@@ -53,6 +53,9 @@ def upload_file():
         
         if 'comment' in request.form:
             data['comment'] = request.form['comment']
+            
+        if 'fileargs' in request.form:
+            data['fileargs'] = request.form['fileargs']
         
         response = requests.post(f"{API_BASE_URL}/api/files", files=files, data=data)
         return handle_api_response(response, "file upload")
@@ -87,6 +90,9 @@ def upload_file_and_scan():
             
         if 'scan_comment' in request.form:
             data['scan_comment'] = request.form['scan_comment']
+            
+        if 'fileargs' in request.form:
+            data['fileargs'] = request.form['fileargs']
             
         if 'project' in request.form:
             data['project'] = request.form['project']

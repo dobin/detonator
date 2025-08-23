@@ -58,6 +58,8 @@ class FileBase(BaseModel):
     filename: str
     source_url: Optional[str] = None
     comment: Optional[str] = None
+    fileargs: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 # Unused
 class FileCreate(FileBase):

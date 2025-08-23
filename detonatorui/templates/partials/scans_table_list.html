@@ -24,6 +24,11 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
                         <div class="font-medium">{{ scan.file.filename }}</div>
+                        {% if scan.file.fileargs %}
+                            <div class="text-xs text-gray-500" title="fileargs: {{ scan.file.fileargs }}">
+                                Args: <code class="bg-gray-100 px-1 rounded">{{ scan.file.fileargs|truncate(20) }}</code>
+                            </div>
+                        {% endif %}
                     </div>
                 </td>
                 <td class="px-6 py-4">

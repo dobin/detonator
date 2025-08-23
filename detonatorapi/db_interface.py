@@ -46,7 +46,7 @@ def db_scan_add_log(db, db_scan, log_message: str):
     db.commit()
 
 
-def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "") -> int:
+def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", fileargs: str = "") -> int:
     file_hash = File.calculate_hash(content)
 
     # DB: Create file record
@@ -55,7 +55,8 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
         filename=filename,
         file_hash=file_hash,
         source_url=source_url,
-        comment=comment
+        comment=comment,
+        fileargs=fileargs
     )
     db.add(db_file)
     db.commit()

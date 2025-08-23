@@ -44,6 +44,7 @@ def main():
     parser.add_argument("--scan-comment", "-sc", default="", help="Comment for the scan")
     parser.add_argument("--project", "-j", default="", help="Project name for the scan")
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
+    parser.add_argument("--fileargs", "-a", default="", help="Command line arguments (parameter or dll function) to pass to the executable")
     #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
     parser.add_argument("--runtime", type=int, default=10, help="Runtime in seconds")
     parser.add_argument("--no-randomize-filename", action="store_true", default=False, help="Randomize filename before upload")
@@ -79,6 +80,7 @@ def main():
             args.password,
             args.runtime,
             args.malware_path,
+            args.fileargs,
             not args.no_randomize_filename
         )
         

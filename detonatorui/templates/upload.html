@@ -45,7 +45,7 @@
                     Prepends random characters to the filename. Note that processes based with that filename will be observed, so avoid explorer.exe and similar.
                 </p>
             </div>
-            <p class="text-gray-500 text-sm mt-1">Upload any file for storage (no analysis will be started)</p>
+            <p class="text-gray-500 text-sm mt-1">Upload a .exe or .dll file (no analysis will be started)</p>
         </div>
 
         <div>
@@ -60,6 +60,20 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
             <p class="text-gray-500 text-sm mt-1">Where did you download this file from?</p>
+        </div>
+
+        <div>
+            <label for="fileargs" class="block text-sm font-medium text-gray-700 mb-2">
+                fileargs (optional)
+            </label>
+            <input 
+                type="text" 
+                id="fileargs" 
+                name="fileargs" 
+                placeholder="-x param1 --config file.conf"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <p class="text-gray-500 text-sm mt-1">Command line fileargs to pass to the executable</p>
         </div>
 
         <div>
