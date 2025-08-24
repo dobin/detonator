@@ -113,7 +113,7 @@ def main():
         # Start FastAPI in a separate thread
         log_level = "debug" if debug else "warning"
         def run_fastapi():
-            uvicorn.run(fastapi_app, host=api_host, port=api_port, log_level=log_level)
+            uvicorn.run(fastapi_app, host=api_host, port=api_port, log_level="warning")
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
         fastapi_thread.start()
     
