@@ -83,17 +83,40 @@ def files_template():
 def scans_template():
     """Template endpoint to render scans list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/scans")
+        # Build query parameters from request args
+        params = {}
+        
+        # Handle pagination
+        skip = request.args.get('skip', 0, type=int)
+        limit = request.args.get('limit', 100, type=int)
+        params['skip'] = skip
+        params['limit'] = limit
+        
+        # Handle filters
+        status = request.args.get('status')
+        if status and status != 'all':
+            params['status'] = status
+            
+        project = request.args.get('project')
+        if project:
+            params['project'] = project
+            
+        result = request.args.get('result')
+        if result:
+            params['result'] = result
+            
+        search = request.args.get('search')
+        if search:
+            params['search'] = search
+        
+        # Legacy filter support (for backward compatibility)
+        filter_status = request.args.get('filter')
+        if filter_status and filter_status != 'all':
+            params['status'] = filter_status
+        
+        response = requests.get(f"{API_BASE_URL}/api/scans", params=params)
         if response.status_code == 200:
             scans = response.json()
-            # Sort scans by ID in descending order (newest first)
-            scans = sorted(scans, key=lambda scan: scan['id'], reverse=True)
-            
-            # Apply filter if specified
-            filter_status = request.args.get('filter')
-            if filter_status and filter_status != 'all':
-                scans = [scan for scan in scans if scan.get('status') == filter_status]
-                
         else:
             scans = []
     except requests.RequestException:
@@ -197,23 +220,47 @@ def profiles_overview_template():
 def scans_table_template():
     """Template endpoint to render scans table via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/scans")
+        # Build query parameters from request args
+        params = {}
+        
+        # Handle pagination
+        skip = request.args.get('skip', 0, type=int)
+        limit = request.args.get('limit', 100, type=int)
+        params['skip'] = skip
+        params['limit'] = limit
+        
+        # Handle filters
+        status = request.args.get('status')
+        if status and status != 'all':
+            params['status'] = status
+            
+        project = request.args.get('project')
+        if project:
+            params['project'] = project
+            
+        result = request.args.get('result')
+        if result:
+            params['result'] = result
+            
+        search = request.args.get('search')
+        if search:
+            params['search'] = search
+        
+        # Legacy filter support (for backward compatibility)
+        filter_status = request.args.get('filter')
+        if filter_status and filter_status != 'all':
+            params['status'] = filter_status
+        
+        response = requests.get(f"{API_BASE_URL}/api/scans", params=params)
         if response.status_code == 200:
             scans = response.json()
-            # Sort scans by ID in descending order (newest first)
-            scans = sorted(scans, key=lambda scan: scan['id'], reverse=True)
-            
-            # Apply filter if specified
-            filter_status = request.args.get('filter')
-            if filter_status and filter_status != 'all':
-                scans = [scan for scan in scans if scan.get('status') == filter_status]
-                
         else:
             scans = []
     except requests.RequestException:
         scans = []
     
     return render_template("partials/scans_table_list.html", scans=scans)
+
 
 @get_bp.route("/templates/create-scan/<int:file_id>")
 def create_file_scan_template(file_id):

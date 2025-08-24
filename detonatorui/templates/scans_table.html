@@ -10,13 +10,72 @@
             <h2 class="text-2xl font-bold text-gray-800">Scans Table</h2>
             <div class="space-x-3">
                 <button 
-                    onclick="htmx.ajax('GET', '/templates/scans-table', {target: '#scans-table-container', swap: 'innerHTML'})"
+                    onclick="refreshTable()"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
                     Refresh
                 </button>
                 <a href="/scans" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                     Card View
                 </a>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-end">
+            <!-- Search Bar -->
+            <div class="flex-1">
+                <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input 
+                    type="text" 
+                    id="search-input"
+                    placeholder="Search by project, comment, or filename..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+            
+            <!-- Status Filter -->
+            <div class="w-full md:w-40">
+                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Statuses</option>
+                    <option value="fresh">Fresh</option>
+                    <option value="running">Running</option>
+                    <option value="finished">Finished</option>
+                    <option value="error">Error</option>
+                </select>
+            </div>
+            
+            <!-- Project Filter -->
+            <div class="w-full md:w-48">
+                <label for="project-filter" class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                <input 
+                    type="text" 
+                    id="project-filter"
+                    placeholder="Filter by project..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+            
+            <!-- Limit Filter -->
+            <div class="w-full md:w-32">
+                <label for="limit-filter" class="block text-sm font-medium text-gray-700 mb-1">Limit</label>
+                <select id="limit-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            
+            <!-- Clear Filters Button -->
+            <div>
+                <button 
+                    onclick="clearFilters()"
+                    class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                    Clear
+                </button>
             </div>
         </div>
     </div>
@@ -37,15 +96,70 @@
 </div>
 
 <script>
-// Filter function
-function filterScans() {
-    const filter = document.getElementById('status-filter').value;
-    const url = filter === 'all' ? '/templates/scans-table' : `/templates/scans-table?filter=${filter}`;
+let debounceTimer;
+
+function buildFilterUrl() {
+    const params = new URLSearchParams();
     
+    // Status filter
+    const status = document.getElementById('status-filter').value;
+    if (status && status !== 'all') {
+        params.append('status', status);
+    }
+    
+    // Search filter
+    const search = document.getElementById('search-input').value.trim();
+    if (search) {
+        params.append('search', search);
+    }
+    
+    // Project filter
+    const project = document.getElementById('project-filter').value.trim();
+    if (project) {
+        params.append('project', project);
+    }
+    
+    // Limit
+    const limit = document.getElementById('limit-filter').value;
+    if (limit && limit !== '100') {
+        params.append('limit', limit);
+    }
+    
+    const queryString = params.toString();
+    return '/templates/scans-table' + (queryString ? '?' + queryString : '');
+}
+
+function applyFilters() {
+    const url = buildFilterUrl();
     htmx.ajax('GET', url, {
         target: '#scans-table-container',
         swap: 'innerHTML'
     });
+}
+
+function debounceApplyFilters() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(applyFilters, 500);
+}
+
+function refreshTable() {
+    applyFilters();
+}
+
+function clearFilters() {
+    // Reset all filter inputs
+    document.getElementById('search-input').value = '';
+    document.getElementById('project-filter').value = '';
+    document.getElementById('status-filter').value = 'all';
+    document.getElementById('limit-filter').value = '100';
+    
+    // Apply filters
+    applyFilters();
+}
+
+// Filter function (legacy support)
+function filterScans() {
+    applyFilters();
 }
 
 // Define deleteScan function
@@ -60,7 +174,7 @@ function deleteScan(scanId) {
                 alert('Error deleting scan: ' + data.error);
             } else {
                 // Refresh the table
-                filterScans();
+                refreshTable();
             }
         })
         .catch(error => {
@@ -75,5 +189,14 @@ function viewScanDetails(scanId) {
     // You can implement a modal or redirect to scan details
     window.location.href = `/scans?scan=${scanId}`;
 }
+
+// Add event listeners for filter inputs
+document.addEventListener('DOMContentLoaded', function() {
+    // Add input event listeners for debounced filtering
+    document.getElementById('search-input').addEventListener('input', debounceApplyFilters);
+    document.getElementById('project-filter').addEventListener('input', debounceApplyFilters);
+    document.getElementById('status-filter').addEventListener('change', applyFilters);
+    document.getElementById('limit-filter').addEventListener('change', applyFilters);
+});
 </script>
 {% endblock %}

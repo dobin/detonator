@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+from sqlalchemy import or_
+from typing import List, Optional
 from datetime import datetime
 import logging
 
@@ -14,10 +15,74 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+@router.get("/scans/count")
+async def get_scans_count(
+    status: Optional[str] = Query(None, description="Filter by scan status"),
+    project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
+    result: Optional[str] = Query(None, description="Filter by scan result"),
+    search: Optional[str] = Query(None, description="Search in project, comment, or filename"),
+    db: Session = Depends(get_db)
+):
+    """Get count of scans with filtering capabilities"""
+    query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    
+    # Apply filters (same as in get_scans)
+    if status:
+        query = query.filter(Scan.status == status)
+    
+    if project:
+        query = query.filter(Scan.project.ilike(f"%{project}%"))
+    
+    if result:
+        query = query.filter(Scan.result.ilike(f"%{result}%"))
+    
+    if search:
+        # Search across multiple fields
+        search_filter = or_(
+            Scan.project.ilike(f"%{search}%"),
+            Scan.comment.ilike(f"%{search}%"),
+            Scan.file.has(File.filename.ilike(f"%{search}%"))
+        )
+        query = query.filter(search_filter)
+    
+    count = query.count()
+    return {"count": count}
+
+
 @router.get("/scans", response_model=List[ScanResponseShort])
-async def get_scans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Get all scans with file information"""
-    scans = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).offset(skip).limit(limit).all()
+async def get_scans(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by scan status"),
+    project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
+    result: Optional[str] = Query(None, description="Filter by scan result"),
+    search: Optional[str] = Query(None, description="Search in project, comment, or filename"),
+    db: Session = Depends(get_db)
+):
+    """Get scans with filtering capabilities"""
+    query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    
+    # Apply filters
+    if status:
+        query = query.filter(Scan.status == status)
+    
+    if project:
+        query = query.filter(Scan.project.ilike(f"%{project}%"))
+    
+    if result:
+        query = query.filter(Scan.result.ilike(f"%{result}%"))
+    
+    if search:
+        # Search across multiple fields
+        search_filter = or_(
+            Scan.project.ilike(f"%{search}%"),
+            Scan.comment.ilike(f"%{search}%"),
+            Scan.file.has(File.filename.ilike(f"%{search}%"))
+        )
+        query = query.filter(search_filter)
+    
+    # Order by ID descending (newest first) and apply pagination
+    scans = query.order_by(Scan.id.desc()).offset(skip).limit(limit).all()
     return scans
 
 
