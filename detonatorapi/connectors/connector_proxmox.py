@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 PROXMOX_NO_RESET = False  # for debugging
 
 INSTANCE_USED_SLEEP_TIME = 10  # seconds to wait if instance is already used
-INSTANCE_USED_RETRIES = 10     # how many retries of INSTANCE_USED_SLEEP_TIME
+INSTANCE_USED_RETRIES = 30     # how many retries of INSTANCE_USED_SLEEP_TIME
 
 POST_VM_START_WAIT = 20       # seconds to wait after starting VM (after revert to snapshot)
 
