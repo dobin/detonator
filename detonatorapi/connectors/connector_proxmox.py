@@ -73,13 +73,13 @@ class ConnectorProxmox(ConnectorBase):
                     Scan.profile_id == db_scan.profile_id
                 ).all()
                 if scans_using_vm:
-                    db_scan_add_log(thread_db, db_scan, f"Proxmox instance already used by another scan. Will try again ({attempt+1}/{INSTANCE_USED_RETRIES})")
+                    db_scan_add_log(thread_db, db_scan, f"Scan {scan_id}: Proxmox instance already used by another scan. Will try again ({attempt+1}/{INSTANCE_USED_RETRIES})")
                     time.sleep(INSTANCE_USED_SLEEP_TIME)
                 else:
                     break
             else:
                 # If we exhausted all retries, set error and return
-                db_scan_change_status(scan_id, "error", "Proxmox instance still in use after maximum retries.")
+                db_scan_change_status(scan_id, "error", f"Scan {scan_id}: Proxmox instance still in use after maximum retries.")
                 thread_db.close()
                 return
 
