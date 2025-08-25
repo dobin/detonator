@@ -79,7 +79,7 @@ class ConnectorProxmox(ConnectorBase):
                     break
             else:
                 # If we exhausted all retries, set error and return
-                db_scan_add_log(thread_db, db_scan, "Proxmox instance still in use after maximum retries.")
+                db_scan_change_status(scan_id, "error", "Proxmox instance still in use after maximum retries.")
                 thread_db.close()
                 return
 
