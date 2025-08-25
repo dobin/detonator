@@ -55,7 +55,7 @@ def connect_to_agent(scan_id) -> bool:
                 #db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Failed to connect to agent at {url}: {response.status_code}")
                 pass
         except requests.RequestException as e:
-            db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Error connecting to agent at {url}: {str(e)}")
+            db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not connect to agent at {url}")
         
         time.sleep(1)
 
