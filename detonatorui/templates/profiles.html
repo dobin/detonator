@@ -154,10 +154,18 @@
 
     <!-- Profiles List -->
     <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Active Profiles</h3>
+            <div id="loading-indicator" class="htmx-indicator">
+                <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                <span class="ml-2 text-sm text-gray-600">Refreshing...</span>
+            </div>
+        </div>
         <div id="profiles-list" 
              hx-get="/templates/profiles" 
              hx-trigger="load, every 3s"
-             hx-swap="innerHTML">
+             hx-swap="innerHTML swap:300ms"
+             hx-indicator="#loading-indicator">
             <div class="text-center py-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <p class="mt-2 text-gray-600">Loading profiles...</p>
@@ -169,6 +177,22 @@
 <script>
 // Global variable to store connector data
 let connectorsData = {};
+
+// Add CSS for loading indicator
+const style = document.createElement('style');
+style.textContent = `
+    .htmx-indicator {
+        opacity: 0;
+        transition: opacity 200ms ease-in;
+    }
+    .htmx-request .htmx-indicator {
+        opacity: 1;
+    }
+    .htmx-request.htmx-indicator {
+        opacity: 1;
+    }
+`;
+document.head.appendChild(style);
 
 // Load available connectors dynamically
 function loadConnectors() {
@@ -469,14 +493,6 @@ document.body.addEventListener('htmx:before', function(event) {
         // Show loading indicator
         document.getElementById('form-result').innerHTML = 
             '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">Saving profile...</div>';
-    }
-});
-
-// Add loading indicator for profile fetching
-document.body.addEventListener('htmx:beforeRequest', function(event) {
-    if (event.detail.requestConfig.path.includes('/templates/profiles')) {
-        document.getElementById('profiles-list').innerHTML = 
-            '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div><p class="mt-2 text-gray-600">Loading profiles...</p></div>';
     }
 });
 </script>
