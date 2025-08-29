@@ -83,6 +83,15 @@ async def get_scans(
     
     # Order by ID descending (newest first) and apply pagination
     scans = query.order_by(Scan.id.desc()).offset(skip).limit(limit).all()
+
+    # Scan overview need this information too
+    for scan in scans:
+        # workaround, there is always one line generated
+        if len(scan.rededr_events) > 250:
+            scan.has_rededr_events = True
+        else:
+            scan.has_rededr_events = False
+
     return scans
 
 

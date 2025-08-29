@@ -84,7 +84,7 @@
             
             <div class="flex flex-col space-y-2 ml-4">
                 <button onclick="viewScanDetails({{ scan.id }})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">View Details</button>
-                {% if scan.rededr_events|length > 250 %}
+                {% if scan.has_rededr_events %}
                 <button onclick="window.open('/semidatasieve/{{ scan.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
                 {% endif %}
                 {% if not READ_ONLY_MODE %}

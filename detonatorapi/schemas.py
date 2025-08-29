@@ -150,6 +150,9 @@ class ScanResponseShort(BaseModel):
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
+
+    # Logs stuff
+    has_rededr_events: Optional[bool] = False
     
     created_at: datetime
     updated_at: datetime
