@@ -82,6 +82,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     agent_port = db_scan.profile.port  # port is always defined in the profile
 
     filename = db_scan.file.filename
+    fileargs = db_scan.file.fileargs
     file_content = db_scan.file.content
     runtime = db_scan.runtime
     malware_path = db_scan.malware_path
@@ -135,9 +136,11 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # last default if not given until now
     if not malware_path or malware_path == "":
         malware_path = "C:\\Users\\Public\\Downloads\\"
-        
+    if not fileargs or fileargs == "":
+        fileargs = ""
+
     db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on Agent at {agent_ip} with runtime {runtime} seconds and malware path {malware_path}")
-    scanResult: ScanResult = agentApi.ExecFile(filename, file_content, malware_path)
+    scanResult: ScanResult = agentApi.ExecFile(filename, file_content, malware_path, fileargs)
     is_malware = False
     if scanResult == ScanResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
