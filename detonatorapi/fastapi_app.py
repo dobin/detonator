@@ -140,7 +140,10 @@ async def upload_file_and_scan(
     # Check if allowed: token
     permissions = tokenAuth.get_permissions(token)
     if permissions.is_anonymous:
+        logger.info("User: anonymous")
         runtime = 12
+    else:
+        logger.info("User: authenticated")
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)

@@ -43,6 +43,7 @@ class DetonatorClient:
                 'file': (upload_filename, f, 'text/plain')
             }
             data = {
+                'token': self.token,
                 'source_url': source_url,
                 'file_comment': file_comment,
                 'scan_comment': scan_comment,
