@@ -4,7 +4,7 @@
         <thead class="bg-gray-50">
             <tr>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connector</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EDR</th>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
             </tr>
         </thead>
@@ -15,7 +15,7 @@
                     <div class="text-sm font-medium text-gray-900">{{ template_name }}</div>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ template.connector }}</div>
+                    <div class="text-sm text-gray-900">{{ template.edr_collector }}</div>
                 </td>
                 <td class="px-4 py-2">
                     {% if template.comment %}
