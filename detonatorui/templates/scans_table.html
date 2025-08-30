@@ -83,7 +83,7 @@
     <!-- Scans Table Container -->
     <div class="bg-white rounded-lg shadow">
         <div id="scans-table-container" 
-             hx-get="/templates/scans-table" 
+             hx-get="/templates/scans-table?limit=10" 
              hx-trigger="load"
              hx-target="this"
              hx-swap="innerHTML">
@@ -151,7 +151,7 @@ function clearFilters() {
     document.getElementById('search-input').value = '';
     document.getElementById('project-filter').value = '';
     document.getElementById('status-filter').value = 'all';
-    document.getElementById('limit-filter').value = '100';
+    document.getElementById('limit-filter').value = '10';
     
     // Apply filters
     applyFilters();

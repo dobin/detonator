@@ -88,7 +88,7 @@ def scans_template():
         
         # Handle pagination
         skip = request.args.get('skip', 0, type=int)
-        limit = request.args.get('limit', 100, type=int)
+        limit = request.args.get('limit', 10, type=int)
         params['skip'] = skip
         params['limit'] = limit
         
@@ -225,7 +225,7 @@ def scans_table_template():
         
         # Handle pagination
         skip = request.args.get('skip', 0, type=int)
-        limit = request.args.get('limit', 100, type=int)
+        limit = request.args.get('limit', 10, type=int)
         params['skip'] = skip
         params['limit'] = limit
         

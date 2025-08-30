@@ -100,7 +100,7 @@
     <!-- Scans List -->
     <div 
         id="scans-container" 
-        hx-get="/templates/scans" 
+        hx-get="/templates/scans?limit=10" 
         hx-trigger="load"
         hx-indicator="#loading"
     >
@@ -154,7 +154,7 @@
         
         // Limit
         const limit = document.getElementById('limit-filter').value;
-        if (limit && limit !== '100') {
+        if (limit) {
             params.append('limit', limit);
         }
         
@@ -215,7 +215,7 @@
         // Reset all filter inputs
         document.getElementById('search-input').value = '';
         document.getElementById('project-filter').value = '';
-        document.getElementById('limit-filter').value = '100';
+        document.getElementById('limit-filter').value = '10';
         
         // Reset status filter to 'all'
         filterScans('all');
