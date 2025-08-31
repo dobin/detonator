@@ -2,6 +2,7 @@ import time
 import requests
 import os
 import sys
+from typing import Optional
 
 from detonatorapi.utils import filename_randomizer
 
@@ -21,6 +22,11 @@ class DetonatorClient:
         except requests.RequestException as e:
             print(f"Error fetching profiles: {e}")
             return {}
+        
+
+    def get_profile(self, profile_name):
+        profiles = self.get_profiles()
+        return profiles.get(profile_name)
 
 
     def valid_profile(self, profile_name):
@@ -77,11 +83,26 @@ class DetonatorClient:
 
             # Wait for completion
             final_scan = self._wait_for_scan_completion(scan_id)
-            if final_scan:
-                if final_scan.get('result'):
-                    print(f"Result: {final_scan['result']}")
+            print("") # because of the ...
+            if not final_scan:
+                print("Scan error")
+                return
+
+            # Non finished (error mostly)
+            if final_scan.get('status') != 'finished':
+                print(f"Scan did not complete successfully: {final_scan.get('status')}")
+                print(final_scan.get('detonator_srv_logs'))
+                return
+
+            # check for RedEdr first (no result print)
+            profile = self.get_profile(profile_name)
+            if profile and profile.get('edr_collector') == 'RedEdr':
+                print("RedEdr data available, but not printed.")
             else:
-                print("Scan did not complete successfully")
+                if final_scan.get('result'):
+                    print(f"Scan Result: {final_scan['result']}")
+                else:
+                    print("No result available?")
                     
 
     def _get_scan_status(self, scan_id):
@@ -94,8 +115,8 @@ class DetonatorClient:
             return None
 
 
-    def _wait_for_scan_completion(self, scan_id, timeout=3600):
-        #print(f"Waiting for scan {scan_id} to complete...")
+    def _wait_for_scan_completion(self, scan_id, timeout=3600) -> Optional[dict]:
+        #print(f"Waiting for scan {scan_id} to complete...")i
         start_time = time.time()
         
         while time.time() - start_time < timeout:
@@ -109,7 +130,7 @@ class DetonatorClient:
             sys.stdout.flush()
             
             if scan['status'] in ["finished", "error", "stopping", "removing" ]:
-                print("")
+                #print(f"Scan finished with status: {scan['status']}")
                 return scan
             elif self.debug:
                 print(f"Scan {scan_id} status: {scan['status']}")

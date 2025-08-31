@@ -87,7 +87,7 @@ async def get_scans(
     # Scan overview need this information too
     for scan in scans:
         # workaround, there is always one line generated
-        if len(scan.rededr_events) > 250:
+        if len(scan.rededr_events) > 220:
             scan.has_rededr_events = True
         else:
             scan.has_rededr_events = False

@@ -13,8 +13,8 @@ def reparse_edr_logs():
     db = get_db_for_thread()
     scans = db.query(Scan).all()
     for scan in scans:
-        if not scan.edr_logs:
-            continue
+        #if not scan.edr_logs:
+        #    continue
         edr_logs = scan.edr_logs
 
         edr_summary: List[Dict] = []
@@ -22,21 +22,22 @@ def reparse_edr_logs():
 
         edr_plugin_log: str = ""
         try:
-            edr_plugin_log = json.loads(edr_logs).get("logs", "")
+            if edr_logs:
+                edr_plugin_log = json.loads(edr_logs).get("logs", "")
 
-            # EDR logs summary
-            for parser in parsers:
-                parser.load(edr_plugin_log)
-                if parser.is_relevant():
-                    if parser.parse():
-                        edr_summary = parser.get_summary()
-                        if scan.profile.edr_collector == "RedEdr":
-                            result_is_detected = ""
-                        elif parser.is_detected():
-                            result_is_detected = "detected"
-                        else:
-                            result_is_detected = "clean"
-                    break
+                # EDR logs summary
+                for parser in parsers:
+                    parser.load(edr_plugin_log)
+                    if parser.is_relevant():
+                        if parser.parse():
+                            edr_summary = parser.get_summary()
+                            if scan.profile.edr_collector == "RedEdr":
+                                result_is_detected = ""
+                            elif parser.is_detected():
+                                result_is_detected = "detected"
+                            else:
+                                result_is_detected = "clean"
+                        break
 
         except Exception as e:
             logger.error(edr_logs)

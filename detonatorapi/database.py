@@ -26,7 +26,7 @@ class Profile(Base):
     edr_collector: Mapped[str] = Column(String(100), nullable=False)
     default_malware_path: Mapped[str] = Column(String(255), default="", nullable=False)
     comment: Mapped[str] = Column(Text, nullable=True)
-    data: Mapped[dict] = Column(JSON, nullable=False)
+    data: Mapped[dict] = Column(JSON, default={}, nullable=False)
     password: Mapped[str] = Column(String(255), default="", nullable=False)
 
     # Relationship
@@ -75,7 +75,7 @@ class Scan(Base):
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
     edr_logs: Mapped[str] = Column(Text, default="", nullable=False)
-    edr_summary: Mapped[list] = Column(JSON, default="", nullable=False)
+    edr_summary: Mapped[list] = Column(JSON, default=[], nullable=False)
     result: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure

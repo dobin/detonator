@@ -121,7 +121,7 @@ function buildFilterUrl() {
     
     // Limit
     const limit = document.getElementById('limit-filter').value;
-    if (limit && limit !== '100') {
+    if (limit) {
         params.append('limit', limit);
     }
     

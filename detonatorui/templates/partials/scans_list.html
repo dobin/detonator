@@ -67,15 +67,15 @@
                         </div>
                     </div>
                     <div class="col-span-8">
-                        {% if scan.result %}
+                        {% if scan.status == "finished" and scan.profile.edr_collector == "RedEdr" %}
+                            RedEdr Logs available.
+                        {% elif scan.result != "" %}
                             <strong>EDR Summary:</strong>
                             {% if not scan.edr_summary or scan.edr_summary|length == 0 %}
-                                {% if scan.profile.edr_collector != "RedEdr" %}
-                                    <p>
-                                        No related EDR events identified.
-                                    </p>
-                                {% endif %}
-                            {% elif scan.edr_summary %}
+                                <p>
+                                    No related EDR events identified.
+                                </p>
+                            {% else %}
                                 {% for entry in scan.edr_summary %}
                                 <div>
                                     {{ entry.name }} - {{ entry.severity }} 

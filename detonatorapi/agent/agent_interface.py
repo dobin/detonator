@@ -210,6 +210,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         result_is_detected = "N/A"
         edr_logs = ""
         db_scan_add_log(thread_db, db_scan, "No EDR logs from Agent")
+    
     else:
         # get the actual EDR log
         edr_plugin_log: str = ""
@@ -236,6 +237,10 @@ def scan_file_with_agent(scan_id: int) -> bool:
         except Exception as e:
             logger.error(edr_logs)
             logger.error(f"Error parsing Defender XML logs: {e}")
+
+    # overwrite previous detection for RedEdr, we dont care
+    if db_scan.profile.edr_collector == "RedEdr":
+        result_is_detected = ""
 
     # if its already detected as malware, make sure the status is set
     # as we might not have any EDR logs
