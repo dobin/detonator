@@ -2,7 +2,7 @@ from typing import Dict, List
 import xml.etree.ElementTree as ET
 import logging
 import json
-
+import urllib.parse
 from .edr_parser import EdrParser
 
 logger = logging.getLogger(__name__)
@@ -101,16 +101,27 @@ class DefenderParser(EdrParser):
         return self.events
     
 
-    def get_summary(self) -> str:
-        edr_summary: List[str] = []
+    def get_summary(self) -> List[Dict]:
+        edr_summary: List[Dict] = []
 
         if len(self.events) == 0:
-            return "No relevant EDR events"
+            return []
 
         for event in self.events:
-            e = f"{event.get('threat_name', '?')}: {event.get('severity_name', '?')}"
-            edr_summary.append(e)
-        return "\n".join(edr_summary)
+            # Behavior:Win32/Meterpreter.gen!A
+            threat_name_short = event.get('threat_name', '')
+            if ':' in threat_name_short:
+                threat_name_short = threat_name_short.split(':', 1)[1].strip()
+            threat_name_short_urlencoded = urllib.parse.quote(threat_name_short)
+            url = f"https://defendersearch.r00ted.ch/search?threat_name={threat_name_short_urlencoded}"
+
+            summary_entry = {
+                "name": event.get('threat_name', '?'),
+                "severity": event.get('severity_name', '?'),
+                "url": url
+            }
+            edr_summary.append(summary_entry)
+        return edr_summary
 
 
     def is_detected(self) -> bool:

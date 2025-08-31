@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import List, Dict
 
 from detonatorapi.database import get_db_for_thread, Scan
 from detonatorapi.agent.agent_interface import parsers
@@ -16,7 +17,7 @@ def reparse_edr_logs():
             continue
         edr_logs = scan.edr_logs
 
-        edr_summary = ""
+        edr_summary: List[Dict] = []
         result_is_detected = ""
 
         edr_plugin_log: str = ""
@@ -29,7 +30,9 @@ def reparse_edr_logs():
                 if parser.is_relevant():
                     if parser.parse():
                         edr_summary = parser.get_summary()
-                        if parser.is_detected():
+                        if scan.profile.edr_collector == "RedEdr":
+                            result_is_detected = ""
+                        elif parser.is_detected():
                             result_is_detected = "detected"
                         else:
                             result_is_detected = "clean"
@@ -38,7 +41,6 @@ def reparse_edr_logs():
         except Exception as e:
             logger.error(edr_logs)
             logger.error(f"Error parsing Defender XML logs: {e}")
-
 
         print(f"Reparsed scan {scan.id}: {result_is_detected}")
         #print(f"  {edr_summary}")

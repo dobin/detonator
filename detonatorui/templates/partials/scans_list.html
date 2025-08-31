@@ -22,7 +22,7 @@
                 </div>
 
                 <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 rounded">
-                    <div class="col-span-3">
+                    <div class="col-span-4">
                         <p class="text-gray-600 text-sm">
                             File: {{ scan.file.filename }} 
                             <a href="/files/{{ scan.file_id }}" class="text-blue-500 hover:underline">
@@ -66,17 +66,28 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-span-9">
+                    <div class="col-span-8">
                         {% if scan.result %}
-                        <strong>EDR Summary:</strong>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
-                         >{{scan.edr_summary}}
-                        </pre>
+                            <strong>EDR Summary:</strong>
+                            {% if not scan.edr_summary or scan.edr_summary|length == 0 %}
+                                {% if scan.profile.edr_collector != "RedEdr" %}
+                                    <p>
+                                        No related EDR events identified.
+                                    </p>
+                                {% endif %}
+                            {% elif scan.edr_summary %}
+                                {% for entry in scan.edr_summary %}
+                                <div>
+                                    {{ entry.name }} - {{ entry.severity }} 
+                                    (<a href="{{ entry.url }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
+                                </div>
+                                {% endfor %}
+                            {% endif %}
                         {% else %}
-                        <strong>Detonator Logs:</strong>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
-                        >{{scan.detonator_srv_logs}}
-                        </pre>
+                            <strong>Detonator Logs:</strong>
+                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
+                            >{{scan.detonator_srv_logs}}
+                            </pre>
                         {% endif %}
                     </div>
                 </div>

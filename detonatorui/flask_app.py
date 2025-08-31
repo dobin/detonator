@@ -32,7 +32,7 @@ def get_status_color(status):
         'error': 'bg-red-100 text-red-800',
         'instantiating': 'bg-blue-100 text-blue-800',
         'finished': 'bg-blue-100 text-blue-800',
-        'scanning': 'bg-green-100 text-green-800',
+        'scanning': 'bg-blue-300 text-blue-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
@@ -47,6 +47,7 @@ def get_scan_status_color(status):
         'detected': 'bg-red-100 text-red-800',
         'file_detected': 'bg-red-100 text-red-800',
         'not_detected': 'bg-green-100 text-green-800',
+        'clean': 'bg-green-100 text-green-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates

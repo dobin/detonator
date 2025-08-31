@@ -118,7 +118,7 @@ class ScanResponse(BaseModel):
     execution_logs: Optional[str] = None
     rededr_events: Optional[str] = None
     edr_logs: Optional[str] = None
-    edr_summary: Optional[str] = None
+    edr_summary: Optional[list] = None
     result: Optional[str] = None
 
     vm_instance_name: Optional[str] = None
@@ -145,13 +145,14 @@ class ScanResponseShort(BaseModel):
     malware_path: Optional[str] = None
     status: str
 
-    edr_summary: Optional[str] = None
+    detonator_srv_logs: Optional[str] = None
+    edr_summary: Optional[list] = None
     result: Optional[str] = None
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
 
-    # Logs stuff
+    # New
     has_rededr_events: Optional[bool] = False
     
     created_at: datetime
