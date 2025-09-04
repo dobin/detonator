@@ -84,7 +84,10 @@ class ConnectorProxmox(ConnectorBase):
                 return
 
             # if vm is not running, wait for it. 
-            self.proxmox_manager.WaitForVmStatus(vm_id, "running", timeout=10)
+            if not self.proxmox_manager.WaitForVmStatus(vm_id, "running", timeout=10):
+                db_scan_change_status(scan_id, "error", f"Scan {scan_id}: Proxmox instance not running after waiting.")
+                thread_db.close()
+                return
 
             db_scan = thread_db.get(Scan, scan_id)  # get db entry again (may have waited for it)
             if not db_scan:  # check mostly for syntax checker
