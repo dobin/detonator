@@ -48,12 +48,10 @@ def connect_to_agent(scan_id) -> bool:
     for attempt in range(15):  # 15 * (1 + 3) = 60s
         try:
             response = requests.get(url, timeout=3)
-            if response.status_code == 200:
-                db_scan_add_log(thread_db, db_scan, f"Connected to agent at {url} on attempt {attempt + 1}")
-                return True
-            else:
-                #db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Failed to connect to agent at {url}: {response.status_code}")
-                pass
+            # just connect
+            #if response.status_code == 200:
+            db_scan_add_log(thread_db, db_scan, f"Connected to agent at {url} on attempt {attempt + 1}")
+            return True
         except requests.RequestException as e:
             db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not connect to agent at {url}")
         
@@ -195,7 +193,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
             db_scan_add_log(thread_db, db_scan, f"Released lock on Agent at {agent_ip}")
 
     # Preparse all the logs
-    edr_summary = ""  # will be generated
+    edr_summary = []  # will be generated
     result_is_detected = ""  # will be generated
     if agent_logs is None:
         agent_logs = "No Agent logs available"
