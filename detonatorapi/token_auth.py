@@ -16,8 +16,8 @@ class TokenPermissions:
 class TokenAuth():
     def get_permissions(self, token: Optional[str]) -> TokenPermissions:
         # Implement logic to retrieve permissions based on the token
-        if not token:
-            return TokenPermissions(True)
+        if not token or token == "":  # its disabled, so never anonymous
+            return TokenPermissions(False)
         
         if token == AUTH_TOKEN:
             return TokenPermissions(False)
