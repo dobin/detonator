@@ -118,6 +118,7 @@ class DefenderParser(EdrParser):
             summary_entry = {
                 "name": event.get('threat_name', '?'),
                 "severity": event.get('severity_name', '?'),
+                "path": event.get('path', '?'),
                 "url": url
             }
             edr_summary.append(summary_entry)

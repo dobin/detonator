@@ -81,6 +81,9 @@
                                     {{ entry.name }} - {{ entry.severity }} 
                                     (<a href="{{ entry.url }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
                                 </div>
+                                <div class="text-gray-500 text-xs mt-2">
+                                    Path: {{ entry.path if entry.path }}
+                                </div>
                                 {% endfor %}
                             {% endif %}
                         {% else %}
