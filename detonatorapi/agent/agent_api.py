@@ -46,8 +46,11 @@ class AgentApi:
         # Check if Agent is reachable
         try:
             test_response = requests.get(self.agent_url, timeout=0.5)
-            return test_response.status_code == 200
-        except:
+            # Can also be 404, just connect is enough
+            #return test_response.status_code == 200
+            return True
+        except Exception as e:
+            #logger.info(f"Agent: Agent not reachable at {self.agent_url}: {e}")
             return False
         
 
@@ -85,9 +88,12 @@ class AgentApi:
 
     def StartTrace(self, target_names: List[str]) -> Result[None]:
         # Reset any previous trace data
-        url = self.agent_url + "/api/reset"
+        url = self.agent_url + "/api/trace/reset"
         try:
             response = requests.post(url)
+            if response.status_code == 404:
+                logging.info("Agent: /api/trace/reset not found. Assuming non-RedEdr agent.")
+                return Result.ok()
             if response.status_code == 200:
                 #print("Response:", response.json())
                 pass
@@ -101,7 +107,7 @@ class AgentApi:
             return Result.error(error_msg)
 
         # Configure trace
-        url = self.agent_url + "/api/trace"
+        url = self.agent_url + "/api/trace/start"
         headers = {"Content-Type": "application/json"}
         payload = {"trace": target_names}
         try:
@@ -121,7 +127,7 @@ class AgentApi:
     
     def StopTrace(self) -> Result[None]:
         # kill running process
-        url = self.agent_url + "/api/kill"
+        url = self.agent_url + "/api/execute/kill"
         try:
             response = requests.post(url)
             if response.status_code != 200:
@@ -137,7 +143,7 @@ class AgentApi:
 
 
     def ExecFile(self, filename: str, file_data: bytes, malware_path: str, fileargs: str) -> ScanResult:
-        url = self.agent_url + "/api/exec"
+        url = self.agent_url + "/api/execute/exec"
         files = {
             "file": (filename, file_data),
         }
