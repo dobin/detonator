@@ -39,7 +39,7 @@ class File(Base):
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     content: Mapped[bytes] = Column(LargeBinary, nullable=False)
     filename: Mapped[str] = Column(String(255), nullable=False)
-    fileargs: Mapped[str] = Column(String(255), nullable=True)
+    exec_arguments: Mapped[str] = Column(String(255), nullable=True)
     file_hash: Mapped[str] = Column(String(64), nullable=False, index=True)
     source_url: Mapped[str] = Column(String(500), nullable=True)
     comment: Mapped[str] = Column(Text, nullable=True)

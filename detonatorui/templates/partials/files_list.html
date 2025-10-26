@@ -12,8 +12,8 @@
                 {% if file.source_url %}
                 <p class="text-gray-600 text-sm">Source: {{ file.source_url }}</p>
                 {% endif %}
-                {% if file.fileargs %}
-                <p class="text-gray-600 text-sm">fileargs: <code class="bg-gray-100 px-1 rounded">{{ file.fileargs }}</code></p>
+                {% if file.exec_arguments %}
+                <p class="text-gray-600 text-sm">exec_arguments: <code class="bg-gray-100 px-1 rounded">{{ file.exec_arguments }}</code></p>
                 {% endif %}
                 {% if file.comment %}
                 <p class="text-gray-700 mt-2">{{ file.comment }}</p>

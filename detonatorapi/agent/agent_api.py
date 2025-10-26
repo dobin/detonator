@@ -142,7 +142,7 @@ class AgentApi:
         return Result.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, fileargs: str) -> ScanResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ScanResult:
         url = self.agent_url + "/api/execute/exec"
         files = {
             "file": (filename, file_data),
@@ -152,7 +152,7 @@ class AgentApi:
             drop_path += "\\"
         data = {
             "drop_path": drop_path,
-            "executable_args": fileargs,
+            "executable_args": exec_arguments,
             "use_additional_etw": "false",
         }
         # multipart form-data

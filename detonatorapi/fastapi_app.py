@@ -133,7 +133,7 @@ async def upload_file_and_scan(
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
     drop_path: Optional[str] = Form(None),
-    fileargs: Optional[str] = Form(None),
+    exec_arguments: Optional[str] = Form(None),
     token: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
@@ -159,7 +159,7 @@ async def upload_file_and_scan(
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
     logger.info(f"Uploading file: {actual_filename}")
     file_content = await file.read()
-    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", fileargs or "")
+    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", exec_arguments or "")
 
     # DB: Create scan record (auto-scan)
     scan_id = db_create_scan(db, file_id, profile_name, scan_comment or "", project or "", runtime or 10, drop_path or "")

@@ -12,7 +12,7 @@
                     <p class="mt-1 text-sm text-blue-700">
                         <strong>{{ file.filename }}</strong><br>
                         {% if file.comment %}Comment: {{ file.comment }}<br>{% endif %}
-                        {% if file.fileargs %}fileargs: <code class="bg-gray-100 px-1 rounded">{{ file.fileargs }}</code><br>{% endif %}
+                        {% if file.exec_arguments %}exec_arguments: <code class="bg-gray-100 px-1 rounded">{{ file.exec_arguments }}</code><br>{% endif %}
                         Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}
                     </p>
                 </div>

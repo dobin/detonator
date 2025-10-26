@@ -48,7 +48,7 @@ $taskName = "RedEdrBootTask"
 $exePath = "C:\RedEdr\RedEdr.exe"
 $myargs    = '--hide --web --etw --port 80 --trace malware'
 
-# Scheduled task action with fileargs
+# Scheduled task action with exec_arguments
 $action = New-ScheduledTaskAction -Execute $exePath -Argument $myargs
 $trigger = New-ScheduledTaskTrigger -AtStartup
 #$trigger = New-ScheduledTaskTrigger -AtLogOn
