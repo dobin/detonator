@@ -151,8 +151,8 @@ class AgentApi:
         if not malware_path.endswith("\\"):
             malware_path += "\\"
         data = {
-            "path": malware_path,
-            "fileargs": fileargs,
+            "drop_path": malware_path,
+            "executable_args": fileargs,
             "use_additional_etw": "false",
         }
         # multipart form-data
