@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from .post import post_bp
 from .get import get_bp
-from .config import READ_ONLY_MODE
+from .config import READ_ONLY_MODE, API_BASE_URL
 
 
 app = Flask(__name__)
@@ -21,6 +21,15 @@ logger = logging.getLogger(__name__)
 
 if READ_ONLY_MODE:
     logger.warning("🔒 FLASK UI RUNNING IN READ-ONLY MODE - Write operations are disabled")
+
+
+# Make API_BASE_URL available to all templates
+@app.context_processor
+def inject_api_base_url():
+    return {
+        'API_BASE_URL': API_BASE_URL,
+        'READ_ONLY': READ_ONLY_MODE
+    }
 
 
 # Helper function for Jinja2 templates
@@ -88,10 +97,3 @@ def pretty_json_filter(s):
 def static_files(filename):
     """Serve static files from the static directory"""
     return app.send_static_file(filename)
-
-
-@app.context_processor
-def inject_global_vars():
-    return {
-        'READ_ONLY': os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
-    }

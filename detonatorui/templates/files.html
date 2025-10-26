@@ -61,7 +61,7 @@
 <script>
     function deleteFile(fileId) {
         if (confirm('Are you sure you want to delete this file and all its scans?')) {
-            fetch('http://localhost:8000/api/files/' + fileId, {
+            fetch('{{ API_BASE_URL }}/api/files/' + fileId, {
                 method: 'DELETE'
             })
             .then(response => {

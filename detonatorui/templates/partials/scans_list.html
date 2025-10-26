@@ -115,7 +115,7 @@
 if (typeof deleteScan === 'undefined') {
     window.deleteScan = function(scanId) {
         if (confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
-            fetch('/api/scans/' + scanId, {
+            fetch('{{ API_BASE_URL }}/api/scans/' + scanId, {
                 method: 'DELETE'
             })
             .then(response => response.json())

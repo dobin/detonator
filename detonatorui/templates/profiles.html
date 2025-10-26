@@ -37,9 +37,9 @@
     <div id="create-profile-form" class="bg-white rounded-lg shadow p-6 mb-6" style="display: none;">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Create New Profile</h3>
         <form 
-            hx-post="/api/profiles/submit" 
-            hx-target="#form-result"
+            id="profile-form"
             hx-encoding="application/x-www-form-urlencoded"
+            hx-target="#form-result"
             class="space-y-6"
         >
             <input type="hidden" id="profile-id" name="profile_id" value="">
@@ -243,7 +243,7 @@ document.head.appendChild(style);
 
 // Load available connectors dynamically
 function loadConnectors() {
-    return fetch('/api/connectors')
+    return fetch('{{ API_BASE_URL }}/api/connectors')
         .then(response => response.json())
         .then(connectors => {
             // Store connector data globally for later use
@@ -386,7 +386,7 @@ function editProfileById(profileId, profileName) {
         '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">Loading profile data...</div>';
     
     // Fetch profile data from API
-    fetch(`/api/profiles/${profileId}`)
+    fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -408,7 +408,7 @@ function editProfileById(profileId, profileName) {
 
 function deleteProfile(profileId, profileName) {
     if (confirm(`Are you sure you want to delete profile "${profileName}"?`)) {
-        fetch(`/api/profiles/${profileId}`, {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -439,7 +439,7 @@ function deleteProfile(profileId, profileName) {
 
 function releaseLock(profileId, profileName) {
     if (confirm(`Are you sure you want to release the lock for profile "${profileName}"?`)) {
-        fetch(`/api/profiles/${profileId}/release_lock`, {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/release_lock`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -504,35 +504,38 @@ function validateJSON() {
 
 // Listen for form completion to refresh profiles list
 document.body.addEventListener('htmx:afterRequest', function(event) {
-    if (event.detail.xhr.status === 200 && 
-        event.detail.requestConfig.verb === 'post' &&
-        event.detail.requestConfig.path.includes('/api/profiles/submit')) {
-        // Show success message
-        const result = JSON.parse(event.detail.xhr.responseText);
-        document.getElementById('form-result').innerHTML = 
-            '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">Profile saved successfully!</div>';
-        
-        // Immediately refresh profiles list and hide form
-        htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
-        
-        // Hide form quickly after showing success
-        setTimeout(() => {
-            hideCreateProfileForm();
-            resetFormForCreate();
-        }, 500);
-    } else if (event.detail.xhr.status >= 400 && 
-               event.detail.requestConfig.path.includes('/api/profiles')) {
-        // Show error message
-        const error = JSON.parse(event.detail.xhr.responseText);
-        document.getElementById('form-result').innerHTML = 
-            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: ' + error.error + '</div>';
+    if (event.detail.elt.id === 'profile-form') {
+        if (event.detail.xhr.status === 200) {
+            // Show success message
+            const result = JSON.parse(event.detail.xhr.responseText);
+            document.getElementById('form-result').innerHTML = 
+                '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">Profile saved successfully!</div>';
+            
+            // Immediately refresh profiles list and hide form
+            htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
+            
+            // Hide form quickly after showing success
+            setTimeout(() => {
+                hideCreateProfileForm();
+                resetFormForCreate();
+            }, 500);
+        } else if (event.detail.xhr.status >= 400) {
+            // Show error message
+            try {
+                const error = JSON.parse(event.detail.xhr.responseText);
+                document.getElementById('form-result').innerHTML = 
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: ' + (error.detail || error.error) + '</div>';
+            } catch (e) {
+                document.getElementById('form-result').innerHTML = 
+                    '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: Server returned status ' + event.detail.xhr.status + '</div>';
+            }
+        }
     }
 });
 
 // Add form validation before submit
 document.body.addEventListener('htmx:before', function(event) {
-    if (event.detail.requestConfig.path.includes('/api/profiles/submit') && 
-        event.detail.requestConfig.verb === 'post') {
+    if (event.detail.elt.id === 'profile-form') {
         if (!validateJSON()) {
             event.preventDefault();
             return false;
@@ -542,5 +545,29 @@ document.body.addEventListener('htmx:before', function(event) {
             '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">Saving profile...</div>';
     }
 });
+
+// Handle form submission by setting the correct method and URL
+document.getElementById('profile-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const profileId = document.getElementById('profile-id').value;
+    const form = e.target;
+    
+    // Determine method and URL based on whether we're creating or updating
+    if (profileId) {
+        // Update existing profile
+        form.setAttribute('hx-put', `{{ API_BASE_URL }}/api/profiles/${profileId}`);
+        form.removeAttribute('hx-post');
+    } else {
+        // Create new profile
+        form.setAttribute('hx-post', '{{ API_BASE_URL }}/api/profiles');
+        form.removeAttribute('hx-put');
+    }
+    
+    // Trigger HTMX
+    htmx.process(form);
+    htmx.trigger(form, 'submit');
+});
+
 </script>
 {% endblock %}

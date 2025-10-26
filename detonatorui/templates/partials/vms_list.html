@@ -91,7 +91,7 @@
 <script>
 function deleteVM(vmName) {
     if (confirm(`Are you sure you want to delete VM "${vmName}"? This action cannot be undone.`)) {
-        fetch(`/api/vms/${vmName}`, {
+        fetch(`{{ API_BASE_URL }}/api/vms/${vmName}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

@@ -22,7 +22,7 @@
     
     <form 
         id="create-scan-form"
-        hx-post="/api/files/{{ file.id }}/createscan" 
+        hx-post="{{ API_BASE_URL }}/api/files/{{ file.id }}/createscan" 
         hx-target="#create-scan-result"
         hx-indicator="#scan-loading"
         class="space-y-4"
