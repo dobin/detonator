@@ -144,13 +144,13 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     comment = scan_data.comment or ""
     project = scan_data.project or ""
     runtime = scan_data.runtime or 10
-    malware_path = scan_data.malware_path or ""
+    drop_path = scan_data.drop_path or ""
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
     
     # Create the scan
-    scan_id = db_create_scan(db, file_id, profile_name, comment, project, runtime=runtime, malware_path=malware_path)
+    scan_id = db_create_scan(db, file_id, profile_name, comment, project, runtime=runtime, drop_path=drop_path)
     
     # Retrieve the created scan to return full details
     db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()

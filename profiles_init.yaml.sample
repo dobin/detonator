@@ -2,7 +2,7 @@ live_rededr:
   connector: Live
   comment: win10 defender rededr
   edr_collector: Defender
-  default_malware_path: C:\Users\\Public\\
+  default_drop_path: C:\Users\\Public\\
   password: secret
   port: 80
   data:
@@ -12,7 +12,7 @@ new_defender:
   connector: NewAzure
   comment: New Azure Win11 Defender
   edr_collector: Defender
-  default_malware_path: C:\RedEdr\data
+  default_drop_path: C:\RedEdr\data
   data:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
     admin_username: admin 

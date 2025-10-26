@@ -112,8 +112,8 @@ def upload_file_and_scan():
             except ValueError:
                 return {"error": "Invalid runtime value"}, 400
         
-        if 'malware_path' in request.form:
-            data['malware_path'] = request.form['malware_path']
+        if 'drop_path' in request.form:
+            data['drop_path'] = request.form['drop_path']
             
         response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data)
         return handle_api_response(response, "file upload and scan")

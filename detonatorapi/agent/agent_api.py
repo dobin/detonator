@@ -142,16 +142,16 @@ class AgentApi:
         return Result.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, malware_path: str, fileargs: str) -> ScanResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, fileargs: str) -> ScanResult:
         url = self.agent_url + "/api/execute/exec"
         files = {
             "file": (filename, file_data),
         }
         # add trailing slash just to make sure
-        if not malware_path.endswith("\\"):
-            malware_path += "\\"
+        if not drop_path.endswith("\\"):
+            drop_path += "\\"
         data = {
-            "drop_path": malware_path,
+            "drop_path": drop_path,
             "executable_args": fileargs,
             "use_additional_etw": "false",
         }

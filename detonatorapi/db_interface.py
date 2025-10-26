@@ -65,14 +65,14 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, default_malware_path: str = "", comment: str = "", password: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = ""):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
         connector=connector,
         port=port,
         edr_collector=edr_collector,
-        default_malware_path=default_malware_path,
+        default_drop_path=default_drop_path,
         comment=comment,
         data=data,
         password=password
@@ -107,16 +107,16 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, malware_path: str = "", password: str = "") -> int:
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, drop_path: str = "", password: str = "") -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
         raise ValueError(f"Profile '{profile_name}' not found")
     
-    # get default_malware_path from profile if none given
-    # always make sure malware_path is set
-    if malware_path == "" and profile.default_malware_path != "":
-        malware_path = profile.default_malware_path
+    # get default_drop_path from profile if none given
+    # always make sure drop_path is set
+    if drop_path == "" and profile.default_drop_path != "":
+        drop_path = profile.default_drop_path
 
     # Create scan directly with the profile instance
     db_scan = Scan(
@@ -125,7 +125,7 @@ def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", proje
         comment=comment,
         project=project,
         runtime=runtime,
-        malware_path=malware_path,
+        drop_path=drop_path,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
     )

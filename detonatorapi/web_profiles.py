@@ -28,7 +28,7 @@ async def get_profiles(db: Session = Depends(get_db)):
             "connector": profile.connector,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
-            "default_malware_path": profile.default_malware_path,
+            "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
             "require_password": requires_password,
@@ -42,7 +42,7 @@ async def create_profile(
     connector: str = Form(...),
     port: int = Form(...),
     edr_collector: Optional[str] = Form(""),
-    default_malware_path: Optional[str] = Form(""),
+    default_drop_path: Optional[str] = Form(""),
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
     data: str = Form(...),
@@ -69,7 +69,7 @@ async def create_profile(
             port=port,
             edr_collector=edr_collector or "",
             data=data_dict,
-            default_malware_path=default_malware_path or "",
+            default_drop_path=default_drop_path or "",
             comment=comment or "",
             password=password or ""
         )
@@ -85,7 +85,7 @@ async def create_profile(
             "connector": created_profile.connector,
             "port": created_profile.port,
             "edr_collector": created_profile.edr_collector,
-            "default_malware_path": created_profile.default_malware_path,
+            "default_drop_path": created_profile.default_drop_path,
             "comment": created_profile.comment,
             "data": created_profile.data,
             "created_at": created_profile.created_at
@@ -157,7 +157,7 @@ async def update_profile(
     connector: str = Form(...),
     port: int = Form(...),
     edr_collector: str = Form(...),
-    default_malware_path: str = Form(""),
+    default_drop_path: str = Form(""),
     comment: str = Form(""),
     data: str = Form(...),
     password: Optional[str] = Form(""),
@@ -187,7 +187,7 @@ async def update_profile(
         profile.connector = connector
         profile.port = port
         profile.edr_collector = edr_collector
-        profile.default_malware_path = default_malware_path
+        profile.default_drop_path = default_drop_path
         profile.comment = comment
         profile.data = data_dict
         
@@ -200,7 +200,7 @@ async def update_profile(
             "connector": profile.connector,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
-            "default_malware_path": profile.default_malware_path,
+            "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
             "password": password or "",

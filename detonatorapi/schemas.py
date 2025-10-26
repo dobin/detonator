@@ -11,7 +11,7 @@ class ProfileBase(BaseModel):
     connector: str
     port: int
     edr_collector: str
-    default_malware_path: Optional[str] = ""
+    default_drop_path: Optional[str] = ""
     comment: Optional[str] = None
     data: dict
 
@@ -23,7 +23,7 @@ class ProfileUpdate(BaseModel):
     connector: Optional[str] = None
     port: Optional[int] = None
     edr_collector: Optional[str] = None
-    default_malware_path: Optional[str] = None
+    default_drop_path: Optional[str] = None
     comment: Optional[str] = None
     data: Optional[dict] = None
 
@@ -85,7 +85,7 @@ class FileCreateScan(BaseModel):
     project: Optional[str] = None
     profile_name: str
     runtime: Optional[int] = 10
-    malware_path: Optional[str] = ""
+    drop_path: Optional[str] = ""
     comment: Optional[str] = None
     password: Optional[str] = None
 
@@ -97,7 +97,7 @@ class ScanUpdate(BaseModel):
     result: Optional[str] = None
     status: Optional[str] = None
     runtime: Optional[int] = None
-    malware_path: Optional[str] = None
+    drop_path: Optional[str] = None
     completed_at: Optional[datetime] = None
 
 # get_scan() response
@@ -109,7 +109,7 @@ class ScanResponse(BaseModel):
     project: Optional[str] = None
     comment: Optional[str] = None
     runtime: Optional[int] = None
-    malware_path: Optional[str] = None
+    drop_path: Optional[str] = None
 
     detonator_srv_logs: Optional[str] = None
     status: str
@@ -142,7 +142,7 @@ class ScanResponseShort(BaseModel):
     project: Optional[str] = None
     comment: Optional[str] = None
     runtime: Optional[int] = None
-    malware_path: Optional[str] = None
+    drop_path: Optional[str] = None
     status: str
 
     detonator_srv_logs: Optional[str] = None

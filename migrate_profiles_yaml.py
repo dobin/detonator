@@ -30,7 +30,7 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
             port=profile_config.get('port', 80),
             edr_collector=profile_config.get('edr_collector', ''),
             data=profile_config.get('data', {}),
-            default_malware_path=profile_config.get('default_malware_path', ''),
+            default_drop_path=profile_config.get('default_drop_path', ''),
             comment=profile_config.get('comment', ''),
             password=profile_config.get('password', '')
         )

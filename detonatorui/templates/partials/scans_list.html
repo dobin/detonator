@@ -45,8 +45,8 @@
                         {% if scan.runtime %}
                         <p class="text-gray-600 text-sm">Runtime: {{ scan.runtime }} seconds</p>
                         {% endif %}
-                        {% if scan.malware_path %}
-                        <p class="text-gray-600 text-sm">Malware Path: {{ scan.malware_path }}</p>
+                        {% if scan.drop_path %}
+                        <p class="text-gray-600 text-sm">Malware Path: {{ scan.drop_path }}</p>
                         {% endif %}
 
                         {% if scan.vm_ip_address %}

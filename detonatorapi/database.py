@@ -24,7 +24,7 @@ class Profile(Base):
     connector: Mapped[str] = Column(String(50), nullable=False)
     port: Mapped[int] = Column(Integer, nullable=False)
     edr_collector: Mapped[str] = Column(String(100), nullable=False)
-    default_malware_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    default_drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
     comment: Mapped[str] = Column(Text, nullable=True)
     data: Mapped[dict] = Column(JSON, default={}, nullable=False)
     password: Mapped[str] = Column(String(255), default="", nullable=False)
@@ -64,7 +64,7 @@ class Scan(Base):
     comment: Mapped[str] = Column(Text, default="", nullable=False)
     project: Mapped[str] = Column(String(100), default="", nullable=False)
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
-    malware_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
 
     # TRACK
     detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)
