@@ -19,6 +19,7 @@ from .web_files import router as files_router
 from .web_scans import router as scans_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
+from .settings import CORS_ALLOW_ORIGINS
 
 
 # Load environment variables
@@ -59,7 +60,7 @@ async def read_only_middleware(request: Request, call_next):
 # Add CORS middleware to allow requests from Flask frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000"],  # Flask will run on port 5000
+    allow_origins=CORS_ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -8,6 +8,7 @@ import os
 import uvicorn
 import logging
 import argparse
+import requests
 
 from detonatorui.flask_app import app as flask_app
 
@@ -15,6 +16,8 @@ from detonatorapi.logging_config import setup_logging
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorapi.connectors.connectors import connectors
 
+from detonatorapi.settings import CORS_ALLOW_ORIGINS
+from detonatorui.config import API_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +81,24 @@ def parse_arguments():
     
     return parser.parse_args()
 
+def print_cors_help():
+    """Print helpful information about CORS configuration."""
+    print("\n" + "="*70)
+    print("⚠️  CORS CONFIGURATION")
+    print("="*70)
+    print(f"\nThe Browser UI JavaScript will attempt to connect to the API:")
+    print(f"  - {API_BASE_URL}")
+    print(f"")
+    print(f"Where the API current CORS allowed value:")
+    print(f"  - {CORS_ALLOW_ORIGINS}")
+    print(f"")
+    print(f"To change CORS settings:")
+    print(f"  Option A - Environment variable:")
+    print(f"    export DETONATOR_CORS_ORIGINS='http://detonator.r00ted.ch'")
+    print(f"  Option B - Edit detonatorapi/settings.py:")
+    print(f"    CORS_ALLOW_ORIGINS = [ 'http://detonator.r00ted.ch' ] ")
+    print("\n" + "="*70 + "\n")
+
 
 def main():
     setup_logging()
@@ -107,6 +128,7 @@ def main():
     start_web = args.mode in ['both', 'web']
     
     fastapi_thread = None
+    print_cors_help()
     
     if start_api:
         logger.info(f"Detonator API: {api_url}")
@@ -116,7 +138,6 @@ def main():
             uvicorn.run(fastapi_app, host=api_host, port=api_port, log_level="warning")
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
         fastapi_thread.start()
-    
     if start_web:
         # Start UI in the main thread
         logger.info(f"Detonator UI : {ui_url}")

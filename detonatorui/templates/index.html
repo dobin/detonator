@@ -9,6 +9,54 @@
         Scan your RedTeam tools (like C2 loader) against various EDR's installed in VMs. For easy and reproducible MalDev analysis.
     </p>
 
+    <!-- API Status Indicator -->
+    <div id="api-status-container" class="mb-6">
+        <div id="api-status-checking" class="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div class="flex items-center">
+                <svg class="animate-spin h-5 w-5 text-blue-500 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm text-blue-700">Checking API server status...</span>
+            </div>
+        </div>
+        
+        <div id="api-status-ok" class="hidden bg-green-50 border border-green-200 rounded-md p-4">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="text-sm text-green-700 font-medium">API Server Connected</span>
+                <span class="text-xs text-green-600 ml-2" id="api-url-display"></span>
+            </div>
+        </div>
+        
+        <div id="api-status-error" class="hidden bg-yellow-50 border border-yellow-300 rounded-md p-4">
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-yellow-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm text-yellow-800 font-medium">Cannot Connect to API Server</p>
+                    <p class="text-xs text-yellow-700 mt-1">Either API server is down or CORS is misconfigured.</p>
+                    <details class="mt-2">
+                        <summary class="text-xs text-yellow-800 font-medium cursor-pointer hover:text-yellow-900">Show troubleshooting help</summary>
+                        <div class="mt-2 bg-yellow-100 p-3 rounded text-xs text-yellow-900">
+                            <p class="font-semibold mb-1">Quick fixes:</p>
+                            <ol class="list-decimal list-inside space-y-1 ml-2">
+                                <li>Make sure API_BASE_URL is set correctly in <code class="bg-yellow-200 px-1 rounded">detonatorui/config.py</code> 
+                                    currently <code class="bg-yellow-200 px-1 rounded">{{ API_BASE_URL }}</code></li>
+                                <li>Check API is accessible at <code class="bg-yellow-200 px-1 rounded">{{ API_BASE_URL }}/api/health</code></li>
+                                <li>Check CORS settings for the API in <code class="bg-yellow-200 px-1 rounded">detonatorapi/settings.py</code>
+                                    to allow our current domain <code class="bg-yellow-200 px-1 rounded">{{ request.host }}</code></li>
+                            </ol>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Profiles Overview -->
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-center mb-4">
@@ -81,4 +129,34 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Check API status on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        const apiUrl = '{{ API_BASE_URL }}';
+        const checkingDiv = document.getElementById('api-status-checking');
+        const okDiv = document.getElementById('api-status-ok');
+        const errorDiv = document.getElementById('api-status-error');
+        const urlDisplay = document.getElementById('api-url-display');
+        
+        fetch(apiUrl + '/api/health', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        })
+        .then(response => {
+            checkingDiv.classList.add('hidden');
+            if (response.ok) {
+                okDiv.classList.remove('hidden');
+                urlDisplay.textContent = `(${apiUrl})`;
+            } else {
+                errorDiv.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            checkingDiv.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+        });
+    });
+</script>
 {% endblock %}
