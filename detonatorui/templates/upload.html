@@ -13,7 +13,7 @@
     </div>
     
     <form 
-        hx-post="/api/upload" 
+        hx-post="{{ API_BASE_URL }}/api/files" 
         hx-encoding="multipart/form-data"
         hx-target="#upload-result"
         hx-indicator="#loading"
