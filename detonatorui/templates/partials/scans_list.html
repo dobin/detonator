@@ -101,6 +101,9 @@
                 {% if scan.has_rededr_events %}
                 <button onclick="window.open('/semidatasieve/{{ scan.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
                 {% endif %}
+                {% if scan.status == "error" %}
+                <button data-auth-required onclick="rescanScan({{ scan.id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" title="Rescan">Rescan</button>
+                {% endif %}
                 <button data-auth-required onclick="deleteScan({{ scan.id }})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" title="Delete Scan">Delete</button>
             </div>
         </div>
@@ -136,6 +139,38 @@ if (typeof deleteScan === 'undefined') {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Failed to delete scan');
+            });
+        }
+    };
+}
+
+// Define rescanScan function globally if not already defined
+if (typeof rescanScan === 'undefined') {
+    window.rescanScan = function(scanId) {
+        if (confirm('Are you sure you want to rescan this scan? It will be reset to fresh status and requeued.')) {
+            fetch('{{ API_BASE_URL }}/api/scans/' + scanId + '/rescan', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error rescanning: ' + data.error);
+                } else {
+                    // Trigger refresh of the scans container via HTMX
+                    if (typeof refreshScans === 'function') {
+                        refreshScans();
+                    } else {
+                        // Fallback: reload the scans list
+                        htmx.ajax('GET', '/templates/scans', {
+                            target: '#scans-container',
+                            swap: 'innerHTML'
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to rescan');
             });
         }
     };

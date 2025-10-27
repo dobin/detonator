@@ -125,7 +125,7 @@ async def update_scan(scan_id: int, scan_update: ScanUpdate, db: Session = Depen
 
 @router.post("/files/{file_id}/createscan", response_model=ScanResponse)
 async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session = Depends(get_db)):
-    """Create a new scan for a file and automatically provision Azure Windows 11 VM"""
+    """Create a new scan for an existing file"""
     # Check if file exists
     db_file = db.query(File).filter(File.id == file_id).first()
     if db_file is None:
@@ -168,6 +168,43 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
     
     db_scan_change_status_quick(db, db_scan, "stop")
     return {"message": "VM shutdown initiated"}
+
+
+@router.post("/scans/{scan_id}/rescan")
+async def rescan(scan_id: int, db: Session = Depends(get_db)):
+    """Rescan a scan that's in error status by resetting it to fresh status"""
+    db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if db_scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    
+    if db_scan.status != "error":
+        raise HTTPException(status_code=400, detail=f"Can only rescan scans in 'error' status. Current status: {db_scan.status}")
+    
+    # Reset scan to fresh status
+    db_scan.status = "fresh"
+    db_scan.updated_at = datetime.utcnow()
+
+    # and all the possile fields
+    db_scan.detonator_srv_logs = ""
+    db_scan.execution_logs = ""
+    db_scan.agent_logs = ""
+    db_scan.rededr_events = ""
+    db_scan.edr_logs = ""
+    db_scan.edr_summary = []
+    db_scan.result = None
+    db_scan.completed_at = None
+    db_scan.vm_exist = 0
+    db_scan.vm_instance_name = None
+    db_scan.vm_ip_address = None
+    
+    # Add log entry about the rescan
+    log_message = f"[{datetime.utcnow().isoformat()}] Scan reset to 'fresh' status for rescanning"
+    db_scan_add_log(db, db_scan, log_message)
+    
+    db.commit()
+    db.refresh(db_scan)
+    
+    return {"message": "Scan status reset to 'fresh' for rescanning", "scan_id": scan_id, "status": db_scan.status}
 
 
 @router.delete("/scans/{scan_id}")
