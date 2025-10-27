@@ -20,7 +20,7 @@ async def get_scans_count(
     status: Optional[str] = Query(None, description="Filter by scan status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     result: Optional[str] = Query(None, description="Filter by scan result"),
-    search: Optional[str] = Query(None, description="Search in project, comment, or filename"),
+    search: Optional[str] = Query(None, description="Search in project, scan comment, file comment, or filename"),
     db: Session = Depends(get_db)
 ):
     """Get count of scans with filtering capabilities"""
@@ -41,7 +41,8 @@ async def get_scans_count(
         search_filter = or_(
             Scan.project.ilike(f"%{search}%"),
             Scan.comment.ilike(f"%{search}%"),
-            Scan.file.has(File.filename.ilike(f"%{search}%"))
+            Scan.file.has(File.filename.ilike(f"%{search}%")),
+            Scan.file.has(File.comment.ilike(f"%{search}%"))
         )
         query = query.filter(search_filter)
     
@@ -56,7 +57,7 @@ async def get_scans(
     status: Optional[str] = Query(None, description="Filter by scan status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     result: Optional[str] = Query(None, description="Filter by scan result"),
-    search: Optional[str] = Query(None, description="Search in project, comment, or filename"),
+    search: Optional[str] = Query(None, description="Search in project, scan comment, file comment, or filename"),
     db: Session = Depends(get_db)
 ):
     """Get scans with filtering capabilities"""
@@ -77,7 +78,8 @@ async def get_scans(
         search_filter = or_(
             Scan.project.ilike(f"%{search}%"),
             Scan.comment.ilike(f"%{search}%"),
-            Scan.file.has(File.filename.ilike(f"%{search}%"))
+            Scan.file.has(File.filename.ilike(f"%{search}%")),
+            Scan.file.has(File.comment.ilike(f"%{search}%"))
         )
         query = query.filter(search_filter)
     
