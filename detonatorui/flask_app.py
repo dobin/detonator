@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from .post import post_bp
 from .get import get_bp
-from .config import READ_ONLY_MODE, API_BASE_URL
+from .config import API_BASE_URL
 
 
 app = Flask(__name__)
@@ -19,16 +19,12 @@ logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-if READ_ONLY_MODE:
-    logger.warning("🔒 FLASK UI RUNNING IN READ-ONLY MODE - Write operations are disabled")
-
 
 # Make API_BASE_URL available to all templates
 @app.context_processor
 def inject_api_base_url():
     return {
-        'API_BASE_URL': API_BASE_URL,
-        'READ_ONLY': READ_ONLY_MODE
+        'API_BASE_URL': API_BASE_URL
     }
 
 
@@ -46,7 +42,6 @@ def get_status_color(status):
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
 app.jinja_env.globals.update(get_status_color=get_status_color)
-app.jinja_env.globals.update(READ_ONLY_MODE=READ_ONLY_MODE)
 
 
 def get_scan_status_color(status):

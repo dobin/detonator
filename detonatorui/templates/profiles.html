@@ -9,13 +9,12 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold text-gray-800">Profiles</h2>
             <div class="space-x-3">
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        onclick="resetFormForCreate(); showCreateProfileForm();"
-                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-                        Create Profile
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    onclick="resetFormForCreate(); showCreateProfileForm();"
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    Create Profile
+                </button>
                 <button 
                     onclick="htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'})"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
@@ -180,13 +179,12 @@
             </div>
             
             <div class="flex space-x-3">
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        type="submit"
-                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-                        Create Profile
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    type="submit"
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    Create Profile
+                </button>
                 <button 
                     type="button"
                     onclick="hideCreateProfileForm()"

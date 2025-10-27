@@ -17,6 +17,15 @@ logger = logging.getLogger(__name__)
 def index():
     return render_template("index.html")
 
+@get_bp.route("/login")
+def login_page():
+    return render_template("login.html")
+
+@get_bp.route("/logout")
+def logout_page():
+    # This will be handled by JavaScript to clear localStorage
+    return render_template("logout.html")
+
 @get_bp.route("/files")
 def files_page():
     return render_template("files.html")

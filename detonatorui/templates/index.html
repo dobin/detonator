@@ -102,8 +102,7 @@
             </a>
         </div>
         
-        {% if not READ_ONLY %}
-        <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+        <div data-auth-required class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
             <h3 class="text-lg font-semibold text-yellow-800 mb-3">Upload Only</h3>
             <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can scan them later).</p>
             <a href="/upload" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 inline-block">
@@ -111,14 +110,13 @@
             </a>
         </div>
         
-        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+        <div data-auth-required class="bg-gray-50 p-6 rounded-lg border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 mb-3">Virtual Machines</h3>
             <p class="text-gray-700 text-sm mb-4">Monitor and manage your Azure VMs used for malware analysis.</p>
             <a href="/vms" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
                 View VMs
             </a>
         </div>
-        {% endif %}
         
         <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
             <h3 class="text-lg font-semibold text-indigo-800 mb-3">Profiles</h3>

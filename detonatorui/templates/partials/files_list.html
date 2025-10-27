@@ -52,22 +52,20 @@
                 {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
-                {% if not READ_ONLY_MODE %}
                 <button 
+                    data-auth-required
                     onclick="createScan({{ file.id }})"
                     class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                 >
                     Create Scan
                 </button>
-                {% endif %}
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        onclick="deleteFile({{ file.id }})"
-                        class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                    >
-                        Delete
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    onclick="deleteFile({{ file.id }})"
+                    class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                >
+                    Delete
+                </button>
             </div>
         </div>
     </div>

@@ -19,40 +19,74 @@ from .web_files import router as files_router
 from .web_scans import router as scans_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
-from .settings import CORS_ALLOW_ORIGINS
+from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
 
 
 # Load environment variables
 load_dotenv()
-
-# Configuration
-READ_ONLY_MODE = os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
 
 # Setup logging - reduce verbosity for HTTP requests
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-if READ_ONLY_MODE:
-    logger.warning("🔒 DETONATOR RUNNING IN READ-ONLY MODE - All write operations are disabled")
-
 app = FastAPI(title="Detonator API", version="0.1.0")
 
 
-# Read-only mode middleware
-# Instead of authentication LOL
+# Authentication helper
+def check_auth(request: Request) -> bool:
+    """Check if request is authenticated via password"""
+    if not AUTH_PASSWORD or AUTH_PASSWORD == "":
+        # No password configured - allow all requests
+        return True
+    
+    # Check for X-Auth-Password header
+    auth_password = request.headers.get("X-Auth-Password", "")
+    if auth_password == AUTH_PASSWORD:
+        return True
+    
+    # Check for Authorization header (Basic or Bearer)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header:
+        # Support "Bearer <password>" format
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            if token == AUTH_PASSWORD:
+                return True
+        # Support "Basic <base64>" format for curl compatibility
+        elif auth_header.startswith("Basic "):
+            import base64
+            try:
+                decoded = base64.b64decode(auth_header[6:]).decode('utf-8')
+                # Basic auth format is "username:password", we only care about password
+                if ':' in decoded:
+                    _, password = decoded.split(':', 1)
+                    if password == AUTH_PASSWORD:
+                        return True
+                # Or just the password alone
+                elif decoded == AUTH_PASSWORD:
+                    return True
+            except:
+                pass
+    
+    return False
+
+
+# Authentication middleware
 @app.middleware("http")
-async def read_only_middleware(request: Request, call_next):
-    if READ_ONLY_MODE and request.method not in ["GET", "HEAD", "OPTIONS"]:
-        # Allow exception for upload_file_and_scan endpoint
-        if request.url.path == "/api/upload-and-scan" and request.method == "POST":
-            # This endpoint is allowed even in read-only mode
-            pass
-        else:
-            return JSONResponse(
-                status_code=403,
-                content={"detail": "Server is running in read-only mode. Write operations are not permitted."}
-            )
+async def auth_middleware(request: Request, call_next):
+    # Allow GET, HEAD, OPTIONS without authentication
+    if request.method in ["GET", "HEAD", "OPTIONS"]:
+        response = await call_next(request)
+        return response
+    
+    # Check authentication for write operations
+    if not check_auth(request):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required. Provide password via X-Auth-Password header or Authorization header."}
+        )
+    
     response = await call_next(request)
     return response
 
@@ -104,7 +138,7 @@ async def health_check():
     return {
         "status": "healthy", 
         "service": "detonator-api",
-        "read_only_mode": READ_ONLY_MODE
+        "auth_enabled": bool(AUTH_PASSWORD)
     }
 
 

@@ -35,11 +35,17 @@ $ poetry run python3 migrate_to_profiles.py
 # Install dependencies
 $ poetry install
 
+# (Optional) Configure authentication password
+$ export DETONATOR_AUTH_PASSWORD="your-secure-password"
+# Or add it to .env file (see .env.example)
+
 # Run both servers
 $ poetry run python -m detonator
 ```
 
 Access the web interface on `http://localhost:5000`.
+
+**Authentication**: If you set `DETONATOR_AUTH_PASSWORD`, you'll need to log in via the web interface or provide the password in API requests. See [doc/authentication.md](doc/authentication.md) for details.
 
 
 ## Usage

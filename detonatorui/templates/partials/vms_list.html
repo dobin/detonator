@@ -67,13 +67,12 @@
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {% if not READ_ONLY_MODE %}
-                        <button
-                            onclick="deleteVM('{{ vm.name }}')"
-                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
-                            Delete
-                        </button>
-                    {% endif %}
+                    <button
+                        data-auth-required
+                        onclick="deleteVM('{{ vm.name }}')"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
+                        Delete
+                    </button>
                 </td>
             </tr>
             {% endfor %}

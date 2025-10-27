@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import requests
 import logging
 import json
-from .config import API_BASE_URL, READ_ONLY_MODE
+from .config import API_BASE_URL
 
 from detonatorapi.utils import filename_randomizer
 
@@ -14,10 +14,15 @@ def handle_api_response(response, operation_name="operation"):
     """Helper function to handle API responses consistently"""
     if response.status_code == 200:
         return response.json()
+    elif response.status_code == 401:
+        return {
+            "error": "Authentication required. Please log in.",
+            "auth_required": True
+        }, 401
     elif response.status_code == 403:
         return {
-            "error": "Server is running in read-only mode. Write operations are not permitted.",
-            "read_only_mode": True
+            "error": "Access forbidden. Check permissions or profile password.",
+            "forbidden": True
         }, 403
     else:
         logger.error(f"API error for {operation_name}: {response.status_code} - {response.text}")
@@ -30,6 +35,13 @@ def upload_file_and_scan():
     try:
         files = {}
         data = {}
+        
+        # Forward authentication header from request
+        headers = {}
+        if 'X-Auth-Password' in request.headers:
+            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
+        elif 'Authorization' in request.headers:
+            headers['Authorization'] = request.headers.get('Authorization')
         
         if 'file' in request.files:
             # fix filename handling
@@ -76,7 +88,7 @@ def upload_file_and_scan():
         if 'drop_path' in request.form:
             data['drop_path'] = request.form['drop_path']
             
-        response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data)
+        response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data, headers=headers)
         return handle_api_response(response, "file upload and scan")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
