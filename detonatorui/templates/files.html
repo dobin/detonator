@@ -81,6 +81,38 @@
         }
     }
 
+    function downloadFile(fileId, filename) {
+        fetch('{{ API_BASE_URL }}/api/files/' + fileId + '/download', {
+            method: 'POST',
+            headers: {
+                'X-Auth-Password': localStorage.getItem('authToken') || ''
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Authentication required');
+                }
+                throw new Error('Failed to download file');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Create a temporary URL for the blob
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            alert('Error downloading file: ' + error.message);
+        });
+    }
+
     function createScan(fileId) {
         // Use HTMX to load the create scan form into the modal
         htmx.ajax('GET', '/templates/create-scan/' + fileId, {

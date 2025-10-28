@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, Header
+from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 import logging
@@ -62,3 +63,19 @@ async def delete_file(file_id: int, db: Session = Depends(get_db)):
     db.delete(db_file)
     db.commit()
     return {"message": "File deleted successfully"}
+
+
+@router.post("/files/{file_id}/download")
+async def download_file(file_id: int, db: Session = Depends(get_db)):
+    """Download a file (requires authentication)"""
+    db_file = db.query(File).filter(File.id == file_id).first()
+    if db_file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return Response(
+        content=db_file.content,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={db_file.filename}"
+        }
+    )
