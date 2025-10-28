@@ -11,7 +11,7 @@ from detonatorapi.database import Scan, get_db_for_thread
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
-from detonatorapi.agent.agent_api import ScanResult
+from detonatorapi.agent.agent_api import ExecutionResult
 
 logger = logging.getLogger(__name__)
 
@@ -138,18 +138,18 @@ def scan_file_with_agent(scan_id: int) -> bool:
         exec_arguments = ""
 
     db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on Agent at {agent_ip} with runtime {runtime} seconds and malware path {drop_path}")
-    scanResult: ScanResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments)
+    executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments)
     is_malware = False
-    if scanResult == ScanResult.ERROR:
-        db_scan_add_log(thread_db, db_scan, f"Could not exec file on Agent")
+    if executionResult == ExecutionResult.ERROR:
+        db_scan_add_log(thread_db, db_scan, f"Could not execute file on Agent")
         release_result = agentApi.ReleaseLock()  # no check, we just release the lock
         if not release_result:
             db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
         return False
-    elif scanResult == ScanResult.VIRUS:
+    elif executionResult == ExecutionResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
         is_malware = True
-    elif scanResult == ScanResult.OK:
+    elif executionResult == ExecutionResult.OK:
         db_scan_add_log(thread_db, db_scan, f"Success executing file {filename}, wait {runtime} seconds")
         thread_db.commit()
 
@@ -160,13 +160,15 @@ def scan_file_with_agent(scan_id: int) -> bool:
         db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
         thread_db.commit()
 
-    # give some time for windows to scan, deliver the virus ETW alert events n stuff
-    time.sleep(SLEEP_TIME_POST_SCAN)
+        # give some time for windows to scan, deliver the virus ETW alert events n stuff
+        time.sleep(SLEEP_TIME_POST_SCAN)
 
-    # Gather EDR logs
-    # we dont want to have the process killing in it
+    # Gather EDR logs - before killing the process
     logger.info("Scan: Gather EDR logs from Agent")
     rededr_events = agentApi.GetRedEdrEvents()
+    if rededr_events is None:  # single check for now
+        db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent - rededr crashed?")
+        return False
     edr_logs = agentApi.GetEdrLogs()
 
     # kill process (after gathering EDR logs, so we dont have the shutdown logs)

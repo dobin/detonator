@@ -8,7 +8,7 @@ from .result import Result
 logger = logging.getLogger(__name__)
 
 
-class ScanResult(Enum):
+class ExecutionResult(Enum):
     OK = 0,
     ERROR = 1,
     VIRUS = 2
@@ -142,7 +142,7 @@ class AgentApi:
         return Result.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ScanResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ExecutionResult:
         url = self.agent_url + "/api/execute/exec"
         files = {
             "file": (filename, file_data),
@@ -162,15 +162,15 @@ class AgentApi:
                 j = response.json()
                 if j.get("status", "") == "virus" :
                     logging.info(f"Agent: File {filename} is detected as malware")
-                    return ScanResult.VIRUS
+                    return ExecutionResult.VIRUS
                 #print("Response:", response.json())
-                return ScanResult.OK
+                return ExecutionResult.OK
             else:
                 logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
-                return ScanResult.ERROR
+                return ExecutionResult.ERROR
         except requests.exceptions.RequestException as e:
             logging.warning(f"Agent HTTP response error: {e}")
-            return ScanResult.ERROR
+            return ExecutionResult.ERROR
         
     
     def GetLockStatus(self) -> bool:
