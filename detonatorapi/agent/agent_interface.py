@@ -160,8 +160,8 @@ def scan_file_with_agent(scan_id: int) -> bool:
         db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
         thread_db.commit()
 
-        # give some time for windows to scan, deliver the virus ETW alert events n stuff
-        time.sleep(SLEEP_TIME_POST_SCAN)
+    # give some time for windows to scan, deliver the virus ETW alert events n stuff
+    time.sleep(SLEEP_TIME_POST_SCAN)
 
     # Gather EDR logs - before killing the process
     logger.info("Scan: Gather EDR logs from Agent")
