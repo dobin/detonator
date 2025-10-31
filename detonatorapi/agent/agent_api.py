@@ -17,8 +17,12 @@ class ExecutionResult(Enum):
 # Note: Copy from https://github.com/dobin/AgentUi/blob/main/rededrapi.py
 
 class AgentApi:
-    def __init__(self, agent_ip: str, agent_port: int = 8080):
+    def __init__(self, agent_ip: str, agent_port: int = 8080, detonator_port: int|None = None):
         self.agent_url = "http://" + agent_ip + ":" + str(agent_port)
+
+        # we set it even if port is None
+        # Usage is typically checked on call by parent
+        self.rededr_url = "http://" + agent_ip + ":" + str(detonator_port)
 
 
     def IsInUse(self) -> bool:
@@ -87,8 +91,7 @@ class AgentApi:
     
 
     def RedEdrStartTrace(self, target_names: List[str]) -> Result[None]:
-        # Reset any previous trace data
-        url = self.agent_url + "/api/trace/reset"
+        url = self.rededr_url + "/api/trace/reset"
         try:
             response = requests.post(url)
             if response.status_code == 404:
@@ -107,7 +110,7 @@ class AgentApi:
             return Result.error(error_msg)
 
         # Configure trace
-        url = self.agent_url + "/api/trace/start"
+        url = self.rededr_url + "/api/trace/start"
         headers = {"Content-Type": "application/json"}
         payload = {"trace": target_names}
         try:
@@ -201,7 +204,7 @@ class AgentApi:
         
 
     def RedEdrGetEvents(self) -> Optional[str]:
-        url = self.agent_url + "/api/logs/rededr"
+        url = self.rededr_url + "/api/logs/rededr"
         try:
             response = requests.get(url)
             if response.status_code == 200:

@@ -85,7 +85,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     runtime = db_scan.runtime
     drop_path = db_scan.drop_path
     rededr_port = db_scan.profile.rededr_port
-    agentApi = AgentApi(agent_ip, agent_port)
+    agentApi = AgentApi(agent_ip, agent_port, rededr_port)
 
     if DO_LOCKING:
         logger.info("Scan: Attempt locking")
@@ -115,7 +115,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # remove file extension for trace
     filename_trace = filename.rsplit('.', 1)[0]
 
-    # Set the process name we gonna trace
+    # RedEdr (if exist): Set the process name we gonna trace
     if rededr_port is not None:
         logger.info("Scan: RedEdr: Attempt StartTrace")
         trace_result = agentApi.RedEdrStartTrace([filename_trace])
@@ -165,7 +165,8 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SCAN)
 
-    # Gather RedEdr logs - before killing the process
+    # RedEdr (if exists): logs 
+    # before killing the process
     if rededr_port is not None:
         logger.info("Scan: RedEdr: Gather EDR logs from Agent")
         rededr_events = agentApi.RedEdrGetEvents()
