@@ -86,7 +86,7 @@ class AgentApi:
         return Result.ok()
     
 
-    def StartTrace(self, target_names: List[str]) -> Result[None]:
+    def RedEdrStartTrace(self, target_names: List[str]) -> Result[None]:
         # Reset any previous trace data
         url = self.agent_url + "/api/trace/reset"
         try:
@@ -125,7 +125,7 @@ class AgentApi:
             return Result.error(error_msg)
         
     
-    def StopTrace(self) -> Result[None]:
+    def KillProcess(self) -> Result[None]:
         # kill running process
         url = self.agent_url + "/api/execute/kill"
         try:
@@ -191,7 +191,7 @@ class AgentApi:
             return False
         
 
-    def GetRedEdrEvents(self) -> Optional[str]:
+    def RedEdrGetEvents(self) -> Optional[str]:
         url = self.agent_url + "/api/logs/rededr"
         try:
             response = requests.get(url)

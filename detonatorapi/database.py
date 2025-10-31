@@ -23,6 +23,7 @@ class Profile(Base):
     name: Mapped[str] = Column(String(100), nullable=False, unique=True, index=True)
     connector: Mapped[str] = Column(String(50), nullable=False)
     port: Mapped[int] = Column(Integer, nullable=False)
+    rededr_port: Mapped[int] = Column(Integer, nullable=True)
     edr_collector: Mapped[str] = Column(String(100), nullable=False)
     default_drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
     comment: Mapped[str] = Column(Text, nullable=True)

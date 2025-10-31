@@ -10,6 +10,7 @@ class ProfileBase(BaseModel):
     name: str
     connector: str
     port: int
+    rededr_port: Optional[int] = None
     edr_collector: str
     default_drop_path: Optional[str] = ""
     comment: Optional[str] = None
@@ -22,6 +23,7 @@ class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     connector: Optional[str] = None
     port: Optional[int] = None
+    rededr_port: Optional[int] = None
     edr_collector: Optional[str] = None
     default_drop_path: Optional[str] = None
     comment: Optional[str] = None
@@ -38,6 +40,7 @@ class ProfileStatusResponse(BaseModel):
     id: int
     ip: Optional[str] = None
     port: Optional[int] = None
+    rededr_port: Optional[int] = None
     is_available: str
 
 

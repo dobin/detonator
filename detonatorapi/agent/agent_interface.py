@@ -84,6 +84,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     file_content = db_scan.file.content
     runtime = db_scan.runtime
     drop_path = db_scan.drop_path
+    rededr_port = db_scan.profile.rededr_port
     agentApi = AgentApi(agent_ip, agent_port)
 
     if DO_LOCKING:
@@ -115,18 +116,19 @@ def scan_file_with_agent(scan_id: int) -> bool:
     filename_trace = filename.rsplit('.', 1)[0]
 
     # Set the process name we gonna trace
-    logger.info("Scan: Attempt StartTrace")
-    trace_result = agentApi.StartTrace([filename_trace])
-    if not trace_result:
-        db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent: {trace_result.error_message}")
-        release_result = agentApi.ReleaseLock()  # no check, we just release the lock
-        if not release_result:
-            db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
-        return False
-    db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
+    if rededr_port is not None:
+        logger.info("Scan: RedEdr: Attempt StartTrace")
+        trace_result = agentApi.RedEdrStartTrace([filename_trace])
+        if not trace_result:
+            db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent: {trace_result.error_message}")
+            release_result = agentApi.ReleaseLock()  # no check, we just release the lock
+            if not release_result:
+                db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
+            return False
+        db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
 
-    # let RedEdr boot up
-    time.sleep(SLEEP_TIME_REDEDR_WARMUP)
+        # let RedEdr boot up
+        time.sleep(SLEEP_TIME_REDEDR_WARMUP)
 
     # Execute our malware
     logger.info("Scan: Attempt Scan")
@@ -163,17 +165,20 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SCAN)
 
-    # Gather EDR logs - before killing the process
-    logger.info("Scan: Gather EDR logs from Agent")
-    rededr_events = agentApi.GetRedEdrEvents()
-    if rededr_events is None:  # single check for now
-        db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent - rededr crashed?")
-        return False
+    # Gather RedEdr logs - before killing the process
+    if rededr_port is not None:
+        logger.info("Scan: RedEdr: Gather EDR logs from Agent")
+        rededr_events = agentApi.RedEdrGetEvents()
+        if rededr_events is None:  # single check for now
+            db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent - rededr crashed?")
+            return False
+    
+    # Get EDR logs
     edr_logs = agentApi.GetEdrLogs()
 
     # kill process (after gathering EDR logs, so we dont have the shutdown logs)
-    logger.info("Scan: Attempt to stop trace on Agent")
-    stop_result = agentApi.StopTrace()
+    logger.info("Scan: Attempt to kill process on Agent")
+    stop_result = agentApi.KillProcess()
     if stop_result:
         db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
     else:

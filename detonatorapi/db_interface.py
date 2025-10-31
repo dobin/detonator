@@ -65,12 +65,13 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = ""):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
         connector=connector,
         port=port,
+        rededr_port=rededr_port,
         edr_collector=edr_collector,
         default_drop_path=default_drop_path,
         comment=comment,
