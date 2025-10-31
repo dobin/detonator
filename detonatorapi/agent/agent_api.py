@@ -144,8 +144,16 @@ class AgentApi:
 
     def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ExecutionResult:
         url = self.agent_url + "/api/execute/exec"
+        
+        # Choose a random XOR key between 0 and 255
+        import random
+        xor_key = random.randint(0, 255)
+        
+        # XOR encrypt the file data
+        encrypted_data = bytes([b ^ xor_key for b in file_data])
+        
         files = {
-            "file": (filename, file_data),
+            "file": (filename, encrypted_data),
         }
         # add trailing slash just to make sure
         if not drop_path.endswith("\\"):
@@ -154,6 +162,7 @@ class AgentApi:
             "drop_path": drop_path,
             "executable_args": exec_arguments,
             "use_additional_etw": "false",
+            "xor_key": str(xor_key),
         }
         # multipart form-data
         try:
