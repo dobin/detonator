@@ -20,3 +20,4 @@ CORS_ALLOW_ORIGINS = os.getenv(
     "http://localhost:5000,http://127.0.0.1:5000"
 ).split(",")
 
+DISABLE_REVERT_VM = False

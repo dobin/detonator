@@ -6,6 +6,7 @@ import os
 import yaml
 import logging
 from typing import Dict, Any, Optional
+from detonatorapi.settings import DISABLE_REVERT_VM
 
 from proxmoxer import ProxmoxAPI, ResourceException
 
@@ -142,6 +143,10 @@ class ProxmoxManager:
 
 
     def StopVm(self, vm_id) -> bool:
+        if DISABLE_REVERT_VM:
+            logger.info("ProxmoxManager: StopVm called but DISABLE_REVERT_VM is set. Skipping stop.")
+            return True
+
         task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.stop.post()
         if not self._waitForTask(task):
             return False
@@ -149,6 +154,10 @@ class ProxmoxManager:
 
 
     def RevertVm(self, vm_id, vm_snapshot) -> bool:
+        if DISABLE_REVERT_VM:
+            logger.info("ProxmoxManager: RevertVm called but DISABLE_REVERT_VM is set. Skipping revert.")
+            return True
+
         task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot(vm_snapshot).rollback.post()
         if not self._waitForTask(task):
             return False
