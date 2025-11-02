@@ -118,10 +118,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Profile not found")
     
     is_available = ""
-    is_in_use = False
-
+    rededr_available = ""
     ip: str = ""
     port: int = 0
+    
     if db_profile.connector == "Live": 
         ip = db_profile.data.get('ip', '')
         port = db_profile.port
@@ -134,8 +134,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             "ip": "",
             "port": 0,
             "is_available": "N/A",
+            "rededr_available": "N/A",
         }
 
+    # Check agent port status
     agentApi: AgentApi = AgentApi(ip, port)
     if agentApi.IsReachable():
         if agentApi.IsInUse():
@@ -145,11 +147,25 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     else:
         is_available = "Not reachable"
 
+    # Check rededr_port status if configured
+    if db_profile.rededr_port:
+        rededrApi: AgentApi = AgentApi(ip, db_profile.rededr_port)
+        if rededrApi.IsReachable():
+            if rededrApi.IsInUse():
+                rededr_available = "In use"
+            else:
+                rededr_available = "Reachable"
+        else:
+            rededr_available = "Not reachable"
+    else:
+        rededr_available = ""
+
     return {
         "id": db_profile.id,
         "ip": ip,
         "port": port,
         "is_available": is_available,
+        "rededr_available": rededr_available,
     }
 
 

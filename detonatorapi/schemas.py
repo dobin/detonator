@@ -42,6 +42,7 @@ class ProfileStatusResponse(BaseModel):
     port: Optional[int] = None
     rededr_port: Optional[int] = None
     is_available: str
+    rededr_available: Optional[str] = None
 
 
 #################
@@ -73,7 +74,6 @@ class FileCreate(FileBase):
 class FileResponse(FileBase):
     id: int
     file_hash: str
-    created_at: datetime
     
     class Config:
         from_attributes = True

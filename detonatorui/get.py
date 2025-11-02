@@ -178,11 +178,15 @@ def profiles_template():
                 try:
                     status_response = requests.get(url)
                     if status_response.status_code == 200:
-                        template['available'] = status_response.json().get('is_available', 'false')
+                        status_data = status_response.json()
+                        template['available'] = status_data.get('is_available', 'false')
+                        template['rededr_available'] = status_data.get('rededr_available', '')
                     else:
                         template['available'] = "Error"
+                        template['rededr_available'] = "Error"
                 except requests.RequestException:
                     template['available'] = "Error"
+                    template['rededr_available'] = "Error"
                 
                 # Add the name to the template for easier access in templates
                 template['name'] = template_name
