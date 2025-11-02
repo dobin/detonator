@@ -46,10 +46,13 @@ $RedEdrPort = 8081
 # Ensure the RedEdr directory exists
 New-Item -ItemType Directory -Path "C:\RedEdr" -Force
 
-# Exclude for Defender
+# Exclude for Defender - very important
 # This is for the whole RedEdr directory
 #   including malware in C:\RedEdr\data
 Add-MpPreference -ExclusionPath "C:\RedEdr"
+
+# just to make sure
+Add-MpPreference -ExclusionProcess "DetonatorAgent.exe"
 
 # Allow RedEdr through Windows Firewall
 New-NetFirewallRule -DisplayName "Allow RedEdr ($RedEdrPort)" `
@@ -94,6 +97,10 @@ New-Item -ItemType Directory -Path "C:\DetonatorAgent" -Force
 # Exclude for Defender
 # This is for the whole DetonatorAgent directory
 Add-MpPreference -ExclusionPath "C:\DetonatorAgent"
+
+# Process too - this is extremely important as DetonatorAgent.exe
+# is dropping and/or containintg malware
+Add-MpPreference -ExclusionProcess "DetonatorAgent.exe"
 
 # Allow DetonatorAgent through Windows Firewall
 New-NetFirewallRule -DisplayName "Allow DetonatorAgent ($DetonatorAgentPort)" `

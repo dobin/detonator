@@ -3,6 +3,7 @@ import requests
 from typing import List, Optional, Dict
 import json
 import logging
+import random
 from .result import Result
 
 logger = logging.getLogger(__name__)
@@ -148,11 +149,7 @@ class AgentApi:
     def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ExecutionResult:
         url = self.agent_url + "/api/execute/exec"
         
-        # Choose a random XOR key between 0 and 255
-        import random
-        xor_key = random.randint(0, 255)
-        
-        # XOR encrypt the file data
+        xor_key = random.randint(64, 255)
         encrypted_data = bytes([b ^ xor_key for b in file_data])
         
         files = {
