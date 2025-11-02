@@ -51,11 +51,12 @@ class AgentApi:
         # Check if Agent is reachable
         try:
             test_response = requests.get(self.agent_url, timeout=0.5)
+            print(f"Agent {self.agent_url} test response code: {test_response.status_code}")
             # Can also be 404, just connect is enough
             #return test_response.status_code == 200
             return True
         except Exception as e:
-            #logger.info(f"Agent: Agent not reachable at {self.agent_url}: {e}")
+            logger.info(f"Agent: Agent not reachable at {self.agent_url}: {e}")
             return False
         
 
