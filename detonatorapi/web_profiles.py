@@ -136,9 +136,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             "is_available": "N/A",
             "rededr_available": "N/A",
         }
+    detonator_port = db_profile.rededr_port
 
     # Check agent port status
-    agentApi: AgentApi = AgentApi(ip, port)
+    agentApi: AgentApi = AgentApi(ip, port, detonator_port)
     if agentApi.IsReachable():
         if agentApi.IsInUse():
             is_available = "In use"
@@ -146,19 +147,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             is_available = "Reachable"
     else:
         is_available = "Not reachable"
-
-    # Check rededr_port status if configured
-    if db_profile.rededr_port:
-        rededrApi: AgentApi = AgentApi(ip, db_profile.rededr_port)
-        if rededrApi.IsReachable():
-            if rededrApi.IsInUse():
-                rededr_available = "In use"
-            else:
-                rededr_available = "Reachable"
-        else:
-            rededr_available = "Not reachable"
+    if agentApi.RedEdrIsReachable():
+        rededr_available = "Reachable"
     else:
-        rededr_available = ""
+        rededr_available = "Not reachable"
 
     return {
         "id": db_profile.id,

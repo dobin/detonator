@@ -213,6 +213,18 @@ class AgentApi:
         except requests.exceptions.RequestException as e:
             logging.warning(f"Agent HTTP response error: {e}")
             return None
+        
+
+    def RedEdrIsReachable(self) -> bool:
+        # Check if RedEdr API is reachable
+        try:
+            test_response = requests.get(self.rededr_url, timeout=1.0)
+            # Can also be 404, just connect is enough
+            #return test_response.status_code == 200
+            return True
+        except Exception as e:
+            #logger.info(f"Agent: RedEdr API not reachable at {self.rededr_url}: {e}")
+            return False
 
 
     def GetAgentLogs(self) -> Optional[str]:
