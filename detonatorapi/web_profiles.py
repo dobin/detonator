@@ -121,13 +121,11 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     rededr_available = ""
     ip: str = ""
     port: int = 0
-    
+    port = db_profile.port
     if db_profile.connector == "Live": 
         ip = db_profile.data.get('ip', '')
-        port = db_profile.port
     elif db_profile.connector == "Proxmox":
         ip = db_profile.data.get('vm_ip', '')
-        port = 0
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
