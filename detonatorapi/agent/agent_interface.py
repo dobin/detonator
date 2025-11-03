@@ -88,78 +88,70 @@ def scan_file_with_agent(scan_id: int) -> bool:
     agentApi = AgentApi(agent_ip, agent_port, rededr_port)
 
     if DO_LOCKING:
-        logger.info("Scan: Attempt locking")
+        logger.info("Attempt to acquire lock at DetonatorAgent")
         # Try to acquire lock 4 times with 30 second intervals
         lock_acquired = False
         attempts = 6
         for attempt in range(attempts):
             if agentApi.IsInUse():
-                db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Agent at {agent_ip} is currently in use")
+                db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: DetonatorAgent at {agent_ip} is currently in use")
             else:
                 lock_result = agentApi.AcquireLock()
                 if lock_result:
-                    db_scan_add_log(thread_db, db_scan, f"Successfully acquired lock on Agent at {agent_ip} on attempt {attempt + 1}")
+                    db_scan_add_log(thread_db, db_scan, f"Successfully acquired lock on attempt {attempt + 1}")
                     lock_acquired = True
                     break
                 else:
-                    db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not lock Agent at {agent_ip}: {lock_result.error_message}")
+                    db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not lock DetonatorAgent at {agent_ip}: {lock_result.error_message}")
             
             if attempt < attempts - 1:  # Don't sleep after the last attempt
                 db_scan_add_log(thread_db, db_scan, f"Waiting 30 seconds before retry...")
                 time.sleep(30)
         
         if not lock_acquired:
-            db_scan_add_log(thread_db, db_scan, f"Failed to acquire lock on Agent at {agent_ip} after 4 attempts")
+            db_scan_add_log(thread_db, db_scan, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
             return False
-
-    # remove file extension for trace
-    filename_trace = filename.rsplit('.', 1)[0]
 
     # RedEdr (if exist): Set the process name we gonna trace
     if rededr_port is not None:
-        logger.info("Scan: RedEdr: Attempt StartTrace")
+        filename_trace = filename.rsplit('.', 1)[0] # remove file extension for trace
+        db_scan_add_log(thread_db, db_scan, f"RedEdr: Start trace for process: {filename_trace}")
         trace_result = agentApi.RedEdrStartTrace([filename_trace])
         if not trace_result:
-            db_scan_add_log(thread_db, db_scan, f"Could not start trace on Agent: {trace_result.error_message}")
-            release_result = agentApi.ReleaseLock()  # no check, we just release the lock
-            if not release_result:
-                db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
+            db_scan_add_log(thread_db, db_scan, f"Error: Could not start trace on RedEdr, error: {trace_result.error_message}")
+            agentApi.ReleaseLock()
             return False
-        db_scan_add_log(thread_db, db_scan, f"Configured trace for file {filename_trace} on Agent at {agent_ip}")
-
+        
         # let RedEdr boot up
         time.sleep(SLEEP_TIME_REDEDR_WARMUP)
+    thread_db.commit()
 
-    # Execute our malware
-    logger.info("Scan: Attempt Scan")
-
-    # last default if not given until now
+    # Execute file on DetonatorAgent
     if not drop_path or drop_path == "":
         drop_path = "C:\\Users\\Public\\Downloads\\"
     if not exec_arguments or exec_arguments == "":
         exec_arguments = ""
 
-    db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on Agent at {agent_ip} with runtime {runtime} seconds and malware path {drop_path}")
+    db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip} with runtime {runtime} seconds and malware path {drop_path}")
     executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments)
     is_malware = False
     if executionResult == ExecutionResult.ERROR:
-        db_scan_add_log(thread_db, db_scan, f"Could not execute file on Agent")
-        release_result = agentApi.ReleaseLock()  # no check, we just release the lock
-        if not release_result:
-            db_scan_add_log(thread_db, db_scan, f"Additionally, could not release lock: {release_result.error_message}")
+        db_scan_add_log(thread_db, db_scan, f"Error: When executing file on DetonatorAgent")
+        agentApi.ReleaseLock()
         return False
     elif executionResult == ExecutionResult.VIRUS:
-        db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware")
+        db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware when writing to disk")
         is_malware = True
     elif executionResult == ExecutionResult.OK:
-        db_scan_add_log(thread_db, db_scan, f"Success executing file {filename}, wait {runtime} seconds")
+        db_scan_add_log(thread_db, db_scan, f"Success executing file {filename}")
+        db_scan_add_log(thread_db, db_scan, f"Waiting, runtime of {runtime} seconds...")
         thread_db.commit()
 
         # process is being executed. 
         time.sleep(runtime)
         
         # enough execution.
-        db_scan_add_log(thread_db, db_scan, f"Runtime of {runtime} seconds completed, gathering results")
+        db_scan_add_log(thread_db, db_scan, f"Runtime completed")
         thread_db.commit()
 
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
@@ -167,56 +159,58 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     # RedEdr (if exists): logs 
     # before killing the process
+    rededr_events = None
     if rededr_port is not None:
-        logger.info("Scan: RedEdr: Gather EDR logs from Agent")
+        logger.info("Gather EDR events from RedEdr")
         rededr_events = agentApi.RedEdrGetEvents()
         if rededr_events is None:  # single check for now
-            db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent - rededr crashed?")
-            return False
+            db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr logs from Agent - RedEdr crashed?")
+            # no return, we still want to try to get other logs
     
     # Get EDR logs
     edr_logs = agentApi.GetEdrLogs()
 
-    # kill process (after gathering EDR logs, so we dont have the shutdown logs)
-    logger.info("Scan: Attempt to kill process on Agent")
+    # kill process (after gathering EDR events, so we dont have the shutdown events)
+    logger.info("Attempt to kill process")
     stop_result = agentApi.KillProcess()
     if stop_result:
-        db_scan_add_log(thread_db, db_scan, f"Agent: killed the process")
+        db_scan_add_log(thread_db, db_scan, f"Process successfully killed")
     else:
-        db_scan_add_log(thread_db, db_scan, f"Agent: Could not kill process: {stop_result.error_message}")
+        db_scan_add_log(thread_db, db_scan, f"Error: Could not kill process: {stop_result.error_message}")
         # no return, we dont care
 
     # Gather logs from Agent
     # After stopping the trace, so we have all the Agent logs (including the process killing)
+    logger.info("Gather Agent and Execution logs")
     agent_logs = agentApi.GetAgentLogs()
     execution_logs = agentApi.GetExecutionLogs()
 
     # we finished 
     if DO_LOCKING:
-        logger.info("Scan: Attempt to release lock")
+        logger.info("Attempt to release lock")
         release_result = agentApi.ReleaseLock()
         if not release_result:
-            db_scan_add_log(thread_db, db_scan, f"Could not release lock on Agent at {agent_ip}: {release_result.error_message}")
+            db_scan_add_log(thread_db, db_scan, f"Error: Could not release lock on Agent at {agent_ip}: {release_result.error_message}")
         else:
-            db_scan_add_log(thread_db, db_scan, f"Released lock on Agent at {agent_ip}")
+            db_scan_add_log(thread_db, db_scan, f"Successfully released lock")
+    db_scan_add_log(thread_db, db_scan, f"All information gathered from Agents, processing logs...")
 
     # Preparse all the logs
     edr_summary = []  # will be generated
     result_is_detected = ""  # will be generated
     if agent_logs is None:
         agent_logs = "No Agent logs available"
-        db_scan_add_log(thread_db, db_scan, "could not get Agent logs from Agent")
+        db_scan_add_log(thread_db, db_scan, "Warning: could not get Agent logs from Agent")
     if rededr_events is None:
         rededr_events = "No RedEdr logs available"
-        db_scan_add_log(thread_db, db_scan, "could not get RedEdr logs from Agent")
+        db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr logs from Agent")
     if execution_logs is None:
         execution_logs = "No Execution logs available"
-        db_scan_add_log(thread_db, db_scan, "could not get Execution logs from Agent")
+        db_scan_add_log(thread_db, db_scan, "Warning: could not get Execution logs from Agent")
     if edr_logs is None:
         result_is_detected = "N/A"
         edr_logs = ""
-        db_scan_add_log(thread_db, db_scan, "No EDR logs from Agent")
-    
+        db_scan_add_log(thread_db, db_scan, "Warning: could not get EDR logs from Agent")
     else:
         # get the actual EDR log
         edr_plugin_log: str = ""
@@ -264,4 +258,3 @@ def scan_file_with_agent(scan_id: int) -> bool:
     thread_db.commit()
 
     return True
-
