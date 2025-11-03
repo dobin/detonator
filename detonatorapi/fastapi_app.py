@@ -3,17 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import os
+import random
+import string
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
-import logging
 
 from .database import get_db, Profile
 from .schemas import  NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 from .token_auth import tokenAuth
-
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .web_files import router as files_router
 from .web_scans import router as scans_router
@@ -189,9 +189,12 @@ async def upload_file_and_scan(
             raise HTTPException(status_code=400, detail="Invalid password for profile")
 
     # DB: Create File
-    actual_filename = file.filename
-    if not actual_filename:
+    # Prepend 4 random chars to filename to avoid collisions
+    filename = file.filename
+    if not filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
+    rand_str = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
+    actual_filename = f"{rand_str}_{filename}"
     logger.info(f"Uploading file: {actual_filename}")
     file_content = await file.read()
     file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", exec_arguments or "")
