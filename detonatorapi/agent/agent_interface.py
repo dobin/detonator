@@ -10,6 +10,7 @@ from typing import List
 from detonatorapi.database import Scan, get_db_for_thread
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
+from detonatorapi.agent.rededr_agent import RedEdrAgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
 from detonatorapi.agent.agent_api import ExecutionResult
 
@@ -85,7 +86,10 @@ def scan_file_with_agent(scan_id: int) -> bool:
     runtime = db_scan.runtime
     drop_path = db_scan.drop_path
     rededr_port = db_scan.profile.rededr_port
-    agentApi = AgentApi(agent_ip, agent_port, rededr_port)
+    agentApi = AgentApi(agent_ip, agent_port)
+    rededrApi: RedEdrAgentApi|None = None
+    if rededr_port is not None:
+        rededrApi = RedEdrAgentApi(agent_ip, rededr_port)
 
     if DO_LOCKING:
         logger.info("Attempt to acquire lock at DetonatorAgent")
@@ -113,10 +117,10 @@ def scan_file_with_agent(scan_id: int) -> bool:
             return False
 
     # RedEdr (if exist): Set the process name we gonna trace
-    if rededr_port is not None:
+    if rededrApi is not None:
         filename_trace = filename.rsplit('.', 1)[0] # remove file extension for trace
         db_scan_add_log(thread_db, db_scan, f"RedEdr: Start trace for process: {filename_trace}")
-        trace_result = agentApi.RedEdrStartTrace([filename_trace])
+        trace_result = rededrApi.StartTrace([filename_trace])
         if not trace_result:
             db_scan_add_log(thread_db, db_scan, f"Error: Could not start trace on RedEdr, error: {trace_result.error_message}")
             agentApi.ReleaseLock()
@@ -160,9 +164,9 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # RedEdr (if exists): logs 
     # before killing the process
     rededr_events = None
-    if rededr_port is not None:
+    if rededrApi is not None:
         logger.info("Gather EDR events from RedEdr")
-        rededr_events = agentApi.RedEdrGetEvents()
+        rededr_events = rededrApi.GetEvents()
         if rededr_events is None:  # single check for now
             db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr logs from Agent - RedEdr crashed?")
             # no return, we still want to try to get other logs

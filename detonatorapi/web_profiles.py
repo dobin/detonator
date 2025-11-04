@@ -9,6 +9,7 @@ from .database import get_db, Profile, Scan
 from .schemas import ProfileResponse, ProfileStatusResponse
 from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by_id
 from .agent.agent_api import AgentApi
+from .agent.rededr_agent import RedEdrAgentApi as RedEdrApi
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -134,10 +135,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             "is_available": "N/A",
             "rededr_available": "N/A",
         }
-    detonator_port = db_profile.rededr_port
+    rededr_port = db_profile.rededr_port
 
     # Check agent port status
-    agentApi: AgentApi = AgentApi(ip, port, detonator_port)
+    agentApi: AgentApi = AgentApi(ip, port)
     if agentApi.IsReachable():
         if agentApi.IsInUse():
             is_available = "In use"
@@ -145,7 +146,10 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             is_available = "Reachable"
     else:
         is_available = "Not reachable"
-    if agentApi.RedEdrIsReachable():
+
+    # Check rededr agent status
+    rededrApi = RedEdrApi(ip, rededr_port)
+    if rededrApi.IsReachable():
         rededr_available = "Reachable"
     else:
         rededr_available = "Not reachable"
