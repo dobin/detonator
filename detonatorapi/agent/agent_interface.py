@@ -136,7 +136,8 @@ def scan_file_with_agent(scan_id: int) -> bool:
     if not exec_arguments or exec_arguments == "":
         exec_arguments = ""
 
-    db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip} with runtime {runtime} seconds and malware path {drop_path}")
+    db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
+    db_scan_add_log(thread_db, db_scan, f"Executing with for {runtime}s and path {drop_path}")
     executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments)
     is_malware = False
     if executionResult == ExecutionResult.ERROR:

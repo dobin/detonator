@@ -88,9 +88,7 @@
                             {% endif %}
                         {% else %}
                             <strong>Detonator Logs:</strong>
-                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
-                            >{{ scan.detonator_srv_logs.split('\n')[-4:]|join('\n') if scan.detonator_srv_logs else '' }}
-                            </pre>
+                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{(scan.detonator_srv_logs.strip().split('\n')[-5:]|join('\n')).strip()}}</pre>
                         {% endif %}
                     </div>
                 </div>
