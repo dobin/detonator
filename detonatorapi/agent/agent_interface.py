@@ -182,14 +182,15 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # Get EDR logs
     edr_logs = agentApi.GetEdrLogs()
 
-    # kill process (after gathering EDR events, so we dont have the shutdown events)
-    logger.info("Attempt to kill process")
-    stop_result = agentApi.KillProcess()
-    if stop_result:
-        db_scan_add_log(thread_db, db_scan, f"Process successfully killed")
-    else:
-        db_scan_add_log(thread_db, db_scan, f"Error: Could not kill process: {stop_result.error_message}")
-        # no return, we dont care
+    # kill process (after gathering EDR events and logs, so we dont have the shutdown events)
+    if executionResult == ExecutionResult.OK:
+        logger.info("Attempt to kill process")
+        stop_result = agentApi.KillProcess()
+        if stop_result:
+            db_scan_add_log(thread_db, db_scan, f"Process successfully killed")
+        else:
+            db_scan_add_log(thread_db, db_scan, f"Error: Could not kill process: {stop_result.error_message}")
+            # no return, we dont care
 
     # Gather logs from Agent
     # After stopping the trace, so we have all the Agent logs (including the process killing)
