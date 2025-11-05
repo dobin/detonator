@@ -120,6 +120,7 @@ class ScanResponse(BaseModel):
     agent_logs: Optional[str] = None
     execution_logs: Optional[str] = None
     rededr_events: Optional[str] = None
+    rededr_logs: Optional[str] = None
     edr_logs: Optional[str] = None
     edr_summary: Optional[list] = None
     result: Optional[str] = None

@@ -76,6 +76,7 @@ class Scan(Base):
     execution_logs: Mapped[str] = Column(Text, default="", nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
+    rededr_logs: Mapped[str] = Column(Text, default="", nullable=False)
     edr_logs: Mapped[str] = Column(Text, default="", nullable=False)
     edr_summary: Mapped[list] = Column(JSON, default=[], nullable=False)
     result: Mapped[str] = Column(Text, default="", nullable=False)

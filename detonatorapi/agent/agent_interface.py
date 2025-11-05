@@ -165,13 +165,20 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # RedEdr (if exists): logs 
     # before killing the process
     rededr_events = None
+    rededr_logs = ""
     if rededrApi is not None:
         logger.info("Gather EDR events from RedEdr")
         rededr_events = rededrApi.GetEvents()
         if rededr_events is None:  # single check for now
             db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr logs from Agent - RedEdr crashed?")
             # no return, we still want to try to get other logs
-    
+
+        rededr_agent_logs = rededrApi.GetAgentLogs()
+        if rededr_agent_logs is None:
+            db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr Agent logs from Agent")
+        else:
+            rededr_logs = rededr_agent_logs
+
     # Get EDR logs
     edr_logs = agentApi.GetEdrLogs()
 
@@ -258,6 +265,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     db_scan.edr_summary = edr_summary
     db_scan.agent_logs = agent_logs
     db_scan.rededr_events = rededr_events
+    db_scan.rededr_logs = rededr_logs
     db_scan.result = result_is_detected
     db_scan.completed_at = datetime.utcnow()
     thread_db.commit()
