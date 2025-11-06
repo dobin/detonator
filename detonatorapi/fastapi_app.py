@@ -20,6 +20,7 @@ from .web_scans import router as scans_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
 from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
+from .utils import sanitize_runtime_seconds
 
 
 # Load environment variables
@@ -179,6 +180,11 @@ async def upload_file_and_scan(
         runtime = 12
     else:
         logger.info("User: authenticated")
+
+    try:
+        runtime = sanitize_runtime_seconds(runtime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)

@@ -10,6 +10,7 @@ from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan, ScanResponseShort
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
+from .utils import sanitize_runtime_seconds
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -114,7 +115,14 @@ async def update_scan(scan_id: int, scan_update: ScanUpdate, db: Session = Depen
         raise HTTPException(status_code=404, detail="Scan not found")
     
     # Update fields
-    for field, value in scan_update.dict(exclude_unset=True).items():
+    update_data = scan_update.dict(exclude_unset=True)
+    if "runtime" in update_data:
+        try:
+            update_data["runtime"] = sanitize_runtime_seconds(update_data["runtime"])
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    for field, value in update_data.items():
         setattr(db_scan, field, value)
     
     db_scan.updated_at = datetime.utcnow()
@@ -145,7 +153,11 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     profile_name = scan_data.profile_name or ""
     comment = scan_data.comment or ""
     project = scan_data.project or ""
-    runtime = scan_data.runtime or 10
+    try:
+        runtime_override = sanitize_runtime_seconds(scan_data.runtime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    runtime = runtime_override if runtime_override is not None else 10
     drop_path = scan_data.drop_path or ""
     
     if not profile_name:

@@ -4,7 +4,7 @@ import logging
 import json
 from .config import API_BASE_URL
 
-from detonatorapi.utils import filename_randomizer
+from detonatorapi.utils import filename_randomizer, RUNTIME_MIN_SECONDS, RUNTIME_MAX_SECONDS
 
 logger = logging.getLogger(__name__)
 post_bp = Blueprint('post', __name__)
@@ -80,10 +80,17 @@ def upload_file_and_scan():
             data['token'] = request.form['token']
         
         if 'runtime' in request.form:
-            try:
-                data['runtime'] = int(request.form['runtime'])
-            except ValueError:
-                return {"error": "Invalid runtime value"}, 400
+            raw_runtime = request.form['runtime'].strip()
+            if raw_runtime:
+                try:
+                    runtime_value = int(raw_runtime)
+                except ValueError:
+                    return {"error": "Invalid runtime value"}, 400
+                if runtime_value < RUNTIME_MIN_SECONDS or runtime_value > RUNTIME_MAX_SECONDS:
+                    return {
+                        "error": f"Runtime must be between {RUNTIME_MIN_SECONDS} and {RUNTIME_MAX_SECONDS} seconds"
+                    }, 400
+                data['runtime'] = runtime_value
         
         if 'drop_path' in request.form:
             data['drop_path'] = request.form['drop_path']
