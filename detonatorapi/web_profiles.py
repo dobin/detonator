@@ -51,9 +51,9 @@ async def create_profile(
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
     data: str = Form(...),
+    mde: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
-    mde: Optional[str] = Form(None),
 ):
     """Create a new profile"""
     try:
@@ -62,6 +62,13 @@ async def create_profile(
             data_dict = json.loads(data)
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
+
+        mde_dict: Optional[dict] = None
+        if mde:
+            try:
+                mde_dict = json.loads(mde)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
         
         mde_dict: Optional[dict] = None
         if mde:
@@ -195,6 +202,7 @@ async def update_profile(
     comment: str = Form(""),
     data: str = Form(...),
     password: Optional[str] = Form(""),
+    mde: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):

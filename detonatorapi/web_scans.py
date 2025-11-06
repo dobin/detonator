@@ -12,6 +12,7 @@ from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
 from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 from .token_auth import require_auth, get_user_from_request
+from .utils import sanitize_runtime_seconds
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -187,12 +188,11 @@ async def file_create_scan(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     runtime = runtime_override if runtime_override is not None else 10
-
     try:
         detection_window_override = sanitize_detection_window_minutes(scan_data.detection_window_minutes)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    detection_window_minutes = detection_window_override if detection_window_override is not None else 10
+    detection_window_minutes = detection_window_override if detection_window_override is not None else 1
     drop_path = scan_data.drop_path or ""
     
     if not profile_name:

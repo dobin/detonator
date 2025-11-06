@@ -133,7 +133,7 @@ async def upload_file_and_scan(
         detection_window_minutes = sanitize_detection_window_minutes(detection_window_minutes)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    detection_window_minutes = detection_window_minutes if detection_window_minutes is not None else 10
+    detection_window_minutes = detection_window_minutes if detection_window_minutes is not None else 1
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)
