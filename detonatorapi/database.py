@@ -39,7 +39,6 @@ class File(Base):
     __tablename__ = "files"
 
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
-    content: Mapped[bytes] = Column(LargeBinary, nullable=False)
     filename: Mapped[str] = Column(String(255), nullable=False)
     exec_arguments: Mapped[str] = Column(String(255), nullable=True)
     file_hash: Mapped[str] = Column(String(64), nullable=False, index=True)
