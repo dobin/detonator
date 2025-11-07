@@ -160,12 +160,12 @@ async def upload_file_and_scan(
     # DB: Create scan record (auto-scan)
     scan_id = db_create_scan(
         db,
-        file_id,
-        profile_name,
-        scan_comment or "",
-        project or "",
-        runtime or 10,
-        drop_path or "",
+        file_id=file_id,
+        profile_name=profile_name,
+        comment=scan_comment or "",
+        project=project or "",
+        runtime=runtime or 10,
+        drop_path=drop_path or "",
         detection_window_minutes=detection_window_minutes,
         user=user,
     )

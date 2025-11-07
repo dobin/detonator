@@ -51,9 +51,9 @@ async def create_profile(
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
     data: str = Form(...),
-    mde: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
+    mde: Optional[str] = Form(None),
 ):
     """Create a new profile"""
     try:
@@ -70,26 +70,11 @@ async def create_profile(
             except json.JSONDecodeError:
                 raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
         
-        mde_dict: Optional[dict] = None
-        if mde:
-            try:
-                mde_dict = json.loads(mde)
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
-        
         # Check if profile name already exists
         existing_profile = db.query(Profile).filter(Profile.name == name).first()
         if existing_profile:
             raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
-        # Parse MDE JSON if provided
-        mde_dict: Optional[dict] = None
-        if mde:
-            try:
-                mde_dict = json.loads(mde)
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
-
         # Create the profile
         profile_id = db_create_profile(
             db=db,

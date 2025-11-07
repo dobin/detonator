@@ -12,7 +12,6 @@ from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
 from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 from .token_auth import require_auth, get_user_from_request
-from .utils import sanitize_runtime_seconds
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
