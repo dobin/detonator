@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from typing import List, Optional
@@ -11,6 +11,7 @@ from .schemas import ScanResponse, ScanUpdate, FileCreateScan, ScanResponseShort
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
 from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
+from .token_auth import require_auth, get_user_from_request
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/scans/count")
 async def get_scans_count(
+    request: Request,
     status: Optional[str] = Query(None, description="Filter by scan status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     result: Optional[str] = Query(None, description="Filter by scan result"),
@@ -26,6 +28,11 @@ async def get_scans_count(
 ):
     """Get count of scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    
+    # Filter by user if guest
+    user = get_user_from_request(request)
+    if user == "guest":
+        query = query.filter(Scan.user == "guest")
     
     # Apply filters (same as in get_scans)
     if status:
@@ -53,6 +60,7 @@ async def get_scans_count(
 
 @router.get("/scans", response_model=List[ScanResponseShort])
 async def get_scans(
+    request: Request,
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by scan status"),
@@ -63,6 +71,11 @@ async def get_scans(
 ):
     """Get scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    
+    # Filter by user if guest
+    user = get_user_from_request(request)
+    if user == "guest":
+        query = query.filter(Scan.user == "guest")
     
     # Apply filters
     if status:
@@ -99,16 +112,27 @@ async def get_scans(
 
 
 @router.get("/scans/{scan_id}", response_model=ScanResponse)
-async def get_scan(scan_id: int, db: Session = Depends(get_db)):
+async def get_scan(scan_id: int, request: Request, db: Session = Depends(get_db)):
     """Get a specific scan with file information"""
     db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
     if db_scan is None:
         raise HTTPException(status_code=404, detail="Scan not found")
+    
+    # Check if user has access to this scan
+    user = get_user_from_request(request)
+    if user == "guest" and db_scan.user != "guest":
+        raise HTTPException(status_code=401, detail="Unauthorized access")
+    
     return db_scan
 
 
 @router.put("/scans/{scan_id}", response_model=ScanResponse)
-async def update_scan(scan_id: int, scan_update: ScanUpdate, db: Session = Depends(get_db)):
+async def update_scan(
+    scan_id: int,
+    scan_update: ScanUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Update a scan"""
     db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if db_scan is None:
@@ -132,7 +156,12 @@ async def update_scan(scan_id: int, scan_update: ScanUpdate, db: Session = Depen
 
 
 @router.post("/files/{file_id}/createscan", response_model=ScanResponse)
-async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session = Depends(get_db)):
+async def file_create_scan(
+    file_id: int,
+    scan_data: FileCreateScan,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Create a new scan for an existing file"""
     # Check if file exists
     db_file = db.query(File).filter(File.id == file_id).first()
@@ -187,7 +216,11 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
 
 
 @router.post("/scans/{scan_id}/shutdown-vm")
-async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
+async def shutdown_vm_for_scan(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Manually shutdown VM for a scan (for testing purposes)"""
     db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if db_scan is None:
@@ -198,7 +231,11 @@ async def shutdown_vm_for_scan(scan_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/scans/{scan_id}/rescan")
-async def rescan(scan_id: int, db: Session = Depends(get_db)):
+async def rescan(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Rescan a scan that's in error status by resetting it to fresh status"""
     db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if db_scan is None:
@@ -235,7 +272,11 @@ async def rescan(scan_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/scans/{scan_id}")
-async def delete_scan(scan_id: int, db: Session = Depends(get_db)):
+async def delete_scan(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Delete a specific scan"""
     db_scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if db_scan is None:

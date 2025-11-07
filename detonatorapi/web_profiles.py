@@ -10,6 +10,7 @@ from .schemas import ProfileResponse, ProfileStatusResponse
 from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by_id
 from .agent.agent_api import AgentApi
 from .agent.rededr_agent import RedEdrAgentApi as RedEdrApi
+from .token_auth import require_auth
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -50,9 +51,9 @@ async def create_profile(
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
     data: str = Form(...),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
     mde: Optional[str] = Form(None),
-    mde: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
 ):
     """Create a new profile"""
     try:
@@ -194,7 +195,8 @@ async def update_profile(
     comment: str = Form(""),
     data: str = Form(...),
     password: Optional[str] = Form(""),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
 ):
     """Update a profile"""
     try:
@@ -251,7 +253,11 @@ async def update_profile(
 
 
 @router.delete("/profiles/{profile_id}")
-async def delete_profile(profile_id: int, db: Session = Depends(get_db)):
+async def delete_profile(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Delete a profile"""
     db_profile = db_get_profile_by_id(db, profile_id)
     if db_profile is None:
@@ -268,7 +274,11 @@ async def delete_profile(profile_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/profiles/{profile_id}/release_lock")
-async def release_profile_lock(profile_id: int, db: Session = Depends(get_db)):
+async def release_profile_lock(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
     """Release lock for a profile"""
     db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
     if db_profile is None:

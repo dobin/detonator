@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
 import os
 import random
@@ -13,7 +12,7 @@ from typing import List, Optional
 from .database import get_db, Profile
 from .schemas import  NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
-from .token_auth import tokenAuth
+from .token_auth import require_auth, get_user_from_request
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .alert_monitor import start_alert_monitoring, stop_alert_monitoring
 from .web_files import router as files_router
@@ -33,64 +32,6 @@ logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Detonator API", version="0.1.0")
-
-
-# Authentication helper
-def check_auth(request: Request) -> bool:
-    """Check if request is authenticated via password"""
-    if not AUTH_PASSWORD or AUTH_PASSWORD == "":
-        # No password configured - allow all requests
-        return True
-    
-    # Check for X-Auth-Password header
-    auth_password = request.headers.get("X-Auth-Password", "")
-    if auth_password == AUTH_PASSWORD:
-        return True
-    
-    # Check for Authorization header (Basic or Bearer)
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header:
-        # Support "Bearer <password>" format
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
-            if token == AUTH_PASSWORD:
-                return True
-        # Support "Basic <base64>" format for curl compatibility
-        elif auth_header.startswith("Basic "):
-            import base64
-            try:
-                decoded = base64.b64decode(auth_header[6:]).decode('utf-8')
-                # Basic auth format is "username:password", we only care about password
-                if ':' in decoded:
-                    _, password = decoded.split(':', 1)
-                    if password == AUTH_PASSWORD:
-                        return True
-                # Or just the password alone
-                elif decoded == AUTH_PASSWORD:
-                    return True
-            except:
-                pass
-    
-    return False
-
-
-# Authentication middleware
-@app.middleware("http")
-async def auth_middleware(request: Request, call_next):
-    # Allow GET, HEAD, OPTIONS without authentication
-    if request.method in ["GET", "HEAD", "OPTIONS"]:
-        response = await call_next(request)
-        return response
-    
-    # Check authentication for write operations
-    if not check_auth(request):
-        return JSONResponse(
-            status_code=401,
-            content={"detail": "Authentication required. Provide password via X-Auth-Password header or Authorization header."}
-        )
-    
-    response = await call_next(request)
-    return response
 
 
 # Add CORS middleware to allow requests from Flask frontend
@@ -163,6 +104,7 @@ async def get_connectors():
 
 @app.post("/api/upload-and-scan", response_model=NewScanResponse)
 async def upload_file_and_scan(
+    request: Request,
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
     file_comment: Optional[str] = Form(None),
@@ -177,13 +119,12 @@ async def upload_file_and_scan(
     token: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    # Check if allowed: token
-    permissions = tokenAuth.get_permissions(token)
-    if permissions.is_anonymous:
-        logger.info("User: anonymous")
+    # Determine user status based on authentication
+    user = get_user_from_request(request)
+    logger.info(f"User: {user}")
+    if user == "guest":
+        logger.info("Guest user")
         runtime = 12
-    else:
-        logger.info("User: authenticated")
 
     try:
         runtime = sanitize_runtime_seconds(runtime)
@@ -213,7 +154,13 @@ async def upload_file_and_scan(
     actual_filename = f"{rand_str}_{filename}"
     logger.info(f"Uploading file: {actual_filename}")
     file_content = await file.read()
-    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", exec_arguments or "")
+    file_id = db_create_file(db, 
+                             filename=actual_filename, 
+                             content=file_content, 
+                             source_url=source_url or "", 
+                             comment=file_comment or "", 
+                             exec_arguments=exec_arguments or "", 
+                             user=user)
 
     # DB: Create scan record (auto-scan)
     scan_id = db_create_scan(
@@ -225,6 +172,7 @@ async def upload_file_and_scan(
         runtime or 10,
         drop_path or "",
         detection_window_minutes=detection_window_minutes,
+        user=user,
     )
 
     data = { 

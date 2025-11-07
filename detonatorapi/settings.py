@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 VM_DESTROY_AFTER = 60  # minutes
-AUTH_TOKEN = ""
 
 # Authentication Configuration
 # Set a password to protect write operations
