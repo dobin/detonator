@@ -29,6 +29,7 @@ class Profile(Base):
     comment: Mapped[str] = Column(Text, nullable=True)
     data: Mapped[dict] = Column(JSON, default={}, nullable=False)
     password: Mapped[str] = Column(String(255), default="", nullable=False)
+    mde: Mapped[dict] = Column(JSON, default={}, nullable=False)
 
     # Relationship
     scans: Mapped[List["Scan"]] = relationship("Scan", back_populates="profile")
@@ -66,6 +67,7 @@ class Scan(Base):
     project: Mapped[str] = Column(String(100), default="", nullable=False)
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    detection_window_minutes: Mapped[int] = Column(Integer, default=1, nullable=False)
     device_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
     device_hostname: Mapped[Optional[str]] = Column(String(255), nullable=True)
     device_os_version: Mapped[Optional[str]] = Column(String(255), nullable=True)
@@ -97,6 +99,28 @@ class Scan(Base):
     # Relationships
     file: Mapped[File] = relationship("File", back_populates="scans")
     profile: Mapped[Profile] = relationship("Profile", back_populates="scans")
+    alerts: Mapped[List["ScanAlert"]] = relationship("ScanAlert", back_populates="scan", cascade="all, delete-orphan")
+
+
+class ScanAlert(Base):
+    __tablename__ = "scan_alerts"
+
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    scan_id: Mapped[int] = Column(Integer, ForeignKey("scans.id"), nullable=False, index=True)
+    alert_id: Mapped[str] = Column(String(128), nullable=False)
+    incident_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    title: Mapped[Optional[str]] = Column(String(255), nullable=True)
+    severity: Mapped[Optional[str]] = Column(String(64), nullable=True)
+    status: Mapped[Optional[str]] = Column(String(64), nullable=True)
+    category: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    detection_source: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    detected_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
+    raw_alert: Mapped[dict] = Column(JSON, default={}, nullable=False)
+    auto_closed_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
+    comment: Mapped[Optional[str]] = Column(Text, nullable=True)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+
+    scan: Mapped[Scan] = relationship("Scan", back_populates="alerts")
 
 
 # Create tables

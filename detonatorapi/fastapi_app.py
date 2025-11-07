@@ -15,12 +15,13 @@ from .schemas import  NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 from .token_auth import tokenAuth
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
+from .alert_monitor import start_alert_monitoring, stop_alert_monitoring
 from .web_files import router as files_router
 from .web_scans import router as scans_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
 from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
-from .utils import sanitize_runtime_seconds
+from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 
 
 # Load environment variables
@@ -108,6 +109,7 @@ async def startup_event():
     try:
         # Start VM monitoring
         start_vm_monitoring()
+        start_alert_monitoring()
     except Exception as e:
         logger.error(f"Error during starting vm_monitoring: {str(e)}")
 
@@ -117,6 +119,7 @@ async def shutdown_event():
     """Stop VM monitoring on shutdown"""
     try:
         stop_vm_monitoring()
+        stop_alert_monitoring()
         logger.info("VM monitoring stopped")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
@@ -169,6 +172,7 @@ async def upload_file_and_scan(
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
     drop_path: Optional[str] = Form(None),
+    detection_window_minutes: Optional[int] = Form(None),
     exec_arguments: Optional[str] = Form(None),
     token: Optional[str] = Form(None),
     db: Session = Depends(get_db),
@@ -185,6 +189,12 @@ async def upload_file_and_scan(
         runtime = sanitize_runtime_seconds(runtime)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+    try:
+        detection_window_minutes = sanitize_detection_window_minutes(detection_window_minutes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    detection_window_minutes = detection_window_minutes if detection_window_minutes is not None else 10
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)
@@ -206,7 +216,16 @@ async def upload_file_and_scan(
     file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", exec_arguments or "")
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, file_id, profile_name, scan_comment or "", project or "", runtime or 10, drop_path or "")
+    scan_id = db_create_scan(
+        db,
+        file_id,
+        profile_name,
+        scan_comment or "",
+        project or "",
+        runtime or 10,
+        drop_path or "",
+        detection_window_minutes=detection_window_minutes,
+    )
 
     data = { 
         "file_id": file_id,

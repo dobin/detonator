@@ -56,6 +56,36 @@ To scan a file on the previously configured `myfirstvm`:
 $ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
 ```
 
+### Microsoft Defender (optional)
+
+Profiles can optionally include an `mde` block to let Detonator correlate alerts and auto-close incidents. Example:
+
+```yaml
+myfirstvm:
+  connector: Live
+  # ...
+  mde:
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    authority: "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000"
+    scopes:
+      - "https://api.security.microsoft.com/.default"
+    client_id: "11111111-2222-3333-4444-555555555555"
+    client_secret_env: "MDE_MYFIRSTVM_CLIENT_SECRET"
+```
+
+Store the corresponding client secret in the environment variable referenced by `client_secret_env`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires.
+
+**Entra app**
+
+1. In `https://entra.microsoft.com`, create an **App Registration** (single tenant is fine).  
+2. Under **API permissions**, add application permissions for:  
+   - `Alert.Read.All`, `Alert.ReadWrite.All`  
+   - `Incident.Read.All`, `Incident.ReadWrite.All`  
+   Grant admin consent.  
+3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
+4. Use the app’s **Application (client) ID**, tenant ID, authority, scopes, and `client_secret_env` in each profile’s `mde` block as shown above.  
+5. Ensure the Detonator API host has the environment variable set (or pull it from your secret manager) before starting the server.
+
 
 ## Setup Guides
 

@@ -10,7 +10,7 @@ from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan, ScanResponseShort
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
-from .utils import sanitize_runtime_seconds
+from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -158,13 +158,28 @@ async def file_create_scan(file_id: int, scan_data: FileCreateScan, db: Session 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     runtime = runtime_override if runtime_override is not None else 10
+
+    try:
+        detection_window_override = sanitize_detection_window_minutes(scan_data.detection_window_minutes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    detection_window_minutes = detection_window_override if detection_window_override is not None else 10
     drop_path = scan_data.drop_path or ""
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
     
     # Create the scan
-    scan_id = db_create_scan(db, file_id, profile_name, comment, project, runtime=runtime, drop_path=drop_path)
+    scan_id = db_create_scan(
+        db,
+        file_id,
+        profile_name,
+        comment,
+        project,
+        runtime=runtime,
+        drop_path=drop_path,
+        detection_window_minutes=detection_window_minutes,
+    )
     
     # Retrieve the created scan to return full details
     db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()

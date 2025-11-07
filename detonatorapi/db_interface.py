@@ -65,7 +65,7 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = "", mde: Optional[dict] = None):
     """Create a new profile in the database"""
     db_profile = Profile(
         name=name,
@@ -76,7 +76,8 @@ def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int
         default_drop_path=default_drop_path,
         comment=comment,
         data=data,
-        password=password
+        password=password,
+        mde=mde or {}
     )
     db.add(db_profile)
     db.commit()
@@ -108,7 +109,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, drop_path: str = "", password: str = "") -> int:
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, drop_path: str = "", detection_window_minutes: int = 1, password: str = "") -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
@@ -127,6 +128,7 @@ def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", proje
         project=project,
         runtime=runtime,
         drop_path=drop_path,
+        detection_window_minutes=detection_window_minutes,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
     )
@@ -134,4 +136,3 @@ def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", proje
     db.commit()
     logger.info(f"DB: Created scan {db_scan.id}")
     return db_scan.id
-

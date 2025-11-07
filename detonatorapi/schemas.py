@@ -15,6 +15,7 @@ class ProfileBase(BaseModel):
     default_drop_path: Optional[str] = ""
     comment: Optional[str] = None
     data: dict
+    mde: Optional[dict] = None
 
 class ProfileCreate(ProfileBase):
     pass
@@ -28,6 +29,7 @@ class ProfileUpdate(BaseModel):
     default_drop_path: Optional[str] = None
     comment: Optional[str] = None
     data: Optional[dict] = None
+    mde: Optional[dict] = None
 
 class ProfileResponse(ProfileBase):
     id: int
@@ -88,6 +90,7 @@ class FileCreateScan(BaseModel):
     project: Optional[str] = None
     profile_name: str
     runtime: Optional[int] = 10
+    detection_window_minutes: Optional[int] = 1
     drop_path: Optional[str] = ""
     comment: Optional[str] = None
     password: Optional[str] = None
@@ -101,6 +104,7 @@ class ScanUpdate(BaseModel):
     status: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
+    detection_window_minutes: Optional[int] = None
     device_id: Optional[str] = None
     device_hostname: Optional[str] = None
     device_os_version: Optional[str] = None
@@ -116,6 +120,7 @@ class ScanResponse(BaseModel):
     comment: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
+    detection_window_minutes: Optional[int] = None
     device_id: Optional[str] = None
     device_hostname: Optional[str] = None
     device_os_version: Optional[str] = None
@@ -133,6 +138,7 @@ class ScanResponse(BaseModel):
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
+    alerts: List["ScanAlertResponse"] = []
     
     created_at: datetime
     updated_at: datetime
@@ -153,6 +159,7 @@ class ScanResponseShort(BaseModel):
     comment: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
+    detection_window_minutes: Optional[int] = None
     device_id: Optional[str] = None
     device_hostname: Optional[str] = None
     device_os_version: Optional[str] = None
@@ -177,6 +184,28 @@ class ScanResponseShort(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class ScanAlertResponse(BaseModel):
+    id: int
+    alert_id: str
+    incident_id: Optional[str] = None
+    title: Optional[str] = None
+    severity: Optional[str] = None
+    status: Optional[str] = None
+    category: Optional[str] = None
+    detection_source: Optional[str] = None
+    detected_at: Optional[datetime] = None
+    auto_closed_at: Optional[datetime] = None
+    comment: Optional[str] = None
+    raw_alert: dict
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+ScanResponse.update_forward_refs()
 
 # get_file() request
 class FileWithScans(FileResponse):

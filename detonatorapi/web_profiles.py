@@ -33,6 +33,7 @@ async def get_profiles(db: Session = Depends(get_db)):
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
+            "mde": profile.mde,
             "require_password": requires_password,
         }
     return result
@@ -49,6 +50,8 @@ async def create_profile(
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
     data: str = Form(...),
+    mde: Optional[str] = Form(None),
+    mde: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """Create a new profile"""
@@ -59,11 +62,26 @@ async def create_profile(
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
         
+        mde_dict: Optional[dict] = None
+        if mde:
+            try:
+                mde_dict = json.loads(mde)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
+        
         # Check if profile name already exists
         existing_profile = db.query(Profile).filter(Profile.name == name).first()
         if existing_profile:
             raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
+        # Parse MDE JSON if provided
+        mde_dict: Optional[dict] = None
+        if mde:
+            try:
+                mde_dict = json.loads(mde)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
+
         # Create the profile
         profile_id = db_create_profile(
             db=db,
@@ -75,7 +93,8 @@ async def create_profile(
             data=data_dict,
             default_drop_path=default_drop_path or "",
             comment=comment or "",
-            password=password or ""
+            password=password or "",
+            mde=mde_dict or {}
         )
         
         # Return the created profile
@@ -92,6 +111,7 @@ async def create_profile(
             "default_drop_path": created_profile.default_drop_path,
             "comment": created_profile.comment,
             "data": created_profile.data,
+            "mde": created_profile.mde,
             "created_at": created_profile.created_at
         }
         
@@ -203,6 +223,8 @@ async def update_profile(
         profile.default_drop_path = default_drop_path
         profile.comment = comment
         profile.data = data_dict
+        if mde_dict is not None:
+            profile.mde = mde_dict
         
         db.commit()
         db.refresh(profile)
@@ -216,6 +238,7 @@ async def update_profile(
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
+            "mde": profile.mde,
             "password": password or "",
             "created_at": profile.created_at
         }
