@@ -28,6 +28,7 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
             name=profile_name,
             connector=profile_config.get('connector', ''),
             port=profile_config.get('port', 80),
+            rededr_port=profile_config.get('rededr_port', None),
             edr_collector=profile_config.get('edr_collector', ''),
             data=profile_config.get('data', {}),
             default_drop_path=profile_config.get('default_drop_path', ''),
