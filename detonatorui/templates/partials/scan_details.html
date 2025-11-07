@@ -15,6 +15,15 @@
         <div><strong>VM Instance:</strong> {{ scan.vm_instance_name or '' }}</div>
         <div><strong>VM IP:</strong> {{ scan.vm_ip_address or '' }}</div>
         <div><strong>Result:</strong> {{ scan.result or '' }}</div>
+        {% if scan.device_hostname %}
+        <div><strong>Agent Hostname:</strong> {{ scan.device_hostname }}</div>
+        {% endif %}
+        {% if scan.device_os_version %}
+        <div><strong>Agent OS:</strong> {{ scan.device_os_version }}</div>
+        {% endif %}
+        {% if scan.device_id %}
+        <div><strong>Device ID (Sense):</strong> <span class="font-mono text-xs break-all">{{ scan.device_id }}</span></div>
+        {% endif %}
     </div>
     
     <!-- Logs Tabs -->
