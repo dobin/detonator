@@ -63,6 +63,7 @@ class FileBase(BaseModel):
     source_url: Optional[str] = None
     comment: Optional[str] = None
     exec_arguments: Optional[str] = None
+    user: str = ""
     created_at: Optional[datetime] = None
 
 # Unused
@@ -116,6 +117,7 @@ class ScanResponse(BaseModel):
 
     detonator_srv_logs: Optional[str] = None
     status: str
+    user: str = ""
 
     agent_logs: Optional[str] = None
     execution_logs: Optional[str] = None
@@ -148,6 +150,7 @@ class ScanResponseShort(BaseModel):
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
     status: str
+    user: str = ""
 
     detonator_srv_logs: Optional[str] = None
     edr_summary: Optional[list] = None

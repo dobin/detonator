@@ -46,7 +46,7 @@ def db_scan_add_log(db, db_scan, log_message: str):
     db.commit()
 
 
-def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", exec_arguments: str = "") -> int:
+def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", exec_arguments: str = "", user: str = "") -> int:
     file_hash = File.calculate_hash(content)
 
     # DB: Create file record
@@ -56,7 +56,8 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
         file_hash=file_hash,
         source_url=source_url,
         comment=comment,
-        exec_arguments=exec_arguments
+        exec_arguments=exec_arguments,
+        user=user
     )
     db.add(db_file)
     db.commit()
@@ -108,7 +109,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, drop_path: str = "", password: str = "") -> int:
+def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, drop_path: str = "", user: str = "") -> int:
     """Create a scan using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
@@ -127,6 +128,7 @@ def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", proje
         project=project,
         runtime=runtime,
         drop_path=drop_path,
+        user=user,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
     )

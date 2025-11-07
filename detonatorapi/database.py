@@ -44,6 +44,7 @@ class File(Base):
     file_hash: Mapped[str] = Column(String(64), nullable=False, index=True)
     source_url: Mapped[str] = Column(String(500), nullable=True)
     comment: Mapped[str] = Column(Text, nullable=True)
+    user: Mapped[str] = Column(String(100), default="", nullable=False)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     
     # Relationship
@@ -67,6 +68,7 @@ class Scan(Base):
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
     more_options: Mapped[dict] = Column(JSON, default={}, nullable=False)
+    user: Mapped[str] = Column(String(100), default="", nullable=False)
 
     # TRACK
     detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)

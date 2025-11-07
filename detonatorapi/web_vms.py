@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 import logging
 
 from .connectors.azure_manager import get_azure_manager
+from .token_auth import require_auth
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -22,7 +23,11 @@ async def get_vms():
 
 
 @router.delete("/vms/{vm_name}")
-async def delete_vm(vm_name: str, background_tasks: BackgroundTasks):
+async def delete_vm(
+    vm_name: str,
+    background_tasks: BackgroundTasks,
+    _: None = Depends(require_auth),
+):
     """Stop and delete a VM and all its resources"""
     try:
         azure_manager = get_azure_manager()
