@@ -66,6 +66,9 @@ class Scan(Base):
     project: Mapped[str] = Column(String(100), default="", nullable=False)
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    device_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    device_hostname: Mapped[Optional[str]] = Column(String(255), nullable=True)
+    device_os_version: Mapped[Optional[str]] = Column(String(255), nullable=True)
     more_options: Mapped[dict] = Column(JSON, default={}, nullable=False)
 
     # TRACK
