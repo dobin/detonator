@@ -164,9 +164,10 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     # RedEdr (if exists): logs 
     # before killing the process
+    # only if we actually executed it
     rededr_events = None
     rededr_logs = ""
-    if rededrApi is not None:
+    if rededrApi is not None and executionResult == ExecutionResult.OK:
         logger.info("Gather EDR events from RedEdr")
         rededr_events = rededrApi.GetEvents()
         if rededr_events is None:  # single check for now
@@ -196,7 +197,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # After stopping the trace, so we have all the Agent logs (including the process killing)
     logger.info("Gather Agent and Execution logs")
     agent_logs = agentApi.GetAgentLogs()
-    execution_logs = agentApi.GetExecutionLogs()
+    execution_logs = agentApi.GetExecutionLogs()  # always for now
 
     # we finished 
     if DO_LOCKING:
