@@ -1,6 +1,9 @@
 import os
 from dotenv import load_dotenv
 
+UPLOAD_DIR = "upload/"
+
+
 # Load environment variables
 load_dotenv()
 

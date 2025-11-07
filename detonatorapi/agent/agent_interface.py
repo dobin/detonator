@@ -4,9 +4,11 @@ from typing import Optional, Dict
 import time
 import json
 from datetime import datetime
-from detonatorapi.edr_parser.edr_parser import EdrParser
 from typing import List
+import os
 
+from detonatorapi.edr_parser.edr_parser import EdrParser
+from detonatorapi.settings import UPLOAD_DIR
 from detonatorapi.database import Scan, get_db_for_thread
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
@@ -82,7 +84,12 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     filename = db_scan.file.filename
     exec_arguments = db_scan.file.exec_arguments
-    file_content = db_scan.file.content
+    
+    # Read file content from disk
+    file_path = os.path.join(UPLOAD_DIR, db_scan.file.filename)
+    with open(file_path, 'rb') as f:
+        file_content = f.read()
+    
     runtime = db_scan.runtime
     drop_path = db_scan.drop_path
     rededr_port = db_scan.profile.rededr_port

@@ -1,9 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-import os
-import random
-import string
+
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
 from sqlalchemy.orm import Session, joinedload
@@ -134,12 +132,9 @@ async def upload_file_and_scan(
     filename = file.filename
     if not filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
-    rand_str = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
-    actual_filename = f"{rand_str}_{filename}"
-    logger.info(f"Uploading file: {actual_filename}")
     file_content = await file.read()
     file_id = db_create_file(db, 
-                             filename=actual_filename, 
+                             filename=filename, 
                              content=file_content, 
                              source_url=source_url or "", 
                              comment=file_comment or "", 

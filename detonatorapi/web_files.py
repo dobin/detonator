@@ -3,11 +3,13 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 import logging
+import os
 
 from .database import get_db, File, Scan
 from .schemas import FileResponse, FileWithScans
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 from .token_auth import require_auth, get_user_from_request
+from .settings import UPLOAD_DIR
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -75,6 +77,15 @@ async def delete_file(
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
     
+    # Delete file from filesystem
+    file_path = os.path.join(UPLOAD_DIR, db_file.filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            logger.info(f"Deleted file from disk: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete file from disk: {file_path}, error: {e}")
+    
     # Delete associated scans first
     db.query(Scan).filter(Scan.file_id == file_id).delete()
     db.delete(db_file)
@@ -93,8 +104,17 @@ async def download_file(
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
     
+    # Check if file exists on disk
+    file_path = os.path.join(UPLOAD_DIR, db_file.filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    # Read file content from disk
+    with open(file_path, 'rb') as f:
+        content = f.read()
+    
     return Response(
-        content=db_file.content,
+        content=content,
         media_type="application/octet-stream",
         headers={
             "Content-Disposition": f"attachment; filename={db_file.filename}"

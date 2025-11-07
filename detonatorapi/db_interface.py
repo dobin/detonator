@@ -1,6 +1,11 @@
 from typing import Optional, List
 from datetime import datetime
 import logging
+import os
+from .settings import UPLOAD_DIR
+import random
+import string
+from werkzeug.utils import secure_filename
 
 from .database import Scan, File, Profile, get_db_for_thread
 from .utils import mylog
@@ -48,11 +53,20 @@ def db_scan_add_log(db, db_scan, log_message: str):
 
 def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", exec_arguments: str = "", user: str = "") -> int:
     file_hash = File.calculate_hash(content)
+ 
+    # prepend 4 random chars to filename to avoid collisions
+    filename = secure_filename(filename)
+    rand_str = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
+    actual_filename = f"{rand_str}_{filename}"
 
-    # DB: Create file record
+    # Write file content to disk
+    file_path = os.path.join(UPLOAD_DIR, f"{actual_filename}")
+    with open(file_path, 'wb') as f:
+        f.write(content)
+    
+    # DB: Create file record with path instead of content
     db_file = File(
-        content=content,
-        filename=filename,
+        filename=actual_filename,
         file_hash=file_hash,
         source_url=source_url,
         comment=comment,
@@ -62,7 +76,7 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
     db.add(db_file)
     db.commit()
 
-    logger.info(f"DB: Created file {db_file.id} with filename: {filename}")
+    logger.info(f"DB: Created file {db_file.id} with filename: {actual_filename}")
     return db_file.id
 
 
