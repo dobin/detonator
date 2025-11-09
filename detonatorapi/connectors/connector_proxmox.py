@@ -209,3 +209,5 @@ class ConnectorProxmox(ConnectorBase):
 
         threading.Thread(target=kill_thread, args=(scan_id, )).start()
 
+
+    def reboot(self, )

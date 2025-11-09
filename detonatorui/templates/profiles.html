@@ -485,6 +485,85 @@ function releaseLock(profileId, profileName) {
     }
 }
 
+function rebootProfile(profileId, profileName) {
+    if (confirm(`Are you sure you want to reboot the VM for profile "${profileName}"?`)) {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/reboot`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error || data.detail) {
+                alert('Error: ' + (data.error || data.detail));
+            } else {
+                // Show success message briefly
+                const tempMsg = document.createElement('div');
+                tempMsg.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+                tempMsg.textContent = data.message || 'VM reboot initiated!';
+                document.body.appendChild(tempMsg);
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    document.body.removeChild(tempMsg);
+                }, 3000);
+                
+                // Refresh the profiles list after a delay to show updated status
+                setTimeout(() => {
+                    htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+}
+
+function revertProfile(profileId, profileName) {
+    if (confirm(`Are you sure you want to revert the VM to snapshot for profile "${profileName}"?\n\nThis will:\n1. Stop the VM\n2. Revert to the configured snapshot\n3. Start the VM again`)) {
+        // Show processing message
+        const processingMsg = document.createElement('div');
+        processingMsg.id = 'revert-processing-msg';
+        processingMsg.className = 'fixed top-4 right-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded z-50';
+        processingMsg.innerHTML = '<div class="flex items-center"><div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>Reverting VM... This may take a minute.</div>';
+        document.body.appendChild(processingMsg);
+        
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/revert`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remove processing message
+            const msg = document.getElementById('revert-processing-msg');
+            if (msg) document.body.removeChild(msg);
+            
+            if (data.error || data.detail) {
+                alert('Error: ' + (data.error || data.detail));
+            } else {
+                // Show success message
+                const tempMsg = document.createElement('div');
+                tempMsg.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+                tempMsg.textContent = data.message || 'VM reverted and restarted successfully!';
+                document.body.appendChild(tempMsg);
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    document.body.removeChild(tempMsg);
+                }, 3000);
+                
+                // Refresh the profiles list
+                htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
+            }
+        })
+        .catch(error => {
+            // Remove processing message
+            const msg = document.getElementById('revert-processing-msg');
+            if (msg) document.body.removeChild(msg);
+            
+            alert('Error: ' + error);
+        });
+    }
+}
+
 // Reset form when creating new profile
 function resetFormForCreate() {
     const form = document.querySelector('#create-profile-form form');

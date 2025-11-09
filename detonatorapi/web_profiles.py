@@ -4,6 +4,7 @@ from typing import Optional
 import logging
 import json
 import requests
+import subprocess
 
 from .database import get_db, Profile, Scan
 from .schemas import ProfileResponse, ProfileStatusResponse
@@ -11,6 +12,8 @@ from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by
 from .agent.agent_api import AgentApi
 from .agent.rededr_agent import RedEdrAgentApi as RedEdrApi
 from .token_auth import require_auth
+from .connectors.connectors import connectors
+from .connectors.connector_proxmox import ConnectorProxmox
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -282,3 +285,91 @@ async def release_profile_lock(
     except Exception as e:
         logger.error(f"Error releasing lock for profile {profile_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error releasing lock: {str(e)}")
+
+
+@router.post("/profiles/{profile_id}/reboot")
+async def reboot(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth)
+):
+    """Reboot the VM associated with the profile"""
+
+    db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    ip = db_profile.data.get('ip', '')
+    try:
+        # Execute SSH reboot command
+        subprocess.run(
+            ["ssh", f"hacker@{ip}", "shutdown", "/r", "/t", "0"],
+            check=True,
+            timeout=30
+        )
+        logger.info(f"Reboot command issued for profile {profile_id} ({db_profile.name})")
+        return {"message": "Reboot command issued"}
+    except subprocess.TimeoutExpired:
+        logger.warning(f"Reboot command timed out for profile {profile_id}")
+        return {"message": "Reboot command issued (timeout waiting for response)"}
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Reboot command failed for profile {profile_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to execute reboot command: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error rebooting profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error issuing reboot: {str(e)}")
+
+
+@router.post("/profiles/{profile_id}/revert")
+async def revert(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth)
+):
+    """Revert the Proxmox VM to snapshot (stop, revert, start)"""
+
+    db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    if db_profile.connector != "Proxmox":
+        raise HTTPException(status_code=400, detail="Revert operation is only supported for Proxmox profiles")
+    
+    # Get VM configuration from profile data
+    vm_id = db_profile.data.get('vm_id')
+    vm_snapshot = db_profile.data.get('vm_snapshot')
+    
+    if not vm_id or not vm_snapshot:
+        raise HTTPException(status_code=400, detail="Profile does not have vm_id or vm_snapshot configured")
+    
+    try:
+        # Get Proxmox connector
+        proxmox_connector = connectors.get("Proxmox")
+        if not proxmox_connector or not isinstance(proxmox_connector, ConnectorProxmox):
+            raise HTTPException(status_code=500, detail="Proxmox connector not available")
+        
+        proxmox_manager = proxmox_connector.proxmox_manager
+        
+        # Stop VM
+        logger.info(f"Stopping VM {vm_id} for profile {profile_id} ({db_profile.name})")
+        if not proxmox_manager.StopVm(vm_id):
+            raise HTTPException(status_code=500, detail="Failed to stop VM")
+        
+        # Revert to snapshot
+        logger.info(f"Reverting VM {vm_id} to snapshot '{vm_snapshot}' for profile {profile_id}")
+        if not proxmox_manager.RevertVm(vm_id, vm_snapshot):
+            raise HTTPException(status_code=500, detail="Failed to revert VM to snapshot")
+        
+        # Start VM
+        logger.info(f"Starting VM {vm_id} for profile {profile_id}")
+        if not proxmox_manager.StartVm(vm_id):
+            raise HTTPException(status_code=500, detail="Failed to start VM after revert")
+        
+        logger.info(f"Successfully reverted and restarted VM {vm_id} for profile {profile_id} ({db_profile.name})")
+        return {"message": f"VM successfully reverted to snapshot '{vm_snapshot}' and restarted"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reverting VM for profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error reverting VM: {str(e)}")
