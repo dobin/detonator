@@ -29,11 +29,7 @@ async def get_scans_count(
     """Get count of scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
     
-    # Filter by user if guest or explicit user filter provided
-    current_user = get_user_from_request(request)
-    if current_user == "guest":
-        query = query.filter(Scan.user == "guest")
-    elif user_filter and user_filter != "all":
+    if user_filter and user_filter != "all":
         query = query.filter(Scan.user == user_filter)
     
     # Apply filters (same as in get_scans)
@@ -75,11 +71,7 @@ async def get_scans(
     """Get scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
     
-    # Filter by user if guest or explicit user filter provided
-    current_user = get_user_from_request(request)
-    if current_user == "guest":
-        query = query.filter(Scan.user == "guest")
-    elif user_filter and user_filter != "all":
+    if user_filter and user_filter != "all":
         query = query.filter(Scan.user == user_filter)
     
     # Apply filters
