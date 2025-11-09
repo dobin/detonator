@@ -89,10 +89,7 @@
 
     <!-- Scans List -->
     <div 
-        id="scans-container" 
-        hx-get="/templates/scans?limit=10{% if AUTH_ENABLED %}&user=guest{% endif %}" 
-        hx-trigger="load"
-        hx-indicator="#loading"
+        id="scans-container"
     >
         <div class="text-center text-gray-500">Loading scans...</div>
     </div>
@@ -266,6 +263,9 @@
         document.getElementById('status-filter').addEventListener('change', applyFilters);
         document.getElementById('user-filter').addEventListener('change', applyFilters);
         document.getElementById('limit-filter').addEventListener('change', applyFilters);
+        
+        // Load initial content based on current dropdown values
+        applyFilters();
         
         // Start auto-refresh when page loads
         startAutoRefresh();

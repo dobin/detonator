@@ -92,11 +92,7 @@
 
     <!-- Scans Table Container -->
     <div class="bg-white rounded-lg shadow">
-        <div id="scans-table-container" 
-             hx-get="/templates/scans-table?limit=10{% if AUTH_ENABLED %}&user=guest{% endif %}" 
-             hx-trigger="load"
-             hx-target="this"
-             hx-swap="innerHTML">
+        <div id="scans-table-container">
             <div class="p-6 text-center">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
                 <p class="mt-2 text-gray-500">Loading scans...</p>
@@ -221,6 +217,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('status-filter').addEventListener('change', applyFilters);
     document.getElementById('user-filter').addEventListener('change', applyFilters);
     document.getElementById('limit-filter').addEventListener('change', applyFilters);
+    
+    // Load initial content based on current dropdown values
+    applyFilters();
 });
 </script>
 {% endblock %}
