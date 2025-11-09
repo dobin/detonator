@@ -299,7 +299,10 @@ async def reboot(
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    ip = db_profile.data.get('ip', '')
+    ip = db_profile.data.get('vm_ip', '')
+    if ip == "":
+        raise HTTPException(status_code=400, detail="Profile does not have vm_ip configured")
+
     try:
         # Execute SSH reboot command
         subprocess.run(
