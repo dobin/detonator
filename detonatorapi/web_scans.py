@@ -23,15 +23,18 @@ async def get_scans_count(
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     result: Optional[str] = Query(None, description="Filter by scan result"),
     search: Optional[str] = Query(None, description="Search in project, scan comment, file comment, or filename"),
+    user_filter: Optional[str] = Query(None, description="Filter by user (guest/admin/all)", alias="user"),
     db: Session = Depends(get_db)
 ):
     """Get count of scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
     
-    # Filter by user if guest
-    user = get_user_from_request(request)
-    if user == "guest":
+    # Filter by user if guest or explicit user filter provided
+    current_user = get_user_from_request(request)
+    if current_user == "guest":
         query = query.filter(Scan.user == "guest")
+    elif user_filter and user_filter != "all":
+        query = query.filter(Scan.user == user_filter)
     
     # Apply filters (same as in get_scans)
     if status:
@@ -66,15 +69,18 @@ async def get_scans(
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     result: Optional[str] = Query(None, description="Filter by scan result"),
     search: Optional[str] = Query(None, description="Search in project, scan comment, file comment, or filename"),
+    user_filter: Optional[str] = Query(None, description="Filter by user (guest/admin/all)", alias="user"),
     db: Session = Depends(get_db)
 ):
     """Get scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
     
-    # Filter by user if guest
-    user = get_user_from_request(request)
-    if user == "guest":
+    # Filter by user if guest or explicit user filter provided
+    current_user = get_user_from_request(request)
+    if current_user == "guest":
         query = query.filter(Scan.user == "guest")
+    elif user_filter and user_filter != "all":
+        query = query.filter(Scan.user == user_filter)
     
     # Apply filters
     if status:

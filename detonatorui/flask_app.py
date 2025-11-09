@@ -6,6 +6,7 @@ from datetime import datetime
 from .post import post_bp
 from .get import get_bp
 from .config import API_BASE_URL
+from detonatorapi.settings import AUTH_PASSWORD
 
 
 app = Flask(__name__)
@@ -23,8 +24,14 @@ logger = logging.getLogger(__name__)
 # Make API_BASE_URL available to all templates
 @app.context_processor
 def inject_api_base_url():
+    # Check if authentication is enabled
+    auth_enabled = False
+    if AUTH_PASSWORD != None and AUTH_PASSWORD != "":
+        auth_enabled = True
+    
     return {
-        'API_BASE_URL': API_BASE_URL
+        'API_BASE_URL': API_BASE_URL,
+        'AUTH_ENABLED': auth_enabled
     }
 
 
