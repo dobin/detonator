@@ -634,6 +634,9 @@ document.getElementById('profile-form').addEventListener('submit', async functio
     formData.delete('profile_id');
     const body = new URLSearchParams();
     for (const [key, value] of formData.entries()) {
+        if (key === 'rededr_port' && (!value || value.trim() === '')) {
+            continue;
+        }
         body.append(key, value ?? '');
     }
 
