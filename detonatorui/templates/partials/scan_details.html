@@ -81,6 +81,13 @@
                     RedEdr Logs
                 </button>
                 {% endif %}
+                {% if scan.profile and scan.profile.mde %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="mde-alerts" onclick="showTab('mde-alerts', this)"
+                >
+                    MDE Alerts
+                </button>
+                {% endif %}
             </nav>
         </div>
         
@@ -128,6 +135,52 @@
                     >{{ scan.rededr_logs|pretty_json }}</pre>
             </div>
             {% endif %}
+            {% if scan.profile and scan.profile.mde %}
+            <div id="mde-alerts" class="tab-content hidden">
+                {% if scan.alerts %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-700">Title</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-700">Status</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-700">Detected</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-700">Incident</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for alert in scan.alerts %}
+                            <tr>
+                                <td class="px-3 py-2">{{ alert.severity or 'N/A' }}</td>
+                                <td class="px-3 py-2">
+                                    <div class="font-medium">{{ alert.title or 'Unnamed alert' }}</div>
+                                    <div class="text-xs text-gray-500 break-all">{{ alert.alert_id }}</div>
+                                </td>
+                                <td class="px-3 py-2">
+                                    {{ alert.status or 'Unknown' }}
+                                    {% if alert.auto_closed_at %}
+                                    <div class="text-xs text-gray-500">Auto Closed {{ alert.auto_closed_at|strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-2">{{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') if alert.detected_at else 'N/A' }}</td>
+                                <td class="px-3 py-2 break-all">{{ alert.incident_id or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="bg-gray-50 border border-gray-200 rounded p-4 text-sm text-gray-600">
+                    <p>No Defender alerts collected yet.</p>
+                    <p class="mt-2">
+                        Detonator polls Microsoft Defender for {{ scan.detection_window_minutes or 1 }} minute{{ '' if (scan.detection_window_minutes or 1) == 1 else 's' }} after execution completes.
+                        If detections occur during that window they will appear here automatically.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
     
@@ -166,55 +219,6 @@
         <p>Completed: {{ scan.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
         {% endif %}
     </div>
-
-    {% set mde_enabled = scan.profile and scan.profile.mde %}
-    {% if mde_enabled %}
-    <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-2">MDE Alerts</h3>
-        {% if scan.alerts %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-700">Title</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-700">Status</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-700">Detected</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-700">Incident</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for alert in scan.alerts %}
-                    <tr>
-                        <td class="px-3 py-2">{{ alert.severity or 'N/A' }}</td>
-                        <td class="px-3 py-2">
-                            <div class="font-medium">{{ alert.title or 'Unnamed alert' }}</div>
-                            <div class="text-xs text-gray-500 break-all">{{ alert.alert_id }}</div>
-                        </td>
-                        <td class="px-3 py-2">
-                            {{ alert.status or 'Unknown' }}
-                            {% if alert.auto_closed_at %}
-                            <div class="text-xs text-gray-500">Auto Closed {{ alert.auto_closed_at|strftime('%Y-%m-%d %H:%M:%S') }}</div>
-                            {% endif %}
-                        </td>
-                        <td class="px-3 py-2">{{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') if alert.detected_at else 'N/A' }}</td>
-                        <td class="px-3 py-2 break-all">{{ alert.incident_id or 'N/A' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="bg-gray-50 border border-gray-200 rounded p-4 text-sm text-gray-600">
-            <p>No Defender alerts collected yet.</p>
-            <p class="mt-2">
-                Detonator polls Microsoft Defender for {{ scan.detection_window_minutes or 1 }} minute{{ '' if (scan.detection_window_minutes or 1) == 1 else 's' }} after execution completes.
-                If detections occur during that window they will appear here automatically.
-            </p>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
 
 {% else %}
