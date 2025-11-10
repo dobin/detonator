@@ -92,12 +92,15 @@ class AlertMonitorTask:
 
             window_minutes = scan.detection_window_minutes or 0
             window_end = scan.completed_at + timedelta(minutes=window_minutes)
+            poll_start = scan.created_at or scan.completed_at or datetime.utcnow()
 
             # If detection window is over, hydrate evidence and finalize
             if now >= window_end:
                 if not options.get("mde_evidence_done"):
                     try:
-                        processed, with_evidence = self._enrich_alerts_with_evidence(scan, client)
+                        processed, with_evidence = self._enrich_alerts_with_evidence(
+                            scan, client, poll_start
+                        )
                         if processed:
                             msg = f"MDE evidence collected for {with_evidence}/{processed} alert(s)"
                         else:
@@ -126,29 +129,18 @@ class AlertMonitorTask:
                     self.db.commit()
                 continue
 
-            # Determine polling window
-            base_since = scan.created_at or scan.completed_at or datetime.utcnow()
-            last_poll_iso = options.get("mde_last_poll")
-            if last_poll_iso:
-                try:
-                    since = datetime.fromisoformat(last_poll_iso)
-                except ValueError:
-                    since = base_since
-                else:
-                    if since < base_since:
-                        since = base_since
-            else:
-                since = base_since
+            # Determine polling window: from scan start until now (capped by detection window)
+            since = poll_start
 
             try:
                 poll_msg = (
                     f"MDE poll: profile={scan.profile.name if scan.profile else 'unknown'} "
                     f"device_id={scan.device_id} hostname={scan.device_hostname} "
-                    f"since={since.isoformat()} window_end={window_end.isoformat()}"
+                    f"since={since.isoformat()} (window_end={window_end.isoformat()})"
                 )
                 logger.info("scan %s - %s", scan.id, poll_msg)
                 db_scan_add_log(self.db, scan, poll_msg)
-                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since, window_end)
+                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
                 server_time_note = f" (MDE server time {server_time})" if server_time else ""
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
@@ -166,7 +158,6 @@ class AlertMonitorTask:
                     msg = f"MDE poll: no alert IDs{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
                     db_scan_add_log(self.db, scan, msg)
-                options["mde_last_poll"] = datetime.utcnow().isoformat()
             except Exception as exc:
                 logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
                 db_scan_add_log(self.db, scan, f"MDE poll failed: {exc}")
@@ -213,12 +204,17 @@ class AlertMonitorTask:
             self.db.commit()
         return new_alerts
 
-    def _enrich_alerts_with_evidence(self, scan: Scan, client: MDEClient) -> Tuple[int, int]:
+    def _enrich_alerts_with_evidence(
+        self,
+        scan: Scan,
+        client: MDEClient,
+        start_time: datetime,
+    ) -> Tuple[int, int]:
         alert_ids = [alert.alert_id for alert in scan.alerts if alert.alert_id]
         if not alert_ids:
             return 0, 0
 
-        evidence_rows = client.fetch_alert_evidence(alert_ids)
+        evidence_rows = client.fetch_alert_evidence(alert_ids, start_time)
         grouped: Dict[str, list] = {}
         for row in evidence_rows:
             alert_id = row.get("AlertId")

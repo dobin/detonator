@@ -72,18 +72,26 @@ class MDEClient:
         server_time = response.headers.get("Date")
         return data.get("results", []), server_time
 
+    @staticmethod
+    def _fmt_datetime(value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _build_alert_evidence_query(self, filters: List[str], pipeline: List[str]) -> str:
+        lines = ["AlertEvidence"]
+        lines.extend(filters)
+        lines.extend(pipeline)
+        return "\n".join(lines).strip()
+
     def fetch_alerts(
         self,
         device_id: Optional[str],
         hostname: Optional[str],
         start_time: datetime,
-        end_time: datetime,
     ) -> Tuple[List[dict], Optional[str]]:
-        if (not device_id and not hostname) or start_time >= end_time:
+        if not device_id and not hostname:
             return [], None
 
-        start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        start_iso = self._fmt_datetime(start_time)
 
         def _escape(value: str) -> str:
             return value.replace('"', '\\"')
@@ -96,18 +104,26 @@ class MDEClient:
 
         device_clause = " or ".join(device_filters)
 
-        query = f"""
-AlertEvidence
-| where Timestamp between (datetime({start_iso}) .. datetime({end_iso}))
-| where {device_clause}
-| summarize arg_max(Timestamp, *) by AlertId
-| project Timestamp, AlertId
-| order by Timestamp desc
-""".strip()
+        query = self._build_alert_evidence_query(
+            filters=[
+                f"| where Timestamp >= datetime({start_iso})",
+                f"| where {device_clause}",
+            ],
+            pipeline=[
+                "| summarize arg_max(Timestamp, *) by AlertId",
+                "| project Timestamp, AlertId",
+                "| order by Timestamp desc",
+            ],
+        )
 
         return self._run_hunting_query(query)
 
-    def fetch_alert_evidence(self, alert_ids: List[str], chunk_size: int = 20) -> List[dict]:
+    def fetch_alert_evidence(
+        self,
+        alert_ids: List[str],
+        start_time: Optional[datetime] = None,
+        chunk_size: int = 20,
+    ) -> List[dict]:
         deduped: List[dict] = []
         if not alert_ids:
             return deduped
@@ -119,15 +135,20 @@ AlertEvidence
         def _escape(value: str) -> str:
             return value.replace('"', '\\"')
 
+        filters: List[str] = []
+        if start_time:
+            start_iso = self._fmt_datetime(start_time)
+            filters.append(f"| where Timestamp >= datetime({start_iso})")
+
         seen: Set[Tuple] = set()
         for idx in range(0, len(unique_ids), chunk_size):
             chunk = unique_ids[idx : idx + chunk_size]
             alert_list = ", ".join(f'"{_escape(alert_id)}"' for alert_id in chunk)
-            query = f"""
-AlertEvidence
-| where AlertId has_any ({alert_list})
-| order by Timestamp desc
-""".strip()
+            filters_with_ids = filters + [f"| where AlertId has_any ({alert_list})"]
+            query = self._build_alert_evidence_query(
+                filters=filters_with_ids,
+                pipeline=["| order by Timestamp desc"],
+            )
             results, _ = self._run_hunting_query(query)
             for row in results:
                 key = (
@@ -155,7 +176,7 @@ AlertEvidence
             "comments": [comment],
             "customDetails": {},
         }
-        self._request("PATCH", f"/v1.0/security/alerts/{alert_id}", json=body)
+        self._request("PATCH", f"/v1.0/security/alerts_v2/{alert_id}", json=body)
 
     def resolve_incident(self, incident_id: str, comment: str):
         body = {
