@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -93,8 +93,26 @@ class AlertMonitorTask:
             window_minutes = scan.detection_window_minutes or 0
             window_end = scan.completed_at + timedelta(minutes=window_minutes)
 
-            # If detection window is over, finalize and skip polling
+            # If detection window is over, hydrate evidence and finalize
             if now >= window_end:
+                if not options.get("mde_evidence_done"):
+                    try:
+                        processed, with_evidence = self._enrich_alerts_with_evidence(scan, client)
+                        if processed:
+                            msg = f"MDE evidence collected for {with_evidence}/{processed} alert(s)"
+                        else:
+                            msg = "MDE evidence collection completed (no alerts recorded)"
+                        db_scan_add_log(self.db, scan, msg)
+                        logger.info("scan %s - %s", scan.id, msg)
+                        options["mde_evidence_done"] = True
+                        scan.more_options = options
+                        self.db.commit()
+                    except Exception as exc:
+                        logger.error(f"Failed to hydrate MDE evidence for scan {scan.id}: {exc}")
+                        db_scan_add_log(self.db, scan, f"MDE evidence fetch failed: {exc}")
+                        # Retry on next loop without auto-closing
+                        continue
+
                 if not options.get("mde_monitor_done"):
                     try:
                         self._auto_close(scan, client)
@@ -134,18 +152,18 @@ class AlertMonitorTask:
                 server_time_note = f" (MDE server time {server_time})" if server_time else ""
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
-                    msg = f"MDE alerts synced: {len(new_alerts)} new{server_time_note}"
+                    msg = f"MDE alert IDs synced: {len(new_alerts)} new{server_time_note}"
                     db_scan_add_log(self.db, scan, msg)
                     logger.info("scan %s - %s", scan.id, msg)
                     if scan.result not in ("file_detected", "detected"):
                         scan.result = "detected"
                         self.db.commit()
                 elif alerts:
-                    msg = f"MDE poll: {len(alerts)} alerts already recorded{server_time_note}"
+                    msg = f"MDE poll: {len(alerts)} alert IDs already recorded{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
                     db_scan_add_log(self.db, scan, msg)
                 else:
-                    msg = f"MDE poll: no alerts{server_time_note}"
+                    msg = f"MDE poll: no alert IDs{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
                     db_scan_add_log(self.db, scan, msg)
                 options["mde_last_poll"] = datetime.utcnow().isoformat()
@@ -194,6 +212,49 @@ class AlertMonitorTask:
         if new_alerts:
             self.db.commit()
         return new_alerts
+
+    def _enrich_alerts_with_evidence(self, scan: Scan, client: MDEClient) -> Tuple[int, int]:
+        alert_ids = [alert.alert_id for alert in scan.alerts if alert.alert_id]
+        if not alert_ids:
+            return 0, 0
+
+        evidence_rows = client.fetch_alert_evidence(alert_ids)
+        grouped: Dict[str, list] = {}
+        for row in evidence_rows:
+            alert_id = row.get("AlertId")
+            if not alert_id:
+                continue
+            grouped.setdefault(alert_id, []).append(row)
+
+        processed = 0
+        with_evidence = 0
+        now_iso = datetime.utcnow().isoformat() + "Z"
+        for alert in scan.alerts:
+            if not alert.alert_id:
+                continue
+            processed += 1
+            evidence = grouped.get(alert.alert_id, [])
+            payload = dict(alert.raw_alert or {})
+            payload["AlertId"] = alert.alert_id
+            payload["evidence"] = evidence
+            payload["evidence_refreshed_at"] = now_iso
+            alert.raw_alert = payload
+            if evidence:
+                with_evidence += 1
+                latest = evidence[0]
+                ts = latest.get("Timestamp")
+                if ts and not alert.detected_at:
+                    try:
+                        alert.detected_at = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    except ValueError:
+                        pass
+                alert.title = alert.title or latest.get("ThreatFamilyName") or latest.get("Title")
+                alert.category = alert.category or latest.get("Category") or latest.get("Technique") or latest.get("AlertType")
+                alert.severity = alert.severity or latest.get("Severity") or latest.get("ReportedSeverity")
+                alert.detection_source = alert.detection_source or latest.get("ServiceSource") or latest.get("DetectionSource")
+        if processed:
+            self.db.commit()
+        return processed, with_evidence
 
     def _auto_close(self, scan: Scan, client: MDEClient):
         comment = f"Auto-Closed by Detonator (scan {scan.id})"

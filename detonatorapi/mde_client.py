@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import requests
 
@@ -65,6 +65,13 @@ class MDEClient:
             raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
         return response
 
+    def _run_hunting_query(self, query: str) -> Tuple[List[dict], Optional[str]]:
+        payload = {"query": query}
+        response = self._request("POST", "/beta/security/runHuntingQuery", json=payload)
+        data = response.json()
+        server_time = response.headers.get("Date")
+        return data.get("results", []), server_time
+
     def fetch_alerts(
         self,
         device_id: Optional[str],
@@ -72,7 +79,7 @@ class MDEClient:
         start_time: datetime,
         end_time: datetime,
     ) -> Tuple[List[dict], Optional[str]]:
-        if not device_id and not hostname:
+        if (not device_id and not hostname) or start_time >= end_time:
             return [], None
 
         start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -94,15 +101,51 @@ AlertEvidence
 | where Timestamp between (datetime({start_iso}) .. datetime({end_iso}))
 | where {device_clause}
 | summarize arg_max(Timestamp, *) by AlertId
-| project Timestamp, AlertId, Title, Severity, Categories, DetectionSource
+| project Timestamp, AlertId
 | order by Timestamp desc
 """.strip()
 
-        payload = {"query": query}
-        response = self._request("POST", "/beta/security/runHuntingQuery", json=payload)
-        data = response.json()
-        server_time = response.headers.get("Date")
-        return data.get("results", []), server_time
+        return self._run_hunting_query(query)
+
+    def fetch_alert_evidence(self, alert_ids: List[str], chunk_size: int = 20) -> List[dict]:
+        deduped: List[dict] = []
+        if not alert_ids:
+            return deduped
+
+        unique_ids = sorted({alert_id for alert_id in alert_ids if alert_id})
+        if not unique_ids:
+            return deduped
+
+        def _escape(value: str) -> str:
+            return value.replace('"', '\\"')
+
+        seen: Set[Tuple] = set()
+        for idx in range(0, len(unique_ids), chunk_size):
+            chunk = unique_ids[idx : idx + chunk_size]
+            alert_list = ", ".join(f'"{_escape(alert_id)}"' for alert_id in chunk)
+            query = f"""
+AlertEvidence
+| where AlertId has_any ({alert_list})
+| order by Timestamp desc
+""".strip()
+            results, _ = self._run_hunting_query(query)
+            for row in results:
+                key = (
+                    row.get("AlertId"),
+                    row.get("EvidenceId"),
+                    row.get("EntityType"),
+                    row.get("EvidenceRole"),
+                    row.get("DeviceId"),
+                    row.get("FileName"),
+                    row.get("ProcessCommandLine"),
+                    row.get("RemoteUrl") or row.get("RemoteIP"),
+                    row.get("RegistryKey"),
+                )
+                if key in seen:
+                    continue
+                seen.add(key)
+                deduped.append(row)
+        return deduped
 
     def resolve_alert(self, alert_id: str, comment: str):
         body = {
