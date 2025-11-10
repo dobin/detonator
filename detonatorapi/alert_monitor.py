@@ -104,10 +104,24 @@ class AlertMonitorTask:
                 since = scan.created_at
 
             try:
+                logger.info(
+                    "MDE poll: scan_id=%s profile=%s device_id=%s hostname=%s since=%s window_end=%s",
+                    scan.id,
+                    scan.profile.name if scan.profile else "unknown",
+                    scan.device_id,
+                    scan.device_hostname,
+                    since.isoformat(),
+                    window_end.isoformat(),
+                )
                 alerts = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
                     db_scan_add_log(self.db, scan, f"MDE alerts synced: {len(new_alerts)} new")
+                    logger.info("MDE poll result: scan_id=%s %s new alerts", scan.id, len(new_alerts))
+                elif alerts:
+                    logger.info("MDE poll result: scan_id=%s existing alerts=%s (none new)", scan.id, len(alerts))
+                else:
+                    logger.info("MDE poll result: scan_id=%s no alerts", scan.id)
                 options["mde_last_poll"] = datetime.utcnow().isoformat()
             except Exception as exc:
                 logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
