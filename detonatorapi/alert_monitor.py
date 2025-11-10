@@ -93,6 +93,15 @@ class AlertMonitorTask:
             window_minutes = scan.detection_window_minutes or 0
             window_end = scan.completed_at + timedelta(minutes=window_minutes)
 
+            # If detection window is over, finalize and skip polling
+            if now >= window_end:
+                if not options.get("mde_monitor_done"):
+                    self._auto_close(scan, client)
+                    options["mde_monitor_done"] = True
+                    scan.more_options = options
+                    self.db.commit()
+                continue
+
             # Determine polling window
             base_since = scan.completed_at or scan.created_at
             last_poll_iso = options.get("mde_last_poll")
@@ -134,10 +143,6 @@ class AlertMonitorTask:
             except Exception as exc:
                 logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
                 continue
-
-            if now >= window_end:
-                self._auto_close(scan, client)
-                options["mde_monitor_done"] = True
 
             scan.more_options = options
             self.db.commit()
