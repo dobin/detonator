@@ -182,6 +182,6 @@ class MDEClient:
             "status": "resolved",
             "classification": "truePositive",
             "determination": "securityTesting",
-            "comments": [comment],
+            "resolvingComment": comment,
         }
         self._request("PATCH", f"/v1.0/security/incidents/{incident_id}", json=body)
