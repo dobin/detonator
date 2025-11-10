@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .database import get_db_for_thread, Scan, ScanAlert, Profile
 from .mde_client import MDEClient
-from .db_interface import db_scan_add_log
+from .db_interface import db_scan_add_log, db_scan_change_status_quick
 
 logger = logging.getLogger(__name__)
 
@@ -96,14 +96,20 @@ class AlertMonitorTask:
             # If detection window is over, finalize and skip polling
             if now >= window_end:
                 if not options.get("mde_monitor_done"):
-                    self._auto_close(scan, client)
+                    try:
+                        self._auto_close(scan, client)
+                    except Exception as exc:
+                        logger.error(f"Failed to auto close alerts for scan {scan.id}: {exc}")
+                        db_scan_add_log(self.db, scan, f"MDE auto-close failed: {exc}")
                     options["mde_monitor_done"] = True
                     scan.more_options = options
+                    if scan.status == "polling":
+                        db_scan_change_status_quick(self.db, scan, "finished")
                     self.db.commit()
                 continue
 
             # Determine polling window
-            base_since = scan.completed_at or scan.created_at
+            base_since = scan.created_at or scan.completed_at or datetime.utcnow()
             last_poll_iso = options.get("mde_last_poll")
             if last_poll_iso:
                 try:
@@ -131,6 +137,9 @@ class AlertMonitorTask:
                     msg = f"MDE alerts synced: {len(new_alerts)} new{server_time_note}"
                     db_scan_add_log(self.db, scan, msg)
                     logger.info("scan %s - %s", scan.id, msg)
+                    if scan.result not in ("file_detected", "detected"):
+                        scan.result = "detected"
+                        self.db.commit()
                 elif alerts:
                     msg = f"MDE poll: {len(alerts)} alerts already recorded{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
@@ -142,6 +151,7 @@ class AlertMonitorTask:
                 options["mde_last_poll"] = datetime.utcnow().isoformat()
             except Exception as exc:
                 logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
+                db_scan_add_log(self.db, scan, f"MDE poll failed: {exc}")
                 continue
 
             scan.more_options = options

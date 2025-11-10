@@ -38,6 +38,7 @@ def get_status_color(status):
         'instantiating': 'bg-blue-100 text-blue-800',
         'finished': 'bg-blue-100 text-blue-800',
         'scanning': 'bg-blue-300 text-blue-800',
+        'polling': 'bg-yellow-100 text-yellow-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
