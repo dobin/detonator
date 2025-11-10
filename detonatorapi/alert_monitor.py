@@ -152,6 +152,11 @@ class AlertMonitorTask:
             except Exception as exc:
                 logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
                 db_scan_add_log(self.db, scan, f"MDE poll failed: {exc}")
+                options["mde_monitor_done"] = True
+                scan.more_options = options
+                if scan.status == "polling":
+                    db_scan_change_status_quick(self.db, scan, "finished")
+                self.db.commit()
                 continue
 
             scan.more_options = options
