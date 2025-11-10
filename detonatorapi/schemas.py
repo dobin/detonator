@@ -177,6 +177,10 @@ class ScanResponseShort(BaseModel):
 
     # New
     has_rededr_events: Optional[bool] = False
+    alert_count: Optional[int] = 0
+    latest_alert_title: Optional[str] = None
+    latest_alert_severity: Optional[str] = None
+    latest_alert_detected_at: Optional[datetime] = None
     
     created_at: datetime
     updated_at: datetime

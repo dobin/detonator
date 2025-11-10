@@ -57,6 +57,23 @@
                             <span class="px-2 py-1 rounded text-xs font-medium {{ get_scan_status_color(scan.result) }}"> {{ scan.result }}</span>
                         </p>
                         {% endif %}
+                        {% if scan.alert_count and scan.alert_count > 0 %}
+                        <div class="text-gray-700 text-sm mt-2 space-y-1">
+                            <div>
+                                <strong>MDE Alerts:</strong>
+                                <span class="font-semibold">{{ scan.alert_count }}</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(scan.latest_alert_severity) }}">
+                                    {{ scan.latest_alert_severity or 'Unknown severity' }}
+                                </span>
+                                <span class="font-medium">{{ scan.latest_alert_title or 'Latest alert' }}</span>
+                                {% if scan.latest_alert_detected_at %}
+                                <span>({{ scan.latest_alert_detected_at|strftime('%Y-%m-%d %H:%M:%S') }})</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <div class="text-gray-500 text-xs mt-2">
                             <p>Created: {{ scan.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>

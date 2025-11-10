@@ -58,7 +58,7 @@ $ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
 
 ### Microsoft Defender (optional)
 
-Profiles can optionally include an `mde` block to let Detonator correlate alerts and auto-close incidents. Example:
+Profiles can optionally include an `mde` block to let Detonator correlate alerts, surface the evidence inside the UI, and auto-close the detections once the window expires. Example:
 
 ```yaml
 myfirstvm:
@@ -84,7 +84,16 @@ Store the corresponding client secret in the environment variable referenced by 
 4. Use the app’s **Application (client) ID**, tenant ID, and `client_secret_env` in each profile’s `mde` block as shown above. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
 5. Ensure the Detonator API host has the environment variable set (or pull it from your secret manager) before starting the server.
 
-Detonator uses Microsoft Graph advanced hunting to pull Defender alerts for each scan, then auto-resolves the corresponding alerts/incidents at the end of the detection window. If the Graph API denies a write (for example, missing incident permissions) Detonator simply logs a warning and leaves the alert/incident untouched.
+Detonator uses Microsoft Graph advanced hunting (`AlertEvidence` table) to continuously poll for Defender alerts tied to the scan’s device. Auto-resolution happens through the `security/alerts_v2/{id}` and `security/incidents/{id}` endpoints.
+
+#### Detection window & polling lifecycle
+
+- Each scan stores `detection_window_minutes` (defaults to `1`). During that window Detonator keeps the scan in the `polling` state and re-queries Defender every minute.
+- The poll window always runs from *scan start → now*, deduping by `AlertId`, so late-arriving alerts are still collected.
+- Right after the window closes Detonator performs a one-time “evidence hydration” query to capture the full `AlertEvidence` payload for every alert that fired.
+- Once evidence is saved it automatically resolves the alerts/incidents using the `alerts_v2` endpoint. If your app registration lacks `SecurityAlert.ReadWrite.All` or `SecurityIncident.ReadWrite.All`, the auto-close step logs a warning but the scan still finishes.
+
+In the UI you’ll see the scan’s badge flip to `polling` while the detection window is active. The scans list now shows a compact Defender summary (alert count + most recent alert metadata) so you can triage at a glance; click “View Details” to see the full evidence block per alert.
 
 ## Setup Guides
 

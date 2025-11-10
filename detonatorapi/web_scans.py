@@ -27,7 +27,11 @@ async def get_scans_count(
     db: Session = Depends(get_db)
 ):
     """Get count of scans with filtering capabilities"""
-    query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    query = db.query(Scan).options(
+        joinedload(Scan.file),
+        joinedload(Scan.profile),
+        joinedload(Scan.alerts),
+    )
     
     # Filter by user if guest
     user = get_user_from_request(request)
@@ -102,11 +106,31 @@ async def get_scans(
 
     # Scan overview need this information too
     for scan in scans:
-        # workaround, there is always one line generated
-        if len(scan.rededr_events) > 220:
-            scan.has_rededr_events = True
+        # Flag RedEdr logs
+        scan.has_rededr_events = len(scan.rededr_events or "") > 220
+
+        # Summarize Defender alerts for the UI
+        alerts_sorted = sorted(
+            scan.alerts,
+            key=lambda alert: alert.detected_at or datetime.min,
+            reverse=True,
+        )
+        scan.alert_count = len(alerts_sorted)
+        if alerts_sorted:
+            latest = alerts_sorted[0]
+            raw = latest.raw_alert or {}
+            scan.latest_alert_title = (
+                latest.title
+                or raw.get("Title")
+                or raw.get("ThreatFamilyName")
+                or "Defender alert"
+            )
+            scan.latest_alert_severity = latest.severity or raw.get("Severity") or ""
+            scan.latest_alert_detected_at = latest.detected_at
         else:
-            scan.has_rededr_events = False
+            scan.latest_alert_title = None
+            scan.latest_alert_severity = None
+            scan.latest_alert_detected_at = None
 
     return scans
 

@@ -173,7 +173,6 @@ class MDEClient:
             "status": "resolved",
             "classification": "informationalExpectedActivity",
             "determination": "securityTesting",
-            "comments": [comment],
             "customDetails": {},
         }
         self._request("PATCH", f"/v1.0/security/alerts_v2/{alert_id}", json=body)

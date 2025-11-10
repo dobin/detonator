@@ -131,7 +131,8 @@ class AlertMonitorTask:
 
             # Determine polling window: from scan start until now (capped by detection window)
             since = poll_start
-
+            if scan.status != "polling":
+                db_scan_change_status_quick(self.db, scan, "polling")
             try:
                 poll_msg = (
                     f"MDE poll: profile={scan.profile.name if scan.profile else 'unknown'} "
