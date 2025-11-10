@@ -15,7 +15,7 @@ class MDEClient:
             raise ValueError("tenant_id missing in MDE configuration")
 
         self.authority = tenant_config.get("authority") or f"https://login.microsoftonline.com/{self.tenant_id}"
-        self.scopes = tenant_config.get("scopes") or ["https://api.security.microsoft.com/.default"]
+        self.scopes = tenant_config.get("scopes") or ["https://graph.microsoft.com/.default"]
         if isinstance(self.scopes, str):
             self.scopes = [self.scopes]
 
@@ -31,7 +31,7 @@ class MDEClient:
         if not self.client_secret:
             raise ValueError(f"Environment variable {secret_env} is not set")
 
-        self.base_url = tenant_config.get("base_url", "https://api.security.microsoft.com")
+        self.base_url = tenant_config.get("base_url", "https://graph.microsoft.com")
         self._token_cache: Tuple[Optional[str], Optional[datetime]] = (None, None)
 
     def _get_access_token(self) -> str:
@@ -65,52 +65,59 @@ class MDEClient:
             raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
         return response
 
-    def fetch_alerts(self, device_id: Optional[str], hostname: Optional[str], since: Optional[datetime]) -> Tuple[List[dict], Optional[str]]:
-        filters = []
+    def fetch_alerts(
+        self,
+        device_id: Optional[str],
+        hostname: Optional[str],
+        start_time: datetime,
+        end_time: datetime,
+    ) -> Tuple[List[dict], Optional[str]]:
+        if not device_id and not hostname:
+            return [], None
+
+        start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        def _escape(value: str) -> str:
+            return value.replace('"', '\\"')
+
+        device_filters = []
         if device_id:
-            filters.append(f"deviceId eq '{device_id}'")
-        elif hostname:
-            filters.append(f"deviceName eq '{hostname}'")
-        if since:
-            filters.append(f"lastUpdateTime ge {since.strftime('%Y-%m-%dT%H:%M:%SZ')}")
+            device_filters.append(f'DeviceId == "{_escape(device_id)}"')
+        if hostname:
+            device_filters.append(f'DeviceName =~ "{_escape(hostname)}"')
 
-        params = {}
-        if filters:
-            params["$filter"] = " and ".join(filters)
-        params["$top"] = "200"
+        device_clause = " or ".join(device_filters)
 
-        alerts: List[dict] = []
-        server_time: Optional[str] = None
-        path = "/api/alerts"
-        while True:
-            response = self._request("GET", path, params=params)
-            payload = response.json()
-            if response.headers.get("Date"):
-                server_time = response.headers.get("Date")
-            alerts.extend(payload.get("value", []))
-            next_link = payload.get("@odata.nextLink")
-            if not next_link:
-                break
-            # nextLink already absolute
-            path = next_link.replace(self.base_url.rstrip('/'), '')
-            params = {}
+        query = f"""
+AlertEvidence
+| where Timestamp between (datetime({start_iso}) .. datetime({end_iso}))
+| where {device_clause}
+| summarize arg_max(Timestamp, *) by AlertId
+| project Timestamp, AlertId, Title, Severity, Categories, DetectionSource
+| order by Timestamp desc
+""".strip()
 
-        return alerts, server_time
+        payload = {"query": query}
+        response = self._request("POST", "/beta/security/runHuntingQuery", json=payload)
+        data = response.json()
+        server_time = response.headers.get("Date")
+        return data.get("results", []), server_time
 
     def resolve_alert(self, alert_id: str, comment: str):
         body = {
-            "status": "Resolved",
-            "classification": "TruePositive",
-            "determination": "SecurityTesting",
-            "comment": comment,
+            "status": "resolved",
+            "classification": "truePositive",
+            "determination": "securityTesting",
+            "comments": [comment],
         }
-        self._request("PATCH", f"/api/alerts/{alert_id}", json=body)
+        self._request("PATCH", f"/v1.0/security/alerts/{alert_id}", json=body)
 
     def resolve_incident(self, incident_id: str, comment: str):
         body = {
-            "status": "Resolved",
-            "classification": "TruePositive",
-            "determination": "SecurityTesting",
-            "comment": comment,
+            "status": "resolved",
+            "classification": "truePositive",
+            "determination": "securityTesting",
+            "comments": [comment],
         }
-        self._request("PATCH", f"/api/incidents/{incident_id}", json=body)
+        self._request("PATCH", f"/v1.0/security/incidents/{incident_id}", json=body)

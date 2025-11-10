@@ -41,7 +41,7 @@ class AlertMonitorTask:
         while self.running:
             try:
                 self.check_scans()
-                await asyncio.sleep(30)
+                await asyncio.sleep(60)
             except asyncio.CancelledError:
                 break
             except Exception as exc:
@@ -124,7 +124,7 @@ class AlertMonitorTask:
                 )
                 logger.info("scan %s - %s", scan.id, poll_msg)
                 db_scan_add_log(self.db, scan, poll_msg)
-                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
+                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since, window_end)
                 server_time_note = f" (MDE server time {server_time})" if server_time else ""
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
@@ -151,10 +151,10 @@ class AlertMonitorTask:
         new_alerts = []
         existing_ids = {alert.alert_id for alert in scan.alerts}
         for alert in alerts:
-            alert_id = alert.get("id")
+            alert_id = alert.get("AlertId") or alert.get("id")
             if not alert_id or alert_id in existing_ids:
                 continue
-            detected_at = alert.get("lastUpdateTime") or alert.get("eventDateTime")
+            detected_at = alert.get("Timestamp") or alert.get("lastUpdateTime") or alert.get("eventDateTime")
             detected_dt = None
             if detected_at:
                 try:
@@ -165,11 +165,11 @@ class AlertMonitorTask:
                 scan_id=scan.id,
                 alert_id=alert_id,
                 incident_id=alert.get("incidentId"),
-                title=alert.get("title"),
-                severity=alert.get("severity"),
+                title=alert.get("Title") or alert.get("title"),
+                severity=alert.get("Severity") or alert.get("severity"),
                 status=alert.get("status"),
-                category=alert.get("category"),
-                detection_source=alert.get("detectionSource"),
+                category=alert.get("Categories") or alert.get("category"),
+                detection_source=alert.get("DetectionSource") or alert.get("detectionSource"),
                 detected_at=detected_dt,
                 raw_alert=alert,
             )
