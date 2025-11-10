@@ -126,12 +126,20 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     is_available = ""
     rededr_available = ""
     ip: str = ""
-    port: int = 0
-    port = db_profile.port
+    port: int = db_profile.port
+    status: str = ""
     if db_profile.connector == "Live": 
         ip = db_profile.data.get('ip', '')
     elif db_profile.connector == "Proxmox":
         ip = db_profile.data.get('vm_ip', '')
+        
+        # Get Proxmox connector
+        proxmox_connector = connectors.get("Proxmox")
+        if not proxmox_connector or not isinstance(proxmox_connector, ConnectorProxmox):
+            raise HTTPException(status_code=500, detail="Proxmox connector not available")
+        proxmox_manager = proxmox_connector.proxmox_manager
+
+        status = proxmox_manager.StatusVm(db_profile.data.get('vm_id'))
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
@@ -139,6 +147,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             "port": 0,
             "is_available": "N/A",
             "rededr_available": "N/A",
+            "status": status,
         }
     rededr_port = db_profile.rededr_port
 
@@ -165,6 +174,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         "port": port,
         "is_available": is_available,
         "rededr_available": rededr_available,
+        "status": status,
     }
 
 

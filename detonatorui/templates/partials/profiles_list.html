@@ -66,19 +66,11 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
-                        {% if 'image_reference' in template.data %}
-                            {{ template.data.get('image_reference', 'N/A')[-20:] }}
-                        {% elif 'vm_name' in template.data %}
-                            {{ template.data.get('vm_name', 'N/A') }}
-                        {% elif 'ip' in template.data %}
-                            <code class="bg-gray-100 px-1 py-0.5 rounded text-xs">{{ template.data.get('ip', 'N/A') }}</code>
-                        {% elif 'vm_ip' in template.data %}
-                            <code class="bg-gray-100 px-1 py-0.5 rounded text-xs">{{ template.data.get('vm_ip', 'N/A') }}</code>
-                        {% else %}
-                            <span class="text-gray-400">-</span>
+                        {% if template.status %}
+                            <div class="mb-1">Status: {{ template.status }}</div>
                         {% endif %}
                         {% if template.default_drop_path %}
-                            <div class="text-xs text-gray-500 mt-1">Path: {{ template.default_drop_path }}</div>
+                            <div class="text-xs text-gray-500 mt-1">DropPath: {{ template.default_drop_path }}</div>
                         {% endif %}
                     </div>
                 </td>
@@ -115,11 +107,11 @@
                                 class="text-orange-600 hover:text-orange-900" 
                                 title="Release Lock">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
-                                    </svg>
-                                </button>
-                            {% endif %}
-                            {% if template.connector == "Proxmox" %}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+                        {% endif %}
+                        {% if template.connector == "Proxmox" %}
                             <button 
                                 data-auth-required
                                 onclick="rebootProfile({{ template.id }}, '{{ template_name }}')"
@@ -138,16 +130,16 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                                 </svg>
                             </button>
-                            {% endif %}
-                            <button 
-                                data-auth-required
-                                onclick="deleteProfile({{ template.id }}, '{{ template_name }}')"
-                                class="text-red-600 hover:text-red-900" 
-                                title="Delete Profile">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </button>
+                        {% endif %}
+                        <button 
+                            data-auth-required
+                            onclick="deleteProfile({{ template.id }}, '{{ template_name }}')"
+                            class="text-red-600 hover:text-red-900" 
+                            title="Delete Profile">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
                     </div>
                 </td>
             </tr>
