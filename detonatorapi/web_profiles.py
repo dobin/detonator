@@ -4,6 +4,7 @@ from typing import Optional
 import logging
 import json
 import requests
+import subprocess
 
 from .database import get_db, Profile, Scan
 from .schemas import ProfileResponse, ProfileStatusResponse
@@ -11,9 +12,25 @@ from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by
 from .agent.agent_api import AgentApi
 from .agent.rededr_agent import RedEdrAgentApi as RedEdrApi
 from .token_auth import require_auth
+from .connectors.connectors import connectors
+from .connectors.connector_proxmox import ConnectorProxmox
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    value = value.strip()
+    if value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be an integer")
 
 
 @router.get("/profiles")
@@ -45,7 +62,7 @@ async def create_profile(
     name: str = Form(...),
     connector: str = Form(...),
     port: int = Form(...),
-    rededr_port: Optional[int] = Form(None),
+    rededr_port: Optional[str] = Form(None),
     edr_collector: Optional[str] = Form(""),
     default_drop_path: Optional[str] = Form(""),
     comment: Optional[str] = Form(""),
@@ -75,13 +92,15 @@ async def create_profile(
         if existing_profile:
             raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
+        rededr_port_value = _parse_optional_int(rededr_port, "RedEdr port")
+
         # Create the profile
         profile_id = db_create_profile(
             db=db,
             name=name,
             connector=connector,
             port=port,
-            rededr_port=rededr_port,
+            rededr_port=rededr_port_value,
             edr_collector=edr_collector or "",
             data=data_dict,
             default_drop_path=default_drop_path or "",
@@ -182,6 +201,7 @@ async def update_profile(
     name: str = Form(...),
     connector: str = Form(...),
     port: int = Form(...),
+    rededr_port: Optional[str] = Form(None),
     edr_collector: str = Form(...),
     default_drop_path: str = Form(""),
     comment: str = Form(""),
@@ -210,14 +230,30 @@ async def update_profile(
             if existing:
                 raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
+        mde_dict: Optional[dict] = None
+        if mde is not None:
+            trimmed = mde.strip()
+            if trimmed == "":
+                mde_dict = {}
+            else:
+                try:
+                    mde_dict = json.loads(trimmed)
+                except json.JSONDecodeError:
+                    raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
+        
+        rededr_port_value = _parse_optional_int(rededr_port, "RedEdr port")
+
         # Update fields
         profile.name = name
         profile.connector = connector
         profile.port = port
         profile.edr_collector = edr_collector
+        if rededr_port_value is not None or (rededr_port is not None and rededr_port.strip() == ""):
+            profile.rededr_port = rededr_port_value
         profile.default_drop_path = default_drop_path
         profile.comment = comment
         profile.data = data_dict
+        profile.password = password or ""
         if mde_dict is not None:
             profile.mde = mde_dict
         
@@ -297,3 +333,94 @@ async def release_profile_lock(
     except Exception as e:
         logger.error(f"Error releasing lock for profile {profile_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error releasing lock: {str(e)}")
+
+
+@router.post("/profiles/{profile_id}/reboot")
+async def reboot(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth)
+):
+    """Reboot the VM associated with the profile"""
+
+    db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    ip = db_profile.data.get('vm_ip', '')
+    if ip == "":
+        raise HTTPException(status_code=400, detail="Profile does not have vm_ip configured")
+
+    try:
+        # Execute SSH reboot command
+        subprocess.run(
+            ["ssh", f"hacker@{ip}", "shutdown", "/r", "/t", "0"],
+            check=True,
+            timeout=30
+        )
+        logger.info(f"Reboot command issued for profile {profile_id} ({db_profile.name})")
+        return {"message": "Reboot command issued"}
+    except subprocess.TimeoutExpired:
+        logger.warning(f"Reboot command timed out for profile {profile_id}")
+        return {"message": "Reboot command issued (timeout waiting for response)"}
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Reboot command failed for profile {profile_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to execute reboot command: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error rebooting profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error issuing reboot: {str(e)}")
+
+
+@router.post("/profiles/{profile_id}/revert")
+async def revert(
+    profile_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth)
+):
+    """Revert the Proxmox VM to snapshot (stop, revert, start)"""
+
+    db_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if db_profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    if db_profile.connector != "Proxmox":
+        raise HTTPException(status_code=400, detail="Revert operation is only supported for Proxmox profiles")
+    
+    # Get VM configuration from profile data
+    vm_id = db_profile.data.get('vm_id')
+    vm_snapshot = db_profile.data.get('vm_snapshot')
+    
+    if not vm_id or not vm_snapshot:
+        raise HTTPException(status_code=400, detail="Profile does not have vm_id or vm_snapshot configured")
+    
+    try:
+        # Get Proxmox connector
+        proxmox_connector = connectors.get("Proxmox")
+        if not proxmox_connector or not isinstance(proxmox_connector, ConnectorProxmox):
+            raise HTTPException(status_code=500, detail="Proxmox connector not available")
+        
+        proxmox_manager = proxmox_connector.proxmox_manager
+        
+        # Stop VM
+        logger.info(f"Stopping VM {vm_id} for profile {profile_id} ({db_profile.name})")
+        if not proxmox_manager.StopVm(vm_id):
+            raise HTTPException(status_code=500, detail="Failed to stop VM")
+        
+        # Revert to snapshot
+        logger.info(f"Reverting VM {vm_id} to snapshot '{vm_snapshot}' for profile {profile_id}")
+        if not proxmox_manager.RevertVm(vm_id, vm_snapshot):
+            raise HTTPException(status_code=500, detail="Failed to revert VM to snapshot")
+        
+        # Start VM
+        logger.info(f"Starting VM {vm_id} for profile {profile_id}")
+        if not proxmox_manager.StartVm(vm_id):
+            raise HTTPException(status_code=500, detail="Failed to start VM after revert")
+        
+        logger.info(f"Successfully reverted and restarted VM {vm_id} for profile {profile_id} ({db_profile.name})")
+        return {"message": f"VM successfully reverted to snapshot '{vm_snapshot}' and restarted"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reverting VM for profile {profile_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error reverting VM: {str(e)}")

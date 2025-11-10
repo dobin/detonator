@@ -126,6 +126,11 @@ def scans_template():
         if search:
             params['search'] = search
         
+        # Handle user filter
+        user = request.args.get('user')
+        if user:
+            params['user'] = user
+        
         # Legacy filter support (for backward compatibility)
         filter_status = request.args.get('filter')
         if filter_status and filter_status != 'all':
@@ -266,6 +271,11 @@ def scans_table_template():
         search = request.args.get('search')
         if search:
             params['search'] = search
+        
+        # Handle user filter
+        user = request.args.get('user')
+        if user:
+            params['user'] = user
         
         # Legacy filter support (for backward compatibility)
         filter_status = request.args.get('filter')

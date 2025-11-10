@@ -3,13 +3,6 @@
     No scans found. <a href="/upload" class="text-blue-500 hover:underline">Upload a file</a> to start analysis.
 </div>
 {% else %}
-<!-- Results count -->
-<div class="mb-4 text-sm text-gray-600">
-    Showing {{ scans|length }} scan{{ 's' if scans|length != 1 else '' }}
-    {% if scans|length == 100 %}
-        (limited to 100 results - use filters to narrow down)
-    {% endif %}
-</div>
 
 <div class="grid grid-cols-1 gap-4">
     {% for scan in scans %}

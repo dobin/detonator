@@ -208,4 +208,3 @@ class ConnectorProxmox(ConnectorBase):
             db_scan_change_status(scan_id, "killed")
 
         threading.Thread(target=kill_thread, args=(scan_id, )).start()
-

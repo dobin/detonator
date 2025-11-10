@@ -30,6 +30,18 @@
                 />
             </div>
             
+            <!-- Status Filter -->
+            <div class="w-full md:w-40">
+                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Statuses</option>
+                    <option value="fresh">Fresh</option>
+                    <option value="running">Running</option>
+                    <option value="finished">Finished</option>
+                    <option value="error">Error</option>
+                </select>
+            </div>
+            
             <!-- Project Filter -->
             <div class="w-full md:w-48">
                 <label for="project-filter" class="block text-sm font-medium text-gray-700 mb-1">Project</label>
@@ -39,6 +51,16 @@
                     placeholder="Filter by project..."
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+            </div>
+            
+            <!-- User Filter -->
+            <div class="w-full md:w-32">
+                <label for="user-filter" class="block text-sm font-medium text-gray-700 mb-1">User</label>
+                <select id="user-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All</option>
+                    <option value="guest" {% if AUTH_ENABLED %}selected{% endif %}>Guest</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
             
             <!-- Limit Filter -->
@@ -63,46 +85,11 @@
                 </button>
             </div>
         </div>
-        
-        <!-- Status Filter Buttons -->
-        <div class="flex space-x-2 mt-4">
-            <button 
-                onclick="filterScans('all')"
-                id="filter-all"
-                class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-                All
-            </button>
-            <button 
-                onclick="filterScans('running')"
-                id="filter-running"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Running
-            </button>
-            <button 
-                onclick="filterScans('finished')"
-                id="filter-finished"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Finished
-            </button>
-            <button 
-                onclick="filterScans('error')"
-                id="filter-error"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Error
-            </button>
-        </div>
     </div>
 
     <!-- Scans List -->
     <div 
-        id="scans-container" 
-        hx-get="/templates/scans?limit=10" 
-        hx-trigger="load"
-        hx-indicator="#loading"
+        id="scans-container"
     >
         <div class="text-center text-gray-500">Loading scans...</div>
     </div>
@@ -128,7 +115,6 @@
 </div>
 
 <script>
-    let currentFilter = 'all';
     let autoRefreshInterval;
     let debounceTimer;
 
@@ -136,8 +122,9 @@
         const params = new URLSearchParams();
         
         // Status filter
-        if (currentFilter !== 'all') {
-            params.append('status', currentFilter);
+        const status = document.getElementById('status-filter').value;
+        if (status && status !== 'all') {
+            params.append('status', status);
         }
         
         // Search filter
@@ -150,6 +137,12 @@
         const project = document.getElementById('project-filter').value.trim();
         if (project) {
             params.append('project', project);
+        }
+        
+        // User filter
+        const user = document.getElementById('user-filter').value;
+        if (user && user !== 'all') {
+            params.append('user', user);
         }
         
         // Limit
@@ -192,22 +185,9 @@
     }
 
     function filterScans(status) {
-        currentFilter = status;
-        
-        // Update filter button appearance
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        
-        const activeBtn = document.getElementById('filter-' + status);
-        activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
-        activeBtn.classList.add('bg-blue-500', 'text-white');
-        
-        // Apply filters immediately
+        // Legacy function kept for compatibility
+        document.getElementById('status-filter').value = status;
         applyFilters();
-        
-        // Restart auto-refresh with new filter
         startAutoRefresh();
     }
 
@@ -215,10 +195,18 @@
         // Reset all filter inputs
         document.getElementById('search-input').value = '';
         document.getElementById('project-filter').value = '';
+        document.getElementById('status-filter').value = 'all';
         document.getElementById('limit-filter').value = '10';
         
-        // Reset status filter to 'all'
-        filterScans('all');
+        // Reset user filter to default based on auth
+        {% if AUTH_ENABLED %}
+        document.getElementById('user-filter').value = 'guest';
+        {% else %}
+        document.getElementById('user-filter').value = 'all';
+        {% endif %}
+        
+        // Apply filters
+        applyFilters();
     }
 
     function refreshScans() {
@@ -272,7 +260,12 @@
         // Add input event listeners for debounced filtering
         document.getElementById('search-input').addEventListener('input', debounceApplyFilters);
         document.getElementById('project-filter').addEventListener('input', debounceApplyFilters);
+        document.getElementById('status-filter').addEventListener('change', applyFilters);
+        document.getElementById('user-filter').addEventListener('change', applyFilters);
         document.getElementById('limit-filter').addEventListener('change', applyFilters);
+        
+        // Load initial content based on current dropdown values
+        applyFilters();
         
         // Start auto-refresh when page loads
         startAutoRefresh();
