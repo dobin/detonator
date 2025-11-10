@@ -94,14 +94,18 @@ class AlertMonitorTask:
             window_end = scan.completed_at + timedelta(minutes=window_minutes)
 
             # Determine polling window
+            base_since = scan.completed_at or scan.created_at
             last_poll_iso = options.get("mde_last_poll")
             if last_poll_iso:
                 try:
                     since = datetime.fromisoformat(last_poll_iso)
                 except ValueError:
-                    since = scan.created_at
+                    since = base_since
+                else:
+                    if since < base_since:
+                        since = base_since
             else:
-                since = scan.created_at
+                since = base_since
 
             try:
                 poll_msg = (
@@ -111,17 +115,19 @@ class AlertMonitorTask:
                 )
                 logger.info("scan %s - %s", scan.id, poll_msg)
                 db_scan_add_log(self.db, scan, poll_msg)
-                alerts = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
+                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
+                server_time_note = f" (MDE server time {server_time})" if server_time else ""
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
-                    db_scan_add_log(self.db, scan, f"MDE alerts synced: {len(new_alerts)} new")
-                    logger.info("MDE poll result: scan_id=%s %s new alerts", scan.id, len(new_alerts))
+                    msg = f"MDE alerts synced: {len(new_alerts)} new{server_time_note}"
+                    db_scan_add_log(self.db, scan, msg)
+                    logger.info("scan %s - %s", scan.id, msg)
                 elif alerts:
-                    msg = f"MDE poll: {len(alerts)} alerts already recorded"
+                    msg = f"MDE poll: {len(alerts)} alerts already recorded{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
                     db_scan_add_log(self.db, scan, msg)
                 else:
-                    msg = "MDE poll: no alerts"
+                    msg = f"MDE poll: no alerts{server_time_note}"
                     logger.info("scan %s - %s", scan.id, msg)
                     db_scan_add_log(self.db, scan, msg)
                 options["mde_last_poll"] = datetime.utcnow().isoformat()

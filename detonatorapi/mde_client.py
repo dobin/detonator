@@ -65,7 +65,7 @@ class MDEClient:
             raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
         return response
 
-    def fetch_alerts(self, device_id: Optional[str], hostname: Optional[str], since: Optional[datetime]) -> List[dict]:
+    def fetch_alerts(self, device_id: Optional[str], hostname: Optional[str], since: Optional[datetime]) -> Tuple[List[dict], Optional[str]]:
         filters = []
         if device_id:
             filters.append(f"deviceId eq '{device_id}'")
@@ -80,10 +80,13 @@ class MDEClient:
         params["$top"] = "200"
 
         alerts: List[dict] = []
+        server_time: Optional[str] = None
         path = "/api/alerts"
         while True:
             response = self._request("GET", path, params=params)
             payload = response.json()
+            if response.headers.get("Date"):
+                server_time = response.headers.get("Date")
             alerts.extend(payload.get("value", []))
             next_link = payload.get("@odata.nextLink")
             if not next_link:
@@ -92,7 +95,7 @@ class MDEClient:
             path = next_link.replace(self.base_url.rstrip('/'), '')
             params = {}
 
-        return alerts
+        return alerts, server_time
 
     def resolve_alert(self, alert_id: str, comment: str):
         body = {
