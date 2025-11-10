@@ -107,9 +107,10 @@ AlertEvidence
     def resolve_alert(self, alert_id: str, comment: str):
         body = {
             "status": "resolved",
-            "classification": "truePositive",
+            "classification": "informationalExpectedActivity",
             "determination": "securityTesting",
             "comments": [comment],
+            "customDetails": {},
         }
         self._request("PATCH", f"/v1.0/security/alerts/{alert_id}", json=body)
 
