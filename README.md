@@ -66,9 +66,6 @@ myfirstvm:
   # ...
   mde:
     tenant_id: "00000000-0000-0000-0000-000000000000"
-    authority: "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000"
-    scopes:
-      - "https://api.security.microsoft.com/.default"
     client_id: "11111111-2222-3333-4444-555555555555"
     client_secret_env: "MDE_MYFIRSTVM_CLIENT_SECRET"
 ```
@@ -79,13 +76,15 @@ Store the corresponding client secret in the environment variable referenced by 
 
 1. In `https://entra.microsoft.com`, create an **App Registration** (single tenant is fine).  
 2. Under **API permissions**, add application permissions for:  
-   - `Alert.Read.All`, `Alert.ReadWrite.All`  
-   - `Incident.Read.All`, `Incident.ReadWrite.All`  
+   - `AdvancedQuery.Read.All` (required for advanced hunting queries)  
+   - `Alert.Read.All` and `Alert.ReadWrite.All` (read alerts + allow Detonator to auto-resolve them)  
+   - `Incident.Read.All` and `Incident.ReadWrite.All` *(optional & only available in tenants where Defender exposes incident APIs — Detonator will still work, but incident auto-close will be skipped if these scopes are missing)*  
    Grant admin consent.  
 3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
-4. Use the app’s **Application (client) ID**, tenant ID, authority, scopes, and `client_secret_env` in each profile’s `mde` block as shown above.  
+4. Use the app’s **Application (client) ID**, tenant ID, and `client_secret_env` in each profile’s `mde` block as shown above. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
 5. Ensure the Detonator API host has the environment variable set (or pull it from your secret manager) before starting the server.
 
+Detonator will always try to resolve collected alerts at the end of the detection window; incident resolution is attempted as well, but if the API returns 403/insufficient privileges (because the incident scopes are missing) the scan simply logs a warning and continues.
 
 ## Setup Guides
 

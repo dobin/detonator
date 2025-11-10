@@ -99,7 +99,7 @@ class MDEClient:
             "status": "Resolved",
             "classification": "TruePositive",
             "determination": "SecurityTesting",
-            "comments": [comment],
+            "comment": comment,
         }
         self._request("PATCH", f"/api/alerts/{alert_id}", json=body)
 
@@ -108,6 +108,6 @@ class MDEClient:
             "status": "Resolved",
             "classification": "TruePositive",
             "determination": "SecurityTesting",
-            "comments": [comment],
+            "comment": comment,
         }
         self._request("PATCH", f"/api/incidents/{incident_id}", json=body)

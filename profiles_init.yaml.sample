@@ -9,9 +9,6 @@ live_rededr:
     ip: 192.168.1.1
   mde:
     tenant_id: "00000000-0000-0000-0000-000000000000"
-    authority: "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000"
-    scopes:
-      - "https://graph.microsoft.com/.default"
     client_id: "11111111-2222-3333-4444-555555555555"
     client_secret_env: "MDE_LIVE_REDEDR_CLIENT_SECRET"
 
@@ -26,8 +23,5 @@ new_defender:
     admin_password: password
   mde:
     tenant_id: "00000000-0000-0000-0000-000000000000"
-    authority: "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000"
-    scopes:
-      - "https://graph.microsoft.com/.default"
     client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
     client_secret_env: "MDE_AZURE_CLIENT_SECRET"

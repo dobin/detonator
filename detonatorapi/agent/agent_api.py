@@ -205,7 +205,7 @@ class AgentApi:
 
 
     def GetDeviceCorrelation(self) -> Optional[Dict[str, str]]:
-        url = self.agent_url + "/api/edr/correlation"
+        url = self.agent_url + "/api/edr/sysinfo"
         try:
             response = requests.get(url, timeout=5)
             if response.status_code == 200:
