@@ -181,6 +181,7 @@ class ScanResponseShort(BaseModel):
     latest_alert_title: Optional[str] = None
     latest_alert_severity: Optional[str] = None
     latest_alert_detected_at: Optional[datetime] = None
+    recent_alerts: Optional[list] = []
     
     created_at: datetime
     updated_at: datetime

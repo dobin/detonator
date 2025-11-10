@@ -5,9 +5,10 @@ Detonate your MalDev payload in a VM.
 
 ## Quick Start
 
-1) Install RedEdr somewhere (in a VM)
-2) Copy `profiles.yaml.sample` to `profiles.yaml`
-3) Configure `profiles.yaml` so it points to that VM
+1. Install DetonatorAgent on the analysis VM (RedEdr optional).
+2. Copy `profiles_init.yaml.sample` to `profiles_init.yaml`.
+3. Edit `profiles_init.yaml` so it points to the VM/connector you deployed.
+4. Install Detonator’s Python dependencies and migrate the YAML profiles into the SQLite database.
 
 ```yaml
 myfirstvm:
@@ -19,18 +20,13 @@ myfirstvm:
   ip: 192.168.1.1
 ```
 
-4) Load the profiles from `profiles.yaml` into the DB:
-```
-
-```
-
 Run the server:
 ```bash
 # Install Deps
 $ apt install python3-poetry
 
 # Create DB
-$ poetry run python3 migrate_to_profiles.py
+$ poetry run python migrate_profiles_yaml.py
 
 # Install dependencies
 $ poetry install
@@ -75,16 +71,12 @@ Store the corresponding client secret in the environment variable referenced by 
 **Entra app**
 
 1. In `https://entra.microsoft.com`, create an **App Registration** (single tenant is fine).  
-2. Under **API permissions**, add application permissions for:  
+2. Under **API permissions**, add application permissions for `Microsoft Graph`:  
    - `SecurityAlert.Read.All` and `SecurityAlert.ReadWrite.All`  
    - `SecurityIncident.Read.All` and `SecurityIncident.ReadWrite.All` *(needed if you want Detonator to auto-close related incidents)*  
-   - `AdvancedHunting.Read.All` (Detonator uses Microsoft Graph advanced hunting to retrieve Defender alerts)  
-   Grant admin consent.  
+   - `AdvancedHunting.Read.All`
 3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
 4. Use the app’s **Application (client) ID**, tenant ID, and `client_secret_env` in each profile’s `mde` block as shown above. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
-5. Ensure the Detonator API host has the environment variable set (or pull it from your secret manager) before starting the server.
-
-Detonator uses Microsoft Graph advanced hunting (`AlertEvidence` table) to continuously poll for Defender alerts tied to the scan’s device. Auto-resolution happens through the `security/alerts_v2/{id}` and `security/incidents/{id}` endpoints.
 
 #### Detection window & polling lifecycle
 

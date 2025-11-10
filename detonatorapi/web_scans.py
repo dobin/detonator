@@ -116,6 +116,7 @@ async def get_scans(
             reverse=True,
         )
         scan.alert_count = len(alerts_sorted)
+        scan.recent_alerts = []
         if alerts_sorted:
             latest = alerts_sorted[0]
             raw = latest.raw_alert or {}
@@ -127,10 +128,23 @@ async def get_scans(
             )
             scan.latest_alert_severity = latest.severity or raw.get("Severity") or ""
             scan.latest_alert_detected_at = latest.detected_at
+            for entry in alerts_sorted[:5]:
+                payload = entry.raw_alert or {}
+                scan.recent_alerts.append(
+                    {
+                        "title": entry.title
+                        or payload.get("Title")
+                        or payload.get("ThreatFamilyName")
+                        or "Defender alert",
+                        "severity": entry.severity or payload.get("Severity") or "",
+                        "detected_at": entry.detected_at,
+                    }
+                )
         else:
             scan.latest_alert_title = None
             scan.latest_alert_severity = None
             scan.latest_alert_detected_at = None
+            scan.recent_alerts = []
 
     return scans
 

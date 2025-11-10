@@ -63,13 +63,22 @@
                                 <strong>MDE Alerts:</strong>
                                 <span class="font-semibold">{{ scan.alert_count }}</span>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                                <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(scan.latest_alert_severity) }}">
-                                    {{ scan.latest_alert_severity or 'Unknown severity' }}
-                                </span>
-                                <span class="font-medium">{{ scan.latest_alert_title or 'Latest alert' }}</span>
-                                {% if scan.latest_alert_detected_at %}
-                                <span>({{ scan.latest_alert_detected_at|strftime('%Y-%m-%d %H:%M:%S') }})</span>
+                            <div class="space-y-1">
+                                {% for alert in scan.recent_alerts %}
+                                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                    <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
+                                        {{ alert.severity or 'Unknown severity' }}
+                                    </span>
+                                    <span class="font-medium">{{ alert.title or 'Defender alert' }}</span>
+                                    {% if alert.detected_at %}
+                                    <span>({{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') }})</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                {% if scan.alert_count > scan.recent_alerts|length %}
+                                <div class="text-xs text-gray-500">
+                                    +{{ scan.alert_count - scan.recent_alerts|length }} more alert{{ '' if (scan.alert_count - scan.recent_alerts|length) == 1 else 's' }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
