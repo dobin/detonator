@@ -43,6 +43,7 @@ class ProfileStatusResponse(BaseModel):
     rededr_port: Optional[int] = None
     is_available: str
     rededr_available: Optional[str] = None
+    status: str
 
 
 #################
