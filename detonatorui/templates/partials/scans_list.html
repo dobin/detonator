@@ -50,6 +50,32 @@
                             <span class="px-2 py-1 rounded text-xs font-medium {{ get_scan_status_color(scan.result) }}"> {{ scan.result }}</span>
                         </p>
                         {% endif %}
+                        {% if scan.alert_count and scan.alert_count > 0 %}
+                        <div class="text-gray-700 text-sm mt-2 space-y-1">
+                            <div>
+                                <strong>MDE Alerts:</strong>
+                                <span class="font-semibold">{{ scan.alert_count }}</span>
+                            </div>
+                            <div class="space-y-1">
+                                {% for alert in scan.recent_alerts %}
+                                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                    <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
+                                        {{ alert.severity or 'Unknown severity' }}
+                                    </span>
+                                    <span class="font-medium">{{ alert.title or 'Defender alert' }}</span>
+                                    {% if alert.detected_at %}
+                                    <span>({{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') }})</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                {% if scan.alert_count > scan.recent_alerts|length %}
+                                <div class="text-xs text-gray-500">
+                                    +{{ scan.alert_count - scan.recent_alerts|length }} more alert{{ '' if (scan.alert_count - scan.recent_alerts|length) == 1 else 's' }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <div class="text-gray-500 text-xs mt-2">
                             <p>Created: {{ scan.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>

@@ -7,6 +7,10 @@ live_rededr:
   port: 80
   data:
     ip: 192.168.1.1
+  mde:
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    client_id: "11111111-2222-3333-4444-555555555555"
+    client_secret_env: "MDE_LIVE_REDEDR_CLIENT_SECRET"
 
 new_defender:
   connector: NewAzure
@@ -17,3 +21,7 @@ new_defender:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
     admin_username: admin 
     admin_password: password
+  mde:
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    client_secret_env: "MDE_AZURE_CLIENT_SECRET"

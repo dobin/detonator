@@ -202,3 +202,20 @@ class AgentApi:
         except requests.exceptions.RequestException as e:
             logging.warning(f"Agent HTTP response error: {e}")
             return None
+
+
+    def GetDeviceCorrelation(self) -> Optional[Dict[str, str]]:
+        url = self.agent_url + "/api/edr/sysinfo"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict):
+                    return data
+                return None
+            else:
+                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                return None
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"Agent HTTP response error: {e}")
+            return None

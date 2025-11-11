@@ -11,6 +11,14 @@ get_bp = Blueprint('get', __name__)
 logger = logging.getLogger(__name__)
 
 
+def _auth_headers() -> Dict[str, str]:
+    headers: Dict[str, str] = {}
+    password = request.headers.get("X-Auth-Password")
+    if password:
+        headers["X-Auth-Password"] = password
+    return headers
+
+
 # MAIN Pages
 
 @get_bp.route("/")
@@ -38,7 +46,7 @@ def scans_page():
 def scan_page():
     # Fetch profiles list
     try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles")
+        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
         if response.status_code == 200:
             profiles = response.json()
         else:
@@ -76,7 +84,7 @@ def semidatasieve(scan_id):
 def files_template():
     """Template endpoint to render files list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/files")
+        response = requests.get(f"{API_BASE_URL}/api/files", headers=_auth_headers())
         if response.status_code == 200:
             files = response.json()
             # Sort scans by ID in descending order (newest first)
@@ -128,7 +136,7 @@ def scans_template():
         if filter_status and filter_status != 'all':
             params['status'] = filter_status
         
-        response = requests.get(f"{API_BASE_URL}/api/scans", params=params)
+        response = requests.get(f"{API_BASE_URL}/api/scans", params=params, headers=_auth_headers())
         if response.status_code == 200:
             scans = response.json()
         else:
@@ -143,7 +151,7 @@ def scan_details_template(scan_id):
     """Template endpoint to render scan details via HTMX"""
     scan: Optional[Dict] = {}
     try:
-        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}")
+        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}", headers=_auth_headers())
         if response.status_code == 200:
             scan = response.json()
         else:
@@ -158,7 +166,7 @@ def scan_details_template(scan_id):
 def vms_template():
     """Template endpoint to render VMs list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/vms")
+        response = requests.get(f"{API_BASE_URL}/api/vms", headers=_auth_headers())
         if response.status_code == 200:
             vms = response.json()
             vms = sorted(vms, key=lambda vm: vm['name'])
@@ -173,7 +181,7 @@ def vms_template():
 def profiles_template():
     """Template endpoint to render profiles list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles")
+        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
         if response.status_code == 200:
             templates = response.json()
             
@@ -181,7 +189,7 @@ def profiles_template():
             for template_name, template in templates.items():
                 url = f"{API_BASE_URL}/api/profiles/{template['id']}/status"
                 try:
-                    status_response = requests.get(url)
+                    status_response = requests.get(url, headers=_auth_headers())
                     if status_response.status_code == 200:
                         status_data = status_response.json()
                         template['available'] = status_data.get('is_available', 'false')
@@ -200,7 +208,7 @@ def profiles_template():
             for template_name, template in templates.items():
                 lock_url = f"{API_BASE_URL}/api/lock/{template['id']}/lock"
                 try:
-                    lock_response = requests.get(lock_url)
+                    lock_response = requests.get(lock_url, headers=_auth_headers())
                     if lock_response.status_code == 200:
                         template['locked'] = lock_response.json().get('is_locked', 'false')
                     else:

@@ -12,11 +12,13 @@ from .schemas import  NewScanResponse
 from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
 from .token_auth import require_auth, get_user_from_request
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
+from .alert_monitor import start_alert_monitoring, stop_alert_monitoring
 from .web_files import router as files_router
 from .web_scans import router as scans_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
 from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
+from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 
 
 # Load environment variables
@@ -46,6 +48,7 @@ async def startup_event():
     try:
         # Start VM monitoring
         start_vm_monitoring()
+        start_alert_monitoring()
     except Exception as e:
         logger.error(f"Error during starting vm_monitoring: {str(e)}")
 
@@ -55,6 +58,7 @@ async def shutdown_event():
     """Stop VM monitoring on shutdown"""
     try:
         stop_vm_monitoring()
+        stop_alert_monitoring()
         logger.info("VM monitoring stopped")
     except Exception as e:
         logger.error(f"Error during shutdown: {str(e)}")
@@ -108,6 +112,7 @@ async def upload_file_and_scan(
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
     drop_path: Optional[str] = Form(None),
+    detection_window_minutes: Optional[int] = Form(None),
     exec_arguments: Optional[str] = Form(None),
     token: Optional[str] = Form(None),
     db: Session = Depends(get_db),
@@ -118,6 +123,17 @@ async def upload_file_and_scan(
     if user == "guest":
         logger.info("Guest user")
         runtime = 12
+
+    try:
+        runtime = sanitize_runtime_seconds(runtime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    try:
+        detection_window_minutes = sanitize_detection_window_minutes(detection_window_minutes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    detection_window_minutes = detection_window_minutes if detection_window_minutes is not None else 1
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)
@@ -142,14 +158,17 @@ async def upload_file_and_scan(
                              user=user)
 
     # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, 
-                             file_id=file_id, 
-                             profile_name=profile_name, 
-                             comment=scan_comment or "", 
-                             project=project or "", 
-                             runtime=runtime or 10, 
-                             drop_path=drop_path or "", 
-                             user=user)
+    scan_id = db_create_scan(
+        db,
+        file_id=file_id,
+        profile_name=profile_name,
+        comment=scan_comment or "",
+        project=project or "",
+        runtime=runtime or 10,
+        drop_path=drop_path or "",
+        detection_window_minutes=detection_window_minutes,
+        user=user,
+    )
 
     data = { 
         "file_id": file_id,

@@ -98,6 +98,28 @@ def scan_file_with_agent(scan_id: int) -> bool:
     if rededr_port is not None:
         rededrApi = RedEdrAgentApi(agent_ip, rededr_port)
 
+    try:
+        correlation = agentApi.GetDeviceCorrelation()
+        if correlation:
+            updated = False
+            device_id = correlation.get("deviceId")
+            if device_id and device_id != db_scan.device_id:
+                db_scan.device_id = device_id
+                updated = True
+            hostname = correlation.get("hostname")
+            if hostname and hostname != db_scan.device_hostname:
+                db_scan.device_hostname = hostname
+                updated = True
+            os_version = correlation.get("osVersion")
+            if os_version and os_version != db_scan.device_os_version:
+                db_scan.device_os_version = os_version
+                updated = True
+            if updated:
+                thread_db.commit()
+                db_scan_add_log(thread_db, db_scan, f"Captured EDR correlation info (hostname={hostname}, device_id={device_id})")
+    except Exception as e:
+        db_scan_add_log(thread_db, db_scan, f"Warning: Unable to retrieve EDR correlation info: {e}")
+
     if DO_LOCKING:
         logger.info("Attempt to acquire lock at DetonatorAgent")
         # Try to acquire lock 4 times with 30 second intervals

@@ -10,6 +10,7 @@ from .database import get_db, File, Scan
 from .schemas import ScanResponse, ScanUpdate, FileCreateScan, ScanResponseShort
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_scan, db_get_profile_by_name, db_scan_add_log
+from .utils import sanitize_runtime_seconds, sanitize_detection_window_minutes
 from .token_auth import require_auth, get_user_from_request
 
 router = APIRouter()
@@ -27,7 +28,16 @@ async def get_scans_count(
     db: Session = Depends(get_db)
 ):
     """Get count of scans with filtering capabilities"""
-    query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
+    query = db.query(Scan).options(
+        joinedload(Scan.file),
+        joinedload(Scan.profile),
+        joinedload(Scan.alerts),
+    )
+    
+    # Filter by user if guest
+    user = get_user_from_request(request)
+    if user == "guest":
+        query = query.filter(Scan.user == "guest")
     
     if user_filter and user_filter != "all":
         query = query.filter(Scan.user == user_filter)
@@ -71,6 +81,11 @@ async def get_scans(
     """Get scans with filtering capabilities"""
     query = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile))
     
+    # Filter by user if guest
+    user = get_user_from_request(request)
+    if user == "guest":
+        query = query.filter(Scan.user == "guest")
+
     if user_filter and user_filter != "all":
         query = query.filter(Scan.user == user_filter)
     
@@ -99,11 +114,45 @@ async def get_scans(
 
     # Scan overview need this information too
     for scan in scans:
-        # workaround, there is always one line generated
-        if len(scan.rededr_events) > 220:
-            scan.has_rededr_events = True
+        # Flag RedEdr logs
+        scan.has_rededr_events = len(scan.rededr_events or "") > 220
+
+        # Summarize Defender alerts for the UI
+        alerts_sorted = sorted(
+            scan.alerts,
+            key=lambda alert: alert.detected_at or datetime.min,
+            reverse=True,
+        )
+        scan.alert_count = len(alerts_sorted)
+        scan.recent_alerts = []
+        if alerts_sorted:
+            latest = alerts_sorted[0]
+            raw = latest.raw_alert or {}
+            scan.latest_alert_title = (
+                latest.title
+                or raw.get("Title")
+                or raw.get("ThreatFamilyName")
+                or "Defender alert"
+            )
+            scan.latest_alert_severity = latest.severity or raw.get("Severity") or ""
+            scan.latest_alert_detected_at = latest.detected_at
+            for entry in alerts_sorted[:5]:
+                payload = entry.raw_alert or {}
+                scan.recent_alerts.append(
+                    {
+                        "title": entry.title
+                        or payload.get("Title")
+                        or payload.get("ThreatFamilyName")
+                        or "Defender alert",
+                        "severity": entry.severity or payload.get("Severity") or "",
+                        "detected_at": entry.detected_at,
+                    }
+                )
         else:
-            scan.has_rededr_events = False
+            scan.latest_alert_title = None
+            scan.latest_alert_severity = None
+            scan.latest_alert_detected_at = None
+            scan.recent_alerts = []
 
     return scans
 
@@ -136,7 +185,14 @@ async def update_scan(
         raise HTTPException(status_code=404, detail="Scan not found")
     
     # Update fields
-    for field, value in scan_update.dict(exclude_unset=True).items():
+    update_data = scan_update.dict(exclude_unset=True)
+    if "runtime" in update_data:
+        try:
+            update_data["runtime"] = sanitize_runtime_seconds(update_data["runtime"])
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    for field, value in update_data.items():
         setattr(db_scan, field, value)
     
     db_scan.updated_at = datetime.utcnow()
@@ -172,14 +228,32 @@ async def file_create_scan(
     profile_name = scan_data.profile_name or ""
     comment = scan_data.comment or ""
     project = scan_data.project or ""
-    runtime = scan_data.runtime or 10
+    try:
+        runtime_override = sanitize_runtime_seconds(scan_data.runtime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    runtime = runtime_override if runtime_override is not None else 10
+    try:
+        detection_window_override = sanitize_detection_window_minutes(scan_data.detection_window_minutes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    detection_window_minutes = detection_window_override if detection_window_override is not None else 1
     drop_path = scan_data.drop_path or ""
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
     
     # Create the scan
-    scan_id = db_create_scan(db, file_id, profile_name, comment, project, runtime=runtime, drop_path=drop_path)
+    scan_id = db_create_scan(
+        db,
+        file_id,
+        profile_name,
+        comment,
+        project,
+        runtime=runtime,
+        drop_path=drop_path,
+        detection_window_minutes=detection_window_minutes,
+    )
     
     # Retrieve the created scan to return full details
     db_scan = db.query(Scan).options(joinedload(Scan.file), joinedload(Scan.profile)).filter(Scan.id == scan_id).first()

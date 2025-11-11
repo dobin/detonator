@@ -19,6 +19,20 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    value = value.strip()
+    if value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be an integer")
+
+
 @router.get("/profiles")
 async def get_profiles(db: Session = Depends(get_db)):
     """Get available profiles"""
@@ -37,6 +51,7 @@ async def get_profiles(db: Session = Depends(get_db)):
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
+            "mde": profile.mde,
             "require_password": requires_password,
         }
     return result
@@ -47,7 +62,7 @@ async def create_profile(
     name: str = Form(...),
     connector: str = Form(...),
     port: int = Form(...),
-    rededr_port: Optional[int] = Form(None),
+    rededr_port: Optional[str] = Form(None),
     edr_collector: Optional[str] = Form(""),
     default_drop_path: Optional[str] = Form(""),
     comment: Optional[str] = Form(""),
@@ -55,6 +70,7 @@ async def create_profile(
     data: str = Form(...),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
+    mde: Optional[str] = Form(None),
 ):
     """Create a new profile"""
     try:
@@ -63,24 +79,34 @@ async def create_profile(
             data_dict = json.loads(data)
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
+
+        mde_dict: Optional[dict] = None
+        if mde:
+            try:
+                mde_dict = json.loads(mde)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
         
         # Check if profile name already exists
         existing_profile = db.query(Profile).filter(Profile.name == name).first()
         if existing_profile:
             raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
+        rededr_port_value = _parse_optional_int(rededr_port, "RedEdr port")
+
         # Create the profile
         profile_id = db_create_profile(
             db=db,
             name=name,
             connector=connector,
             port=port,
-            rededr_port=rededr_port,
+            rededr_port=rededr_port_value,
             edr_collector=edr_collector or "",
             data=data_dict,
             default_drop_path=default_drop_path or "",
             comment=comment or "",
-            password=password or ""
+            password=password or "",
+            mde=mde_dict or {}
         )
         
         # Return the created profile
@@ -97,6 +123,7 @@ async def create_profile(
             "default_drop_path": created_profile.default_drop_path,
             "comment": created_profile.comment,
             "data": created_profile.data,
+            "mde": created_profile.mde,
             "created_at": created_profile.created_at
         }
         
@@ -186,11 +213,13 @@ async def update_profile(
     name: str = Form(...),
     connector: str = Form(...),
     port: int = Form(...),
+    rededr_port: Optional[str] = Form(None),
     edr_collector: str = Form(...),
     default_drop_path: str = Form(""),
     comment: str = Form(""),
     data: str = Form(...),
     password: Optional[str] = Form(""),
+    mde: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
@@ -213,14 +242,32 @@ async def update_profile(
             if existing:
                 raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
         
+        mde_dict: Optional[dict] = None
+        if mde is not None:
+            trimmed = mde.strip()
+            if trimmed == "":
+                mde_dict = {}
+            else:
+                try:
+                    mde_dict = json.loads(trimmed)
+                except json.JSONDecodeError:
+                    raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
+        
+        rededr_port_value = _parse_optional_int(rededr_port, "RedEdr port")
+
         # Update fields
         profile.name = name
         profile.connector = connector
         profile.port = port
         profile.edr_collector = edr_collector
+        if rededr_port_value is not None or (rededr_port is not None and rededr_port.strip() == ""):
+            profile.rededr_port = rededr_port_value
         profile.default_drop_path = default_drop_path
         profile.comment = comment
         profile.data = data_dict
+        profile.password = password or ""
+        if mde_dict is not None:
+            profile.mde = mde_dict
         
         db.commit()
         db.refresh(profile)
@@ -234,6 +281,7 @@ async def update_profile(
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
+            "mde": profile.mde,
             "password": password or "",
             "created_at": profile.created_at
         }

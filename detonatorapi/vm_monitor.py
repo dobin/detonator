@@ -73,7 +73,7 @@ class VMMonitorTask:
             status: str = scan.status
 
             # Skip finished (nothing todo)
-            if status in [ 'finished' ]:
+            if status in [ 'finished', 'polling' ]:
                 continue
             if status in [ 'error' ]:
                 continue
@@ -128,12 +128,20 @@ class VMMonitorTask:
                     db_scan_change_status_quick(self.db, scan, "removing")
                     connector.remove(scan_id)
                 case "removed":
-                    db_scan_change_status_quick(self.db, scan, "finished")
+                    if self._needs_mde_polling(scan):
+                        db_scan_change_status_quick(self.db, scan, "polling")
+                    else:
+                        db_scan_change_status_quick(self.db, scan, "finished")
 
                 case "kill":
                     db_scan_change_status_quick(self.db, scan, "killing")
                     connector.kill(scan_id)
-                
+
+    def _needs_mde_polling(self, scan: Scan) -> bool:
+        window = scan.detection_window_minutes or 0
+        has_mde = bool(scan.profile and scan.profile.mde)
+        return has_mde and window > 0
+
 
 # Global VM monitor instance
 vm_monitor = VMMonitorTask()

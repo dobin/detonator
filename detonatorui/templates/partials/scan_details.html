@@ -15,6 +15,18 @@
         <div><strong>VM Instance:</strong> {{ scan.vm_instance_name or '' }}</div>
         <div><strong>VM IP:</strong> {{ scan.vm_ip_address or '' }}</div>
         <div><strong>Result:</strong> {{ scan.result or '' }}</div>
+        {% if scan.detection_window_minutes is not none %}
+        <div><strong>Detection Window:</strong> {{ scan.detection_window_minutes }} min</div>
+        {% endif %}
+        {% if scan.device_hostname %}
+        <div><strong>Agent Hostname:</strong> {{ scan.device_hostname }}</div>
+        {% endif %}
+        {% if scan.device_os_version %}
+        <div><strong>Agent OS:</strong> {{ scan.device_os_version }}</div>
+        {% endif %}
+        {% if scan.device_id %}
+        <div><strong>Device ID (Sense):</strong> <span class="font-mono text-xs break-all">{{ scan.device_id }}</span></div>
+        {% endif %}
     </div>
     
     <!-- Logs Tabs -->
@@ -69,6 +81,13 @@
                     RedEdr Logs
                 </button>
                 {% endif %}
+                {% if scan.profile and scan.profile.mde %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                    data-tab="mde-alerts" onclick="showTab('mde-alerts', this)"
+                >
+                    MDE Alerts
+                </button>
+                {% endif %}
             </nav>
         </div>
         
@@ -114,6 +133,145 @@
             <div id="rededr-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
                     >{{ scan.rededr_logs|pretty_json }}</pre>
+            </div>
+            {% endif %}
+            {% if scan.profile and scan.profile.mde %}
+            <div id="mde-alerts" class="tab-content hidden">
+                {% if scan.alerts %}
+                <div class="space-y-4">
+                    {% for alert in scan.alerts %}
+                    <div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm space-y-3">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                            <div>
+                                <div class="text-xs uppercase tracking-wide text-gray-500">Alert</div>
+                                <div class="text-base font-semibold text-gray-900">
+                                    {{ alert.title or 'Defender Alert' }}
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    {{ alert.category or 'Uncategorized' }}
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600 md:text-right">
+                                <div><strong>Detected:</strong> {{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') if alert.detected_at else 'Pending' }}</div>
+                                <div><strong>Severity:</strong> {{ alert.severity or 'N/A' }}</div>
+                                <div><strong>Source:</strong> {{ alert.detection_source or 'Unknown' }}</div>
+                                <div><strong>ID:</strong> <span class="font-mono text-xs break-all">{{ alert.alert_id }}</span></div>
+                            </div>
+                        </div>
+
+                        {% set evidence = [] %}
+                        {% if alert.raw_alert and alert.raw_alert.get('evidence') %}
+                            {% set evidence = alert.raw_alert.get('evidence') %}
+                        {% endif %}
+
+                        {% if evidence %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Timestamp</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Role</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Entity</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    {% for ev in evidence %}
+                                    <tr class="align-top">
+                                        <td class="px-3 py-2 whitespace-nowrap">
+                                            {{ ev.Timestamp or 'N/A' }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ ev.EvidenceRole or 'Unknown' }}</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ ev.EntityType or 'Unknown' }}</td>
+                                        <td class="px-3 py-2 space-y-1">
+                                            {% set meta = namespace(shown=False) %}
+                                            {% if ev.DeviceName or ev.DeviceId %}
+                                                <div><span class="font-medium text-gray-700">Device:</span> {{ ev.DeviceName or ev.DeviceId }}</div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.FileName %}
+                                                {% set file_hash = ev.FileSha256 or ev.FileSHA256 or ev.SHA256 or ev.Sha256 %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">File:</span>
+                                                    {{ ev.FileName }}{% if file_hash %} <span class="text-xs text-gray-500">({{ file_hash }})</span>{% endif %}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.ProcessCommandLine %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Command:</span>
+                                                    <span class="font-mono text-xs break-all">{{ ev.ProcessCommandLine }}</span>
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.AccountName %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Account:</span>
+                                                    {{ ev.AccountDomain ~ '\\' if ev.AccountDomain else '' }}{{ ev.AccountName }}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.RemoteUrl or ev.RemoteIP %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Remote:</span>
+                                                    {{ ev.RemoteUrl or ev.RemoteIP }}
+                                                    {% if ev.RemotePort %}:{{ ev.RemotePort }}{% endif %}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.RegistryKey or ev.RegistryValueName %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Registry:</span>
+                                                    {{ ev.RegistryKey }}{% if ev.RegistryValueName %} ({{ ev.RegistryValueName }}){% endif %}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.FolderPath %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Path:</span>
+                                                    {{ ev.FolderPath }}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if ev.ThreatFamilyName %}
+                                                <div>
+                                                    <span class="font-medium text-gray-700">Threat:</span>
+                                                    {{ ev.ThreatFamilyName }}
+                                                </div>
+                                                {% set meta.shown = True %}
+                                            {% endif %}
+                                            {% if not meta.shown %}
+                                                <div class="text-gray-500">No additional attributes reported.</div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="bg-gray-50 border border-dashed border-gray-300 rounded p-3 text-sm text-gray-600">
+                            No detailed evidence has been returned for this alert yet.
+                        </div>
+                        {% endif %}
+
+                        {% if alert.raw_alert and alert.raw_alert.get('evidence_refreshed_at') %}
+                        <div class="text-xs text-gray-500">
+                            Evidence refreshed: {{ alert.raw_alert.get('evidence_refreshed_at')|strftime('%Y-%m-%d %H:%M:%S') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="bg-gray-50 border border-gray-200 rounded p-4 text-sm text-gray-600">
+                    <p>No Defender alerts collected yet.</p>
+                    <p class="mt-2">
+                        Detonator polls Microsoft Defender for {{ scan.detection_window_minutes or 1 }} minute{{ '' if (scan.detection_window_minutes or 1) == 1 else 's' }} after execution completes.
+                        If detections occur during that window they will appear here automatically.
+                    </p>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
         </div>

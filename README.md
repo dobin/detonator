@@ -5,9 +5,10 @@ Detonate your MalDev payload in a VM.
 
 ## Quick Start
 
-1) Install RedEdr somewhere (in a VM)
-2) Copy `profiles.yaml.sample` to `profiles.yaml`
-3) Configure `profiles.yaml` so it points to that VM
+1. Install DetonatorAgent on the analysis VM (RedEdr optional).
+2. Copy `profiles_init.yaml.sample` to `profiles_init.yaml`.
+3. Edit `profiles_init.yaml` so it points to the VM/connector you deployed.
+4. Install Detonator’s Python dependencies and migrate the YAML profiles into the SQLite database.
 
 ```yaml
 myfirstvm:
@@ -19,18 +20,13 @@ myfirstvm:
   ip: 192.168.1.1
 ```
 
-4) Load the profiles from `profiles.yaml` into the DB:
-```
-
-```
-
 Run the server:
 ```bash
 # Install Deps
 $ apt install python3-poetry
 
 # Create DB
-$ poetry run python3 migrate_to_profiles.py
+$ poetry run python migrate_profiles_yaml.py
 
 # Install dependencies
 $ poetry install
@@ -56,6 +52,40 @@ To scan a file on the previously configured `myfirstvm`:
 $ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
 ```
 
+### Microsoft Defender (optional)
+
+Profiles can optionally include an `mde` block to let Detonator correlate alerts, surface the evidence inside the UI, and auto-close the detections once the window expires. Example:
+
+```yaml
+myfirstvm:
+  connector: Live
+  # ...
+  mde:
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    client_id: "11111111-2222-3333-4444-555555555555"
+    client_secret_env: "MDE_MYFIRSTVM_CLIENT_SECRET"
+```
+
+Store the corresponding client secret in the environment variable referenced by `client_secret_env`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires.
+
+**Entra app**
+
+1. In `https://entra.microsoft.com`, create an **App Registration** (single tenant is fine).  
+2. Under **API permissions**, add application permissions for `Microsoft Graph`:  
+   - `SecurityAlert.Read.All` and `SecurityAlert.ReadWrite.All`  
+   - `SecurityIncident.Read.All` and `SecurityIncident.ReadWrite.All` *(needed if you want Detonator to auto-close related incidents)*  
+   - `AdvancedHunting.Read.All`
+3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
+4. Use the app’s **Application (client) ID**, tenant ID, and `client_secret_env` in each profile’s `mde` block as shown above. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
+
+#### Detection window & polling lifecycle
+
+- Each scan stores `detection_window_minutes` (defaults to `1`). During that window Detonator keeps the scan in the `polling` state and re-queries Defender every minute.
+- The poll window always runs from *scan start → now*, deduping by `AlertId`, so late-arriving alerts are still collected.
+- Right after the window closes Detonator performs a one-time “evidence hydration” query to capture the full `AlertEvidence` payload for every alert that fired.
+- Once evidence is saved it automatically resolves the alerts/incidents using the `alerts_v2` endpoint. If your app registration lacks `SecurityAlert.ReadWrite.All` or `SecurityIncident.ReadWrite.All`, the auto-close step logs a warning but the scan still finishes.
+
+In the UI you’ll see the scan’s badge flip to `polling` while the detection window is active. The scans list now shows a compact Defender summary (alert count + most recent alert metadata) so you can triage at a glance; click “View Details” to see the full evidence block per alert.
 
 ## Setup Guides
 
