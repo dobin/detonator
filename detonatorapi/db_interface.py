@@ -82,6 +82,11 @@ def db_create_file(db, filename: str, content: bytes, source_url: str = "", comm
 
 def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = "", mde: Optional[dict] = None):
     """Create a new profile in the database"""
+    # Handle backward compatibility: if mde is provided, put it in data["edr_mde"]
+    if mde is not None:
+        data = dict(data)  # Create a copy to avoid modifying the original
+        data["edr_mde"] = mde
+    
     db_profile = Profile(
         name=name,
         connector=connector,
@@ -91,8 +96,7 @@ def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int
         default_drop_path=default_drop_path,
         comment=comment,
         data=data,
-        password=password,
-        mde=mde or {}
+        password=password
     )
     db.add(db_profile)
     db.commit()

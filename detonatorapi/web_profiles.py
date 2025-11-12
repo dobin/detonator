@@ -51,7 +51,6 @@ async def get_profiles(db: Session = Depends(get_db)):
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
-            "mde": profile.mde,
             "require_password": requires_password,
         }
     return result
@@ -123,7 +122,7 @@ async def create_profile(
             "default_drop_path": created_profile.default_drop_path,
             "comment": created_profile.comment,
             "data": created_profile.data,
-            "mde": created_profile.mde,
+            "mde": created_profile.data.get("edr_mde", {}),
             "created_at": created_profile.created_at
         }
         
@@ -267,7 +266,7 @@ async def update_profile(
         profile.data = data_dict
         profile.password = password or ""
         if mde_dict is not None:
-            profile.mde = mde_dict
+            profile.data["edr_mde"] = mde_dict
         
         db.commit()
         db.refresh(profile)
@@ -281,7 +280,7 @@ async def update_profile(
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
-            "mde": profile.mde,
+            "mde": profile.data.get("edr_mde", {}),
             "password": password or "",
             "created_at": profile.created_at
         }

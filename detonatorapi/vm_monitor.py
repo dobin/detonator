@@ -133,13 +133,16 @@ class VMMonitorTask:
                     else:
                         db_scan_change_status_quick(self.db, scan, "finished")
 
+                case "polling": 
+                    pass
+
                 case "kill":
                     db_scan_change_status_quick(self.db, scan, "killing")
                     connector.kill(scan_id)
 
     def _needs_mde_polling(self, scan: Scan) -> bool:
         window = scan.detection_window_minutes or 0
-        has_mde = bool(scan.profile and scan.profile.mde)
+        has_mde = bool(scan.profile and scan.profile.data.get("edr_mde"))
         return has_mde and window > 0
 
 

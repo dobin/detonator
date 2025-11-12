@@ -53,7 +53,7 @@ class AlertMonitorTask:
             self.db.close()
 
     def _get_client(self, profile: Profile) -> Optional[MDEClient]:
-        cfg = profile.mde or {}
+        cfg = profile.data.get("edr_mde") or {}
         if not cfg:
             return None
         cache_key = f"{profile.id}:{cfg.get('client_id')}:{cfg.get('client_secret_env')}"
@@ -82,7 +82,7 @@ class AlertMonitorTask:
             options = dict(scan.more_options or {})
             if options.get("mde_monitor_done"):
                 continue
-            if not scan.profile or not scan.profile.mde:
+            if not scan.profile or not scan.profile.data.get("edr_mde"):
                 continue
             client = self._get_client(scan.profile)
             if not client:
