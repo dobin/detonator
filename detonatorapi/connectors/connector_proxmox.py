@@ -74,6 +74,10 @@ class ConnectorProxmox(ConnectorBase):
                 ).all()
                 if scans_using_vm:
                     db_scan_add_log(thread_db, db_scan, f"Scan {scan_id}: Proxmox instance already used by another scan. Will try again ({attempt+1}/{INSTANCE_USED_RETRIES})")
+                    # print the other scans using the VM
+                    for other_scan in scans_using_vm:
+                        logger.info(f"Scan {scan_id}: Proxmox instance used by scan {other_scan.id} (status: {other_scan.status})")
+
                     time.sleep(INSTANCE_USED_SLEEP_TIME)
                 else:
                     break
