@@ -107,9 +107,6 @@ class ScanUpdate(BaseModel):
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
     detection_window_minutes: Optional[int] = None
-    device_id: Optional[str] = None
-    device_hostname: Optional[str] = None
-    device_os_version: Optional[str] = None
     completed_at: Optional[datetime] = None
 
 # get_scan() response
@@ -123,9 +120,6 @@ class ScanResponse(BaseModel):
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
     detection_window_minutes: Optional[int] = None
-    device_id: Optional[str] = None
-    device_hostname: Optional[str] = None
-    device_os_version: Optional[str] = None
 
     detonator_srv_logs: Optional[str] = None
     status: str
@@ -163,9 +157,6 @@ class ScanResponseShort(BaseModel):
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
     detection_window_minutes: Optional[int] = None
-    device_id: Optional[str] = None
-    device_hostname: Optional[str] = None
-    device_os_version: Optional[str] = None
     status: str
     user: str = ""
 

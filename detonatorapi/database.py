@@ -68,9 +68,6 @@ class Scan(Base):
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
     detection_window_minutes: Mapped[int] = Column(Integer, default=1, nullable=False)
 
-    device_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
-    device_hostname: Mapped[Optional[str]] = Column(String(255), nullable=True)
-    device_os_version: Mapped[Optional[str]] = Column(String(255), nullable=True)
     more_options: Mapped[dict] = Column(JSON, default={}, nullable=False)
     
     user: Mapped[str] = Column(String(100), default="", nullable=False)

@@ -18,14 +18,17 @@
         {% if scan.detection_window_minutes is not none %}
         <div><strong>Detection Window:</strong> {{ scan.detection_window_minutes }} min</div>
         {% endif %}
-        {% if scan.device_hostname %}
-        <div><strong>Agent Hostname:</strong> {{ scan.device_hostname }}</div>
-        {% endif %}
-        {% if scan.device_os_version %}
-        <div><strong>Agent OS:</strong> {{ scan.device_os_version }}</div>
-        {% endif %}
-        {% if scan.device_id %}
-        <div><strong>Device ID (Sense):</strong> <span class="font-mono text-xs break-all">{{ scan.device_id }}</span></div>
+        {% if scan.profile and scan.profile.data.get('device_info') %}
+            {% set device_info = scan.profile.data.get('device_info', {}) %}
+            {% if device_info.get('hostname') %}
+            <div><strong>Agent Hostname:</strong> {{ device_info.get('hostname') }}</div>
+            {% endif %}
+            {% if device_info.get('os_version') %}
+            <div><strong>Agent OS:</strong> {{ device_info.get('os_version') }}</div>
+            {% endif %}
+            {% if device_info.get('device_id') %}
+            <div><strong>Device ID (Sense):</strong> <span class="font-mono text-xs break-all">{{ device_info.get('device_id') }}</span></div>
+            {% endif %}
         {% endif %}
     </div>
     

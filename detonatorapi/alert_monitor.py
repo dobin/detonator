@@ -74,11 +74,20 @@ class AlertMonitorTask:
         scans = (
             self.db.query(Scan)
             .options(joinedload(Scan.profile), joinedload(Scan.alerts))
-            .filter(Scan.device_id.isnot(None))
             .all()
         )
         now = datetime.utcnow()
         for scan in scans:
+            # Get device info from Profile.data["device_info"]
+            if not scan.profile:
+                continue
+            device_info = scan.profile.data.get("edr_mde", None)
+            if not device_info:
+                continue
+
+            device_id = device_info.get("device_id", None)
+            device_hostname = device_info.get("hostname", None)
+                
             options = dict(scan.more_options or {})
             if options.get("mde_monitor_done"):
                 continue
@@ -136,12 +145,12 @@ class AlertMonitorTask:
             try:
                 poll_msg = (
                     f"MDE poll: profile={scan.profile.name if scan.profile else 'unknown'} "
-                    f"device_id={scan.device_id} hostname={scan.device_hostname} "
+                    f"device_id={device_id} hostname={device_hostname} "
                     f"since={since.isoformat()} (window_end={window_end.isoformat()})"
                 )
                 logger.info("scan %s - %s", scan.id, poll_msg)
                 db_scan_add_log(self.db, scan, poll_msg)
-                alerts, server_time = client.fetch_alerts(scan.device_id, scan.device_hostname, since)
+                alerts, server_time = client.fetch_alerts(device_id, device_hostname, since)
                 server_time_note = f" (MDE server time {server_time})" if server_time else ""
                 new_alerts = self._store_alerts(scan, alerts)
                 if new_alerts:
