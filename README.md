@@ -63,10 +63,9 @@ myfirstvm:
   mde:
     tenant_id: "00000000-0000-0000-0000-000000000000"
     client_id: "11111111-2222-3333-4444-555555555555"
-    client_secret_env: "MDE_MYFIRSTVM_CLIENT_SECRET"
 ```
 
-Store the corresponding client secret in the environment variable referenced by `client_secret_env`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires.
+Store the corresponding client secret in the environment variable `MDE_AZURE_CLIENT_SECRET`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires.
 
 **Entra app**
 
@@ -74,9 +73,9 @@ Store the corresponding client secret in the environment variable referenced by 
 2. Under **API permissions**, add application permissions for `Microsoft Graph`:  
    - `SecurityAlert.Read.All` and `SecurityAlert.ReadWrite.All`  
    - `SecurityIncident.Read.All` and `SecurityIncident.ReadWrite.All` *(needed if you want Detonator to auto-close related incidents)*  
-   - `AdvancedHunting.Read.All`
+   - `ThreatHunting.Read.All`
 3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
-4. Use the app’s **Application (client) ID**, tenant ID, and `client_secret_env` in each profile’s `mde` block as shown above. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
+4. Use the app’s **Application (client) ID**, tenant ID in each profile’s `mde` block as shown above, and export `MDE_AZURE_CLIENT_SECRET`. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.  
 
 #### Detection window & polling lifecycle
 

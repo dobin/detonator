@@ -56,7 +56,7 @@ class AlertMonitorTask:
         cfg = profile.data.get("edr_mde") or {}
         if not cfg:
             return None
-        cache_key = f"{profile.id}:{cfg.get('client_id')}:{cfg.get('client_secret_env')}"
+        cache_key = f"{profile.id}:{cfg.get('client_id')}"
         client = self.client_cache.get(cache_key)
         if client:
             return client

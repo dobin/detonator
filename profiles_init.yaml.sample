@@ -20,7 +20,6 @@ new_defender:
     edr_mde:
       tenant_id: "00000000-0000-0000-0000-000000000000"
       client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-      client_secret_env: "MDE_AZURE_CLIENT_SECRET"
       hostname: ""
       device_id: ""
     

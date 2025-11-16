@@ -23,13 +23,9 @@ class MDEClient:
         if not self.client_id:
             raise ValueError("client_id missing in MDE configuration")
 
-        secret_env = tenant_config.get("client_secret_env")
-        if not secret_env:
-            raise ValueError("client_secret_env missing in MDE configuration")
-
-        self.client_secret = os.getenv(secret_env)
+        self.client_secret = os.getenv("MDE_AZURE_CLIENT_SECRET")
         if not self.client_secret:
-            raise ValueError(f"Environment variable {secret_env} is not set")
+            raise ValueError(f"Environment variable MDE_AZURE_CLIENT_SECRET is not set")
 
         self.base_url = tenant_config.get("base_url", "https://graph.microsoft.com")
         self._token_cache: Tuple[Optional[str], Optional[datetime]] = (None, None)
