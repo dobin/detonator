@@ -6,7 +6,7 @@ import time
 from detonatorapi.database import get_db_for_thread, Scan
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
 from detonatorapi.agent.agent_interface import connect_to_agent, scan_file_with_agent
-
+from detonatorapi.edr_cloud.mde_alert_monitor import AlertMonitorMde
 from detonatorapi.database import get_db_for_thread, Scan
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,15 @@ class ConnectorBase:
                 db_scan_change_status(scan_id, "error", f"Could not start trace on RedEdr")
 
         threading.Thread(target=scan_thread, args=(scan_id, )).start()
+
+        # Check if we have MDE configured
+        scan: Scan = get_db_for_thread().get(Scan, scan_id)
+        if not scan:
+            return
+        if scan.profile and scan.profile.data.get("edr_mde"):
+            alertMonitorMde = AlertMonitorMde(scan_id)
+            alertMonitorMde.start_monitoring()
+
 
     def stop(self, scan_id: int):
         raise NotImplementedError("This method should be overridden by subclasses")

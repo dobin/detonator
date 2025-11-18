@@ -34,7 +34,6 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
             default_drop_path=profile_config.get('default_drop_path', ''),
             comment=profile_config.get('comment', ''),
             password=profile_config.get('password', ''),
-            mde=profile_config.get('mde', {})
         )
         logger.info(f"Initialized profile '{profile_name}' from YAML")
 

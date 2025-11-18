@@ -136,7 +136,6 @@ def db_create_scan(
     project: str = "",
     runtime: int = 10,
     drop_path: str = "",
-    detection_window_minutes: int = 1,
     user: str = "",
 ) -> int:
     """Create a scan using a profile name instead of profile_id"""
@@ -157,7 +156,6 @@ def db_create_scan(
         project=project,
         runtime=runtime,
         drop_path=drop_path,
-        detection_window_minutes=detection_window_minutes,
         user=user,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",

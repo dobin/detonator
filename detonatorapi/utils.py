@@ -32,13 +32,3 @@ def sanitize_runtime_seconds(value: Optional[int]) -> Optional[int]:
         raise ValueError(f"Runtime must be between {RUNTIME_MIN_SECONDS} and {RUNTIME_MAX_SECONDS} seconds.")
     return value
 
-
-def sanitize_detection_window_minutes(value: Optional[int]) -> Optional[int]:
-    """Ensure detection window minutes are within supported bounds."""
-    if value is None:
-        return None
-    if value < DETECTION_WINDOW_MIN_MINUTES or value > DETECTION_WINDOW_MAX_MINUTES:
-        raise ValueError(
-            f"Detection window must be between {DETECTION_WINDOW_MIN_MINUTES} and {DETECTION_WINDOW_MAX_MINUTES} minutes."
-        )
-    return value

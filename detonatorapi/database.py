@@ -66,10 +66,6 @@ class Scan(Base):
     project: Mapped[str] = Column(String(100), default="", nullable=False)
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
-    detection_window_minutes: Mapped[int] = Column(Integer, default=1, nullable=False)
-
-    more_options: Mapped[dict] = Column(JSON, default={}, nullable=False)
-    
     user: Mapped[str] = Column(String(100), default="", nullable=False)
 
     # TRACK
@@ -86,6 +82,7 @@ class Scan(Base):
     result: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure
+    # TEMP
     vm_exist: Mapped[int] = Column(Integer, default=0, nullable=False)
     vm_instance_name: Mapped[str] = Column(String(100), nullable=True)
     vm_ip_address: Mapped[str] = Column(String(15), nullable=True)
@@ -124,15 +121,6 @@ class ScanAlert(Base):
 
 # Create tables
 Base.metadata.create_all(bind=engine)
-
-
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def get_db_for_thread():

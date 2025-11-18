@@ -20,7 +20,5 @@ new_defender:
     edr_mde:
       tenant_id: "00000000-0000-0000-0000-000000000000"
       client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-      hostname: ""
-      device_id: ""
-    
-    
+      hostname: "DESKTOP-12356"
+      device_id: "4234k4j2k3j4k23j4k2j43"

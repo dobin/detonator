@@ -92,7 +92,6 @@ class FileCreateScan(BaseModel):
     project: Optional[str] = None
     profile_name: str
     runtime: Optional[int] = 10
-    detection_window_minutes: Optional[int] = 1
     drop_path: Optional[str] = ""
     comment: Optional[str] = None
     password: Optional[str] = None
@@ -106,7 +105,6 @@ class ScanUpdate(BaseModel):
     status: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
-    detection_window_minutes: Optional[int] = None
     completed_at: Optional[datetime] = None
 
 # get_scan() response
@@ -119,7 +117,6 @@ class ScanResponse(BaseModel):
     comment: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
-    detection_window_minutes: Optional[int] = None
 
     detonator_srv_logs: Optional[str] = None
     status: str
@@ -156,7 +153,6 @@ class ScanResponseShort(BaseModel):
     comment: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
-    detection_window_minutes: Optional[int] = None
     status: str
     user: str = ""
 

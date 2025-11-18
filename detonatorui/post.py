@@ -100,20 +100,7 @@ def upload_file_and_scan():
         
         if 'drop_path' in request.form:
             data['drop_path'] = request.form['drop_path']
-        
-        if 'detection_window_minutes' in request.form:
-            raw_window = request.form['detection_window_minutes'].strip()
-            if raw_window:
-                try:
-                    window_value = int(raw_window)
-                except ValueError:
-                    return {"error": "Invalid detection window value"}, 400
-                if window_value < DETECTION_WINDOW_MIN_MINUTES or window_value > DETECTION_WINDOW_MAX_MINUTES:
-                    return {
-                        "error": f"Detection window must be between {DETECTION_WINDOW_MIN_MINUTES} and {DETECTION_WINDOW_MAX_MINUTES} minutes"
-                    }, 400
-                data['detection_window_minutes'] = window_value
-            
+                    
         response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data, headers=headers)
         return handle_api_response(response, "file upload and scan")
     except requests.RequestException as e:
