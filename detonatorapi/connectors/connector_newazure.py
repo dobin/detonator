@@ -81,6 +81,7 @@ class ConnectorNewAzure(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             azure_manager = get_azure_manager()
             if not azure_manager:
@@ -109,6 +110,7 @@ class ConnectorNewAzure(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             vm_name = db_scan.vm_instance_name
             azure_manager = get_azure_manager()
@@ -136,5 +138,6 @@ class ConnectorNewAzure(ConnectorBase):
             # Set it to killed. We tried.
             # (never to error and vm_exist = 1 as it will be killed again)
             db_scan_change_status_quick(thread_db, db_scan, "killed")
+            thread_db.close()
 
         threading.Thread(target=kill_thread, args=(scan_id, )).start()

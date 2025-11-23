@@ -34,6 +34,7 @@ def connect_to_agent(scan_id) -> bool:
     db_scan: Scan = thread_db.get(Scan, scan_id)
     if not db_scan:
         logger.error(f"Scan {scan_id} not found")
+        thread_db.close()
         return False
     # IP in template?
     if 'ip' in db_scan.profile.data:
@@ -43,6 +44,7 @@ def connect_to_agent(scan_id) -> bool:
         agent_ip = db_scan.vm_ip_address
     if not agent_ip:
         logger.error(f"Scan {db_scan.id} has no VM IP address defined")
+        thread_db.close()
         return False
     agent_port = db_scan.profile.port
     
@@ -54,6 +56,7 @@ def connect_to_agent(scan_id) -> bool:
             # just connect
             #if response.status_code == 200:
             db_scan_add_log(thread_db, db_scan, f"Connected to agent at {url} on attempt {attempt + 1}")
+            thread_db.close()
             return True
         except requests.RequestException as e:
             db_scan_add_log(thread_db, db_scan, f"Attempt {attempt + 1}: Could not connect to agent at {url}")
@@ -61,6 +64,7 @@ def connect_to_agent(scan_id) -> bool:
         time.sleep(1)
 
     db_scan_add_log(thread_db, db_scan, f"Failed to connect to agent at {url} after 10 attempts")
+    thread_db.close()
     return False
 
 
@@ -70,6 +74,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     db_scan: Scan = thread_db.get(Scan, scan_id)
     if not db_scan:
         logger.error(f"Scan {scan_id} not found")
+        thread_db.close()
         return False
     # IP in template?
     if 'ip' in db_scan.profile.data:
@@ -79,6 +84,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         agent_ip = db_scan.vm_ip_address
     if not agent_ip:
         logger.error(f"Scan {db_scan.id} has no VM IP address defined")
+        thread_db.close()
         return False
     agent_port = db_scan.profile.port  # port is always defined in the profile
 
@@ -121,6 +127,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         
         if not lock_acquired:
             db_scan_add_log(thread_db, db_scan, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
+            thread_db.close()
             return False
 
     # RedEdr (if exist): Set the process name we gonna trace
@@ -131,6 +138,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         if not trace_result:
             db_scan_add_log(thread_db, db_scan, f"Error: Could not start trace on RedEdr, error: {trace_result.error_message}")
             agentApi.ReleaseLock()
+            thread_db.close()
             return False
         
         # let RedEdr boot up
@@ -150,6 +158,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     if executionResult == ExecutionResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Error: When executing file on DetonatorAgent")
         agentApi.ReleaseLock()
+        thread_db.close()
         return False
     elif executionResult == ExecutionResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware when writing to disk")
@@ -278,5 +287,6 @@ def scan_file_with_agent(scan_id: int) -> bool:
     db_scan.result = result_is_detected
     db_scan.completed_at = datetime.utcnow()
     thread_db.commit()
+    thread_db.close()
 
     return True

@@ -61,6 +61,7 @@ class ConnectorProxmox(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
             vm_id = db_profile.data['vm_id']
@@ -96,6 +97,7 @@ class ConnectorProxmox(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)  # get db entry again (may have waited for it)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             db_scan.vm_ip_address = db_profile.data['vm_ip']
             db_scan_change_status_quick(thread_db, db_scan, "instantiated")
@@ -124,6 +126,7 @@ class ConnectorProxmox(ConnectorBase):
             db_scan: Scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
             vm_id = db_profile.data['vm_id']
@@ -147,6 +150,7 @@ class ConnectorProxmox(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
             vm_id = db_profile.data['vm_id']
@@ -185,6 +189,7 @@ class ConnectorProxmox(ConnectorBase):
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
+                thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
             vm_id = db_profile.data['vm_id']
@@ -210,5 +215,6 @@ class ConnectorProxmox(ConnectorBase):
             # Set it to killed. We tried.
             # (never to error and vm_exist = 1 as it will be killed again)
             db_scan_change_status(scan_id, "killed")
+            thread_db.close()
 
         threading.Thread(target=kill_thread, args=(scan_id, )).start()

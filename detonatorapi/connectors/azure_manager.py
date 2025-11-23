@@ -143,8 +143,10 @@ class AzureManager:
             
         except Exception as e:
             logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
+            db.close()
             return False
         
+        db.close()
         return True
     
     

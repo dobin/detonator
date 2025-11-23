@@ -18,7 +18,9 @@ def db_scan_change_status(scan_id: int, status: str, log_message: str = ""):
     thread_db = get_db()
     db_scan = thread_db.get(Scan, scan_id)
 
-    return db_scan_change_status_quick(thread_db, db_scan, status, log_message)
+    ret = db_scan_change_status_quick(thread_db, db_scan, status, log_message)
+    thread_db.close()
+    return ret
 
 
 # Change the status of a scan in the database

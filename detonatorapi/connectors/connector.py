@@ -58,12 +58,18 @@ class ConnectorBase:
         threading.Thread(target=scan_thread, args=(scan_id, )).start()
 
         # Check if we have MDE configured
-        scan: Scan = get_db().get(Scan, scan_id)
+        db = get_db()
+        scan: Scan = db.get(Scan, scan_id)
         if not scan:
+            db.close()
             return
         if scan.profile and scan.profile.data.get("edr_mde"):
             alertMonitorMde = AlertMonitorMde(scan_id)
             alertMonitorMde.start_monitoring()
+            logger.info(f"Started Cloud-MDE alert monitoring for scan {scan_id}")
+        else:
+            logger.info(f"No Cloud-MDE configured for scan {scan_id}")
+        db.close()
 
 
     def stop(self, scan_id: int):
