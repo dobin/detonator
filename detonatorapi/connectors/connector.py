@@ -2,6 +2,7 @@ import logging
 import threading
 from typing import Dict, List, Optional
 import time
+from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db, Scan
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
@@ -59,7 +60,7 @@ class ConnectorBase:
 
         # Check if we have MDE configured
         db = get_db()
-        scan: Scan = db.get(Scan, scan_id)
+        scan = db.query(Scan).options(joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
         if not scan:
             db.close()
             return
