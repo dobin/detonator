@@ -30,7 +30,7 @@ class ProxmoxManager:
     def __init__(self):
         self.proxmox_ip = None
         self.proxmox_node_name = None
-        self.proxmoxApi: ProxmoxAPI
+        self.proxmoxApi: ProxmoxAPI | None = None
 
 
     def Init(self) -> bool:
@@ -97,6 +97,9 @@ class ProxmoxManager:
     
 
     def StatusVm(self, vm_id) -> str:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
         try:
             vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
             if not vmStatus:
@@ -109,6 +112,9 @@ class ProxmoxManager:
     
 
     def StatusVmLock(self, vm_id) -> str:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
         try:
             vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
             if not vmStatus:
@@ -136,6 +142,9 @@ class ProxmoxManager:
     
 
     def StartVm(self, vm_id) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
         task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.start.post()
         if not self._waitForTask(task):
             return False
@@ -143,6 +152,9 @@ class ProxmoxManager:
 
 
     def StopVm(self, vm_id) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         if DISABLE_REVERT_VM:
             logger.info("ProxmoxManager: StopVm called but DISABLE_REVERT_VM is set. Skipping stop.")
             return True
@@ -154,6 +166,9 @@ class ProxmoxManager:
 
 
     def RevertVm(self, vm_id, vm_snapshot) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         if DISABLE_REVERT_VM:
             logger.info("ProxmoxManager: RevertVm called but DISABLE_REVERT_VM is set. Skipping revert.")
             return True
@@ -166,6 +181,9 @@ class ProxmoxManager:
 
 
     def SnapshotExists(self, vm_id, snapshot_name) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         try:
             snapshots = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot.get()
             if not snapshots:
@@ -182,6 +200,9 @@ class ProxmoxManager:
 
 
     def _waitForTask(self, rollback_task, max_tries=30):
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         if not rollback_task:
             return True
         if 'taskid' not in rollback_task:
