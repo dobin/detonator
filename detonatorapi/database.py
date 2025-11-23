@@ -123,5 +123,5 @@ class ScanAlert(Base):
 Base.metadata.create_all(bind=engine)
 
 
-def get_db_for_thread():
+def get_db():
     return SessionLocal()

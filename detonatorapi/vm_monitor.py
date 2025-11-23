@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import time
 import threading
 
-from .database import get_db_for_thread, Scan
+from .database import get_db, Scan
 from .db_interface import db_scan_change_status_quick
 from .utils import mylog
 from .settings import *
@@ -50,7 +50,7 @@ class VMMonitorTask:
 
     async def _monitor_loop(self):
         # IN-thread initialization
-        self.db = get_db_for_thread()
+        self.db = get_db()
 
         while self.running:
             try:

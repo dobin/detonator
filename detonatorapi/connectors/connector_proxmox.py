@@ -3,7 +3,7 @@ import time
 import threading
 from typing import Dict, List, Optional
 
-from detonatorapi.database import get_db_for_thread, Scan, Profile
+from detonatorapi.database import get_db, Scan, Profile
 from detonatorapi.utils import mylog, scanid_to_vmname
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_get_profile_by_id, db_scan_change_status
 
@@ -57,7 +57,7 @@ class ConnectorProxmox(ConnectorBase):
 
     def instantiate(self, scan_id: int):
         def instantiate_thread(scan_id: int): 
-            thread_db = get_db_for_thread()
+            thread_db = get_db()
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
@@ -120,7 +120,7 @@ class ConnectorProxmox(ConnectorBase):
             return
 
         def stop_thread(scan_id: int):
-            thread_db = get_db_for_thread()
+            thread_db = get_db()
             db_scan: Scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
@@ -143,7 +143,7 @@ class ConnectorProxmox(ConnectorBase):
             return
 
         def remove_thread(scan_id: int):
-            thread_db = get_db_for_thread()
+            thread_db = get_db()
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")
@@ -181,7 +181,7 @@ class ConnectorProxmox(ConnectorBase):
     def kill(self, scan_id: int):
         """Attempt to kill (stop and delete) the VM"""
         def kill_thread(scan_id: int):
-            thread_db = get_db_for_thread()
+            thread_db = get_db()
             db_scan = thread_db.get(Scan, scan_id)
             if not db_scan:  # check mostly for syntax checker
                 logger.error(f"Scan {scan_id} not found")

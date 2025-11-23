@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from detonatorapi.edr_cloud.mde_client import MDEClient
-from detonatorapi.database import get_db_for_thread, Profile
+from detonatorapi.database import get_db, Profile
 
 # Configure logging
 logging.basicConfig(
@@ -51,7 +51,7 @@ def test_mde_client(profile_name: str = "win10dev"):
     print_section("MDE Client Test Script")
     
     # Load configuration from database
-    db = get_db_for_thread()
+    db = get_db()
     try:
         profile = db.query(Profile).filter(Profile.name == profile_name).first()
         if not profile:

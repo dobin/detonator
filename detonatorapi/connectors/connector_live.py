@@ -2,7 +2,7 @@ import logging
 import threading
 from typing import Dict, List, Optional
 
-from detonatorapi.database import get_db_for_thread, Scan
+from detonatorapi.database import get_db, Scan
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
 
 from .connector import ConnectorBase

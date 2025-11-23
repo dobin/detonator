@@ -9,7 +9,7 @@ import os
 
 from detonatorapi.edr_parser.edr_parser import EdrParser
 from detonatorapi.settings import UPLOAD_DIR
-from detonatorapi.database import Scan, get_db_for_thread
+from detonatorapi.database import Scan, get_db
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log
 from detonatorapi.agent.agent_api import AgentApi
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
@@ -30,7 +30,7 @@ DO_LOCKING = True
 # Attempt to connect to the agent port to see if its up and running
 def connect_to_agent(scan_id) -> bool:
     agent_ip: Optional[str] = None
-    thread_db = get_db_for_thread()
+    thread_db = get_db()
     db_scan: Scan = thread_db.get(Scan, scan_id)
     if not db_scan:
         logger.error(f"Scan {scan_id} not found")
@@ -66,7 +66,7 @@ def connect_to_agent(scan_id) -> bool:
 
 def scan_file_with_agent(scan_id: int) -> bool:
     agent_ip: Optional[str] = None
-    thread_db = get_db_for_thread()
+    thread_db = get_db()
     db_scan: Scan = thread_db.get(Scan, scan_id)
     if not db_scan:
         logger.error(f"Scan {scan_id} not found")

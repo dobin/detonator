@@ -5,7 +5,7 @@ from typing import Dict, Optional, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
-from ..database import get_db_for_thread, Scan, ScanAlert, Profile
+from ..database import get_db, Scan, ScanAlert, Profile
 from .mde_client import MDEClient
 from ..db_interface import db_scan_add_log, db_scan_change_status_quick
 
@@ -32,7 +32,7 @@ class AlertMonitorMde:
 
 
     async def _monitor_loop(self):
-        self.db = get_db_for_thread()
+        self.db = get_db()
         while self.running:
             try:
                 # check newest status

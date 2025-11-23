@@ -2,7 +2,7 @@ import json
 import logging
 from typing import List, Dict
 
-from detonatorapi.database import get_db_for_thread, Scan
+from detonatorapi.database import get_db, Scan
 from detonatorapi.agent.agent_interface import parsers
 
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def reparse_edr_logs():
-    db = get_db_for_thread()
+    db = get_db()
     scans = db.query(Scan).all()
     for scan in scans:
         #if not scan.edr_logs:
