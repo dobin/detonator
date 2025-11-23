@@ -24,16 +24,13 @@ class AlertMonitorMde:
 
 
     def start_monitoring(self):
-        if self.running:
-            return
-        self.running = True
         self.task = asyncio.create_task(self._monitor_loop())
         logger.info("Alert monitoring task started")
 
 
     async def _monitor_loop(self):
         self.db = get_db()
-        while self.running:
+        while True:
             try:
                 # check newest status
                 scan = self.db.query(Scan).filter(Scan.id == self.scan_id).first()
