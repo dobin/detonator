@@ -116,7 +116,7 @@ class AlertMonitorMde:
             alerts = client.fetch_alerts(
                 device_id, device_hostname, time_from, time_to
             )
-            pprint.pprint(alerts)
+            #pprint.pprint(alerts)
             self._store_alerts(scan, alerts)
         except Exception as exc:
             db_scan_add_log(self.db, scan, f"MDE poll: failed: {exc}")
@@ -130,12 +130,12 @@ class AlertMonitorMde:
         existing_ids = {alert.alert_id for alert in scan.alerts}
         
         for alert in alerts_with_evidence:
-            alert_id = alert.get("alert_id", None)
+            alert_id = alert.get("AlertId", None)
             if not alert_id:
                 continue
             if alert_id in existing_ids:
                 continue
-                
+
             # Extract metadata from first evidence row
             detected_at = alert.get("Timestamp")
             detected_dt = None
