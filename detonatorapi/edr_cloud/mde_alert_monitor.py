@@ -107,7 +107,7 @@ class AlertMonitorMde:
  
         # Determine polling window
         time_from = scan.created_at
-        time_to = datetime.utcnow()
+        time_to = scan.completed_at or datetime.utcnow()
         
         try:
             poll_msg = f"MDE poll {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
