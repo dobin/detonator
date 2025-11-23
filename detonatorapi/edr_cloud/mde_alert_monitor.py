@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
+import pprint
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -127,33 +128,27 @@ class AlertMonitorMde:
         
         try:
             poll_msg = (
-                f"MDE poll: profile={scan.profile.name if scan.profile else 'unknown'} "
-                f"device_id={device_id} hostname={device_hostname} "
-                f"since={since.isoformat()} (window_end={window_end.isoformat()})"
+                f"MDE poll {scan.id}: "
+                f" from {since.isoformat()} to {window_end.isoformat()} "
+            #    f"({device_id} / {device_hostname})"
             )
-            logger.info("scan %s - %s", scan.id, poll_msg)
             db_scan_add_log(self.db, scan, poll_msg)
+
             alerts, server_time = client.fetch_alerts(device_id, device_hostname, since)
-            server_time_note = f" (MDE server time {server_time})" if server_time else ""
+            pprint.pprint(alerts)
+
             new_alerts = self._store_alerts(scan, alerts)
             if new_alerts:
-                msg = f"MDE alert IDs synced: {len(new_alerts)} new{server_time_note}"
+                msg = f"MDE poll: new alert IDs synced: {len(new_alerts)} ({server_time})"
                 db_scan_add_log(self.db, scan, msg)
-                logger.info("scan %s - %s", scan.id, msg)
-                if scan.result not in ("file_detected", "detected"):
-                    scan.result = "detected"
-                    self.db.commit()
             elif alerts:
-                msg = f"MDE poll: {len(alerts)} alert IDs already recorded{server_time_note}"
-                logger.info("scan %s - %s", scan.id, msg)
+                msg = f"MDE poll: {len(alerts)} alert IDs already recorded ({server_time})"
                 db_scan_add_log(self.db, scan, msg)
             else:
-                msg = f"MDE poll: no alert IDs{server_time_note}"
-                logger.info("scan %s - %s", scan.id, msg)
+                msg = f"MDE poll: no alert IDs ({server_time})"
                 db_scan_add_log(self.db, scan, msg)
         except Exception as exc:
-            logger.error(f"Failed to fetch MDE alerts for scan {scan.id}: {exc}")
-            db_scan_add_log(self.db, scan, f"MDE poll failed: {exc}")
+            db_scan_add_log(self.db, scan, f"MDE poll: failed: {exc}")
 
         self.db.commit()
         return True
