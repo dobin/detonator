@@ -136,6 +136,9 @@ class AlertMonitorMde:
             if alert_id in existing_ids:
                 continue
 
+            # somehow we have a lot of duplicates in the list?
+            existing_ids.add(alert_id)
+
             # Extract metadata from first evidence row
             detected_at = alert.get("Timestamp")
             detected_dt = None
