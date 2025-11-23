@@ -37,8 +37,7 @@ class AlertMonitorMde:
                 if not scan:
                     break
 
-                stop_time = scan.completed_at + timedelta(minutes=POLLING_TIME_MINUTES)
-                if scan.status in ["error", "finished"] and stop_time > datetime.utcnow():
+                if scan.status in ["error", "finished"] and scan.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) > datetime.utcnow():
                     # We finished
                     self._finish_monitoring(scan)
                     break
