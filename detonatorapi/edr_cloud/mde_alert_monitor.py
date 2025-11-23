@@ -12,7 +12,7 @@ from ..db_interface import db_scan_add_log, db_scan_change_status_quick
 
 logger = logging.getLogger(__name__)
 
-POLLING_TIME_MINUTES = 1
+POLLING_TIME_MINUTES = 10  # post 
 
 
 class AlertMonitorMde:
@@ -32,12 +32,20 @@ class AlertMonitorMde:
     async def _monitor_loop(self):
         self.db = get_db()
 
-        start_time = datetime.utcnow()
-        while start_time + timedelta(minutes=POLLING_TIME_MINUTES) > datetime.utcnow():
+        #start_time = datetime.utcnow()
+        #while start_time + timedelta(minutes=POLLING_TIME_MINUTES) > datetime.utcnow():
+        while True:
             try:
                 scan = self.db.query(Scan).filter(Scan.id == self.scan_id).first()
                 if not scan:
                     break
+                
+                # check if we are done
+                if scan.status in ("error", "finished"):
+                    # check if we are > POLLING_TIME_MINUTES after completed_at
+                    if scan.completed_at and \
+                          scan.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) < datetime.utcnow():
+                        break
 
                 # poll
                 self._poll(scan)
