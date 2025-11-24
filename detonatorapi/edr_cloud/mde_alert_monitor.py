@@ -12,8 +12,8 @@ from ..db_interface import db_scan_add_log, db_scan_change_status_quick
 
 logger = logging.getLogger(__name__)
 
-POLLING_TIME_MINUTES = 10  # post 
-
+POLLING_TIME_MINUTES = 2  # post end monitoring duration
+POLL_INTERVAL_SECONDS = 30  # polling interval
 
 class AlertMonitorMde:
 
@@ -51,7 +51,7 @@ class AlertMonitorMde:
                 db.commit()
 
                 # sleep a bit before next poll
-                await asyncio.sleep(10)
+                await asyncio.sleep(POLL_INTERVAL_SECONDS)
             except asyncio.CancelledError:
                 break
             except Exception as exc:
@@ -108,14 +108,12 @@ class AlertMonitorMde:
         if not client:
             return False
 
-        logger.info("scan %s: Poll for MDE events", scan.id)
- 
         # Determine polling window
         time_from = scan.created_at
         time_to = scan.completed_at or datetime.utcnow()
         
         try:
-            poll_msg = f"MDE poll {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
+            poll_msg = f"MDE poll for scan {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
             db_scan_add_log(db, scan, poll_msg)
 
             alerts = client.fetch_alerts(
