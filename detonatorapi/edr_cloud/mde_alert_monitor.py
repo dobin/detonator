@@ -20,7 +20,6 @@ class AlertMonitorMde:
     def __init__(self, scan_id: int):
         self.scan_id = scan_id
         self.task: Optional[asyncio.Task] = None
-        self.db: Optional[Session] = None
         self.client_cache: Dict[str, MDEClient] = {}
 
 
@@ -30,13 +29,13 @@ class AlertMonitorMde:
 
 
     async def _monitor_loop(self):
-        self.db = get_db()
-
         #start_time = datetime.utcnow()
         #while start_time + timedelta(minutes=POLLING_TIME_MINUTES) > datetime.utcnow():
         while True:
+            db = None
             try:
-                scan = self.db.query(Scan).filter(Scan.id == self.scan_id).first()
+                db = get_db()
+                scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
                 if not scan:
                     break
                 
@@ -48,7 +47,8 @@ class AlertMonitorMde:
                         break
 
                 # poll
-                self._poll(scan)
+                self._poll(db, scan)
+                db.commit()
 
                 # sleep a bit before next poll
                 await asyncio.sleep(10)
@@ -57,21 +57,22 @@ class AlertMonitorMde:
             except Exception as exc:
                 logger.error(f"Alert monitor loop error: {exc}")
                 await asyncio.sleep(5)
+            finally:
+                if db:
+                    db.close()
 
         # We finished. Close alerts
-        scan = self.db.query(Scan).filter(Scan.id == self.scan_id).first()
-        if scan:
-            self._finish_monitoring(scan)
+        db = get_db()
+        try:
+            scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
+            if scan:
+                self._finish_monitoring(db, scan)
+            db.commit()
+        finally:
+            db.close()
 
-        if self.db:
-            self.db.commit()
-            self.db.close()
 
-
-    def _finish_monitoring(self, scan: Scan) -> bool:
-        if not self.db:
-            return False
-
+    def _finish_monitoring(self, db: Session, scan: Scan) -> bool:
         # Scan Info
         if not scan.profile:
             return False
@@ -84,19 +85,15 @@ class AlertMonitorMde:
         logger.info("scan %s: Finalizing MDE alert monitoring", scan.id)
 
         try:
-            self._auto_close(scan, client)
+            self._auto_close(db, scan, client)
         except Exception as exc:
             logger.error(f"Failed to auto close alerts for scan {scan.id}: {exc}")
-            db_scan_add_log(self.db, scan, f"MDE auto-close failed: {exc}")
+            db_scan_add_log(db, scan, f"MDE auto-close failed: {exc}")
 
-        self.db.commit()
         return True
 
 
-    def _poll(self, scan: Scan) -> bool:
-        if not self.db:
-            return False
-
+    def _poll(self, db: Session, scan: Scan) -> bool:
         # Scan Info
         if not scan.profile:
             return False
@@ -119,21 +116,20 @@ class AlertMonitorMde:
         
         try:
             poll_msg = f"MDE poll {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
-            db_scan_add_log(self.db, scan, poll_msg)
+            db_scan_add_log(db, scan, poll_msg)
 
             alerts = client.fetch_alerts(
                 device_id, device_hostname, time_from, time_to
             )
             #pprint.pprint(alerts)
-            self._store_alerts(scan, alerts)
+            self._store_alerts(db, scan, alerts)
         except Exception as exc:
-            db_scan_add_log(self.db, scan, f"MDE poll: failed: {exc}")
+            db_scan_add_log(db, scan, f"MDE poll: failed: {exc}")
 
-        self.db.commit()
         return True
 
 
-    def _store_alerts(self, scan: Scan, alerts_with_evidence):
+    def _store_alerts(self, db: Session, scan: Scan, alerts_with_evidence):
         """Store alerts with their evidence already included."""
         existing_ids = {alert.alert_id for alert in scan.alerts}
         
@@ -165,14 +161,12 @@ class AlertMonitorMde:
                 detection_source=alert.get("DetectionSource"),
                 detected_at=detected_dt,
             )
-            self.db.add(scan_alert)
+            db.add(scan_alert)
             scan.alerts.append(scan_alert)
             logger.info(f"scan {scan.id}: New alert stored: {alert_id}")
-            
-        self.db.commit()
     
 
-    def _auto_close(self, scan: Scan, client: MDEClient):
+    def _auto_close(self, db: Session, scan: Scan, client: MDEClient):
         comment = f"Auto-Closed by Detonator (scan {scan.id})"
         closed_incidents = set()
         for alert in scan.alerts:
@@ -182,7 +176,6 @@ class AlertMonitorMde:
                     alert.status = "Resolved"
                     alert.auto_closed_at = datetime.utcnow()
                     alert.comment = comment
-                    self.db.commit()
                 except Exception as exc:
                     logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
             incident_id = alert.incident_id
@@ -192,7 +185,7 @@ class AlertMonitorMde:
                     closed_incidents.add(incident_id)
                 except Exception as exc:
                     logger.error(f"Failed to resolve incident {incident_id}: {exc}")
-        db_scan_add_log(self.db, scan, "Detection window completed. Alerts auto-closed.")
+        db_scan_add_log(db, scan, "Detection window completed. Alerts auto-closed.")
 
 
     def _get_client(self, profile: Profile) -> Optional[MDEClient]:
