@@ -124,4 +124,22 @@ Base.metadata.create_all(bind=engine)
 
 
 def get_db():
+    """
+    Database session dependency for FastAPI.
+    Yields a session that will be automatically closed after the request.
+    For manual management outside FastAPI, use get_db_direct() instead.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_db_direct():
+    """
+    Get a database session directly without dependency injection.
+    IMPORTANT: Caller MUST close the session manually with db.close()
+    Use this for background tasks, threads, and non-FastAPI code.
+    """
     return SessionLocal()

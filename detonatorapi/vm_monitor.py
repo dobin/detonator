@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import time
 import threading
 
-from .database import get_db, Scan
+from .database import get_db_direct, Scan
 from .db_interface import db_scan_change_status_quick
 from .utils import mylog
 from .settings import *
@@ -51,7 +51,7 @@ class VMMonitorTask:
         while self.running:
             db = None
             try:
-                db = get_db()
+                db = get_db_direct()
                 self.check_all_scans(db)
                 db.commit()
                 await asyncio.sleep(1)

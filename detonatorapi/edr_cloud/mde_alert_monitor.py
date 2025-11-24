@@ -6,7 +6,7 @@ import pprint
 
 from sqlalchemy.orm import Session, joinedload
 
-from ..database import get_db, Scan, ScanAlert, Profile
+from ..database import get_db_direct, Scan, ScanAlert, Profile
 from .mde_client import MDEClient
 from ..db_interface import db_scan_add_log, db_scan_change_status_quick
 
@@ -34,7 +34,7 @@ class AlertMonitorMde:
         while True:
             db = None
             try:
-                db = get_db()
+                db = get_db_direct()
                 scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
                 if not scan:
                     break
@@ -62,7 +62,7 @@ class AlertMonitorMde:
                     db.close()
 
         # We finished. Close alerts
-        db = get_db()
+        db = get_db_direct()
         try:
             scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
             if scan:

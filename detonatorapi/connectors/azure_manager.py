@@ -15,7 +15,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 
 from detonatorapi.utils import mylog, scanid_to_vmname
-from detonatorapi.database import Scan, get_db
+from detonatorapi.database import Scan, get_db_direct
 
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
@@ -74,20 +74,20 @@ class AzureManager:
 
     def create_machine(self, scan_id) -> bool:
         vm_name = scanid_to_vmname(scan_id)
-        db = get_db()
+        db = get_db_direct()
 
-        # All required information is in the database entry
-        db_scan = db.get(Scan, scan_id)
-        if not db_scan:
-            logger.error(f"Scan with ID {scan_id} not found in database")
-            # No DB to update
-            return False
-        
-        # DB UPDATE: Indicate we creating the VM currently
-        db_scan.vm_instance_name = vm_name
-        db.commit()
-        
         try:
+            # All required information is in the database entry
+            db_scan = db.get(Scan, scan_id)
+            if not db_scan:
+                logger.error(f"Scan with ID {scan_id} not found in database")
+                # No DB to update
+                return False
+            
+            # DB UPDATE: Indicate we creating the VM currently
+            db_scan.vm_instance_name = vm_name
+            db.commit()
+            
             logger.info(f"Azure: Creating VM: {vm_name} with profile {db_scan.profile.name}")
             logger.info(f"Azure: This can take a few minutes")
 
@@ -140,14 +140,13 @@ class AzureManager:
             db_scan.vm_ip_address = public_ip_info.ip_address
             db_scan.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
             db.commit()
+            return True
             
         except Exception as e:
             logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
-            db.close()
             return False
-        
-        db.close()
-        return True
+        finally:
+            db.close()
     
     
     def _create_network_security_group(self, nsg_name: str):
