@@ -26,7 +26,6 @@ class VMMonitorTask:
     def __init__(self):
         self.running = False
         self.task = None
-        self.db: Session = Session()
 
 
     def start_monitoring(self):
@@ -49,25 +48,25 @@ class VMMonitorTask:
     
 
     async def _monitor_loop(self):
-        # IN-thread initialization
-        self.db = get_db()
-
         while self.running:
+            db = None
             try:
-                self.check_all_scans()
+                db = get_db()
+                self.check_all_scans(db)
+                db.commit()
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error in VM monitoring loop: {str(e)}")
                 await asyncio.sleep(1)
-
-        self.db.commit()
-        self.db.close()
+            finally:
+                if db:
+                    db.close()
     
 
-    def check_all_scans(self):
-        scans = self.db.query(Scan).all()
+    def check_all_scans(self, db: Session):
+        scans = db.query(Scan).all()
         for scan in scans:
             scan_id: int = scan.id
             status: str = scan.status
@@ -81,57 +80,57 @@ class VMMonitorTask:
             # get responsible VM manager, based on the profile->connector
             if not scan.profile.connector:
                 logger.error(f"Scan {scan_id} has no profile connector")
-                db_scan_change_status_quick(self.db, scan, "error")
+                db_scan_change_status_quick(db, scan, "error")
                 continue
             connector: ConnectorBase|None = connectors.get(scan.profile.connector)
             if not connector:
                 logger.error(f"Scan {scan_id} has no valid VM manager defined for profile connector: {scan.profile.connector}")
                 logger.error(f"VM Managers: {list(connectors.get_all().keys())}")
-                db_scan_change_status_quick(self.db, scan, "error")
+                db_scan_change_status_quick(db, scan, "error")
                 continue
 
             # cleanup failed
             if status == "error" and scan.vm_exist == 1:
-                db_scan_change_status_quick(self.db, scan, "killing")
+                db_scan_change_status_quick(db, scan, "killing")
 
             # State Machine
             match status:
                 case "fresh":
                     # Start the process with instantiating the VM
-                    db_scan_change_status_quick(self.db, scan, "instantiate")
+                    db_scan_change_status_quick(db, scan, "instantiate")
 
                 case "instantiate":
-                    db_scan_change_status_quick(self.db, scan, "instantiating")
+                    db_scan_change_status_quick(db, scan, "instantiating")
                     connector.instantiate(scan_id)
                 case "instantiated":
-                    db_scan_change_status_quick(self.db, scan, "connect")
+                    db_scan_change_status_quick(db, scan, "connect")
 
                 case "connect":
-                    db_scan_change_status_quick(self.db, scan, "connecting")
+                    db_scan_change_status_quick(db, scan, "connecting")
                     connector.connect(scan_id)
                 case "connected":
-                    db_scan_change_status_quick(self.db, scan, "scan")
+                    db_scan_change_status_quick(db, scan, "scan")
 
                 case "scan":
-                    db_scan_change_status_quick(self.db, scan, "scanning")
+                    db_scan_change_status_quick(db, scan, "scanning")
                     connector.scan(scan_id)
                 case "scanned":
-                    db_scan_change_status_quick(self.db, scan, "stop")
+                    db_scan_change_status_quick(db, scan, "stop")
 
                 case "stop":
-                    db_scan_change_status_quick(self.db, scan, "stopping")
+                    db_scan_change_status_quick(db, scan, "stopping")
                     connector.stop(scan_id)
                 case "stopped":
-                    db_scan_change_status_quick(self.db, scan, "remove")
+                    db_scan_change_status_quick(db, scan, "remove")
 
                 case "remove":
-                    db_scan_change_status_quick(self.db, scan, "removing")
+                    db_scan_change_status_quick(db, scan, "removing")
                     connector.remove(scan_id)
                 case "removed":
-                    db_scan_change_status_quick(self.db, scan, "finished")
+                    db_scan_change_status_quick(db, scan, "finished")
 
                 case "kill":
-                    db_scan_change_status_quick(self.db, scan, "killing")
+                    db_scan_change_status_quick(db, scan, "killing")
                     connector.kill(scan_id)
 
 

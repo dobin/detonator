@@ -60,17 +60,18 @@ class ConnectorBase:
 
         # Check if we have MDE configured
         db = get_db()
-        scan = db.query(Scan).options(joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
-        if not scan:
+        try:
+            scan = db.query(Scan).options(joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
+            if not scan:
+                return
+            if scan.profile and scan.profile.data.get("edr_mde"):
+                alertMonitorMde = AlertMonitorMde(scan_id)
+                alertMonitorMde.start_monitoring()
+                logger.info(f"Started Cloud-MDE alert monitoring for scan {scan_id}")
+            else:
+                logger.info(f"No Cloud-MDE configured for scan {scan_id}")
+        finally:
             db.close()
-            return
-        if scan.profile and scan.profile.data.get("edr_mde"):
-            alertMonitorMde = AlertMonitorMde(scan_id)
-            alertMonitorMde.start_monitoring()
-            logger.info(f"Started Cloud-MDE alert monitoring for scan {scan_id}")
-        else:
-            logger.info(f"No Cloud-MDE configured for scan {scan_id}")
-        db.close()
 
 
     def stop(self, scan_id: int):
