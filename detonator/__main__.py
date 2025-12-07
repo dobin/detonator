@@ -19,6 +19,9 @@ from detonatorapi.connectors.connectors import connectors
 from detonatorapi.settings import CORS_ALLOW_ORIGINS
 from detonatorui.config import API_BASE_URL
 
+from detonatorapi.database import get_db_direct
+from detonatorapi.db_interface import db_list_profiles
+
 logger = logging.getLogger(__name__)
 
 
@@ -129,6 +132,24 @@ def main():
     
     fastapi_thread = None
     print_cors_help()
+
+    # check if we have a profile with data.edr_mde configured
+    db = get_db_direct()
+    profiles = db_list_profiles(db)
+    mde_configured = None
+    for profile in profiles:
+        if profile.data and "edr_mde" in profile.data:
+            mde_configured = profile.name
+            break
+    db.close()
+
+    if mde_configured:
+        secret = os.getenv("MDE_AZURE_CLIENT_SECRET")
+        if not secret or secret.strip() == "":
+            logger.error(f"MDE configuration detected in profile \"{mde_configured}\", but MDE_AZURE_CLIENT_SECRET environment variable is not set")
+            sys.exit(1)
+        
+
     
     if start_api:
         logger.info(f"Detonator API: {api_url}")
