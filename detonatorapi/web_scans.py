@@ -234,6 +234,7 @@ async def file_create_scan(
         raise HTTPException(status_code=400, detail=str(exc))
     runtime = runtime_override if runtime_override is not None else 10
     drop_path = scan_data.drop_path or ""
+    execution_mode = scan_data.execution_mode or "exec"
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
@@ -247,6 +248,7 @@ async def file_create_scan(
         project,
         runtime=runtime,
         drop_path=drop_path,
+        execution_mode=execution_mode,
     )
     
     # Retrieve the created scan to return full details

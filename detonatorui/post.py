@@ -100,6 +100,9 @@ def upload_file_and_scan():
         
         if 'drop_path' in request.form:
             data['drop_path'] = request.form['drop_path']
+        
+        if 'execution_mode' in request.form:
+            data['execution_mode'] = request.form['execution_mode']
                     
         response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data, headers=headers)
         return handle_api_response(response, "file upload and scan")

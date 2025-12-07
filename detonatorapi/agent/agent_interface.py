@@ -98,6 +98,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     
     runtime = db_scan.runtime
     drop_path = db_scan.drop_path
+    execution_mode = db_scan.execution_mode
     rededr_port = db_scan.profile.rededr_port
     agentApi = AgentApi(agent_ip, agent_port)
     rededrApi: RedEdrAgentApi|None = None
@@ -153,7 +154,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
     db_scan_add_log(thread_db, db_scan, f"Executing with for {runtime}s and path {drop_path}")
-    executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments)
+    executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments, execution_mode)
     is_malware = False
     if executionResult == ExecutionResult.ERROR:
         db_scan_add_log(thread_db, db_scan, f"Error: When executing file on DetonatorAgent")

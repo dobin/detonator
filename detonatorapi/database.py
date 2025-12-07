@@ -66,6 +66,7 @@ class Scan(Base):
     project: Mapped[str] = Column(String(100), default="", nullable=False)
     runtime: Mapped[int] = Column(Integer, default=10, nullable=False)
     drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
+    execution_mode: Mapped[str] = Column(String(50), default="exec", nullable=False)
     user: Mapped[str] = Column(String(100), default="", nullable=False)
 
     # TRACK

@@ -16,14 +16,14 @@
             class="space-y-6"
         >
             <!-- File Selection -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Select File for Analysis *</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">File *</h3>
                     <p class="text-sm text-gray-500">
                         Your malware file to execute on the VM <br>
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="file" 
                         id="file" 
@@ -33,16 +33,36 @@
                     >
                 </div>
             </div>
-
-            <!-- Profile -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Analysis Profile *</h3>
+                                    
+            <!-- File arguments -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">File arguments</h3>
                     <p class="text-sm text-gray-500">
-                        The analysis environment profile that defines which virtual machine, EDR system, and analysis tools will be used
+                        [Optional] .EXE: Command line parameters<br>
+                        [Mandatory] .DLL: Exported function name to invoke
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
+                    <input 
+                        type="text" 
+                        id="exec_arguments" 
+                        name="exec_arguments" 
+                        placeholder="--debug / DllMain"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Profile *</h3>
+                    <p class="text-sm text-gray-500">
+                        The environment profile that defines which virtual machine, EDR system, and analysis tools will be used
+                    </p>
+                </div>
+                <div>
                     <select 
                         id="profile_name" 
                         name="profile_name"
@@ -63,37 +83,37 @@
                     </select>
                 </div>
             </div>
-                        
-            <!-- File arguments -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">File arguments</h3>
+            
+            <!-- Execution Mode -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Execution Mode *</h3>
                     <p class="text-sm text-gray-500">
-                        [Optional] .EXE: Command line parameters<br>
-                        [Mandatory] .DLL: Exported function name to invoke
+                        Autoit is more realistic for initial access. <br>
+                        Exec invokes the target directly. Supports .dll.
                     </p>
                 </div>
-                <div class="lg:col-span-2">
-                    <input 
-                        type="text" 
-                        id="exec_arguments" 
-                        name="exec_arguments" 
-                        placeholder="--debug / DllMain"
+                <div>
+                    <select 
+                        id="execution_mode" 
+                        name="execution_mode"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                        <option value="exec">Direct execution</option>
+                        <option value="autoitexplorer" selected>Execute via AutoIt</option>
+                    </select>
                 </div>
             </div>
 
             <!-- Runtime -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Runtime (seconds)</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Runtime (seconds)</h3>
                     <p class="text-sm text-gray-500">
-                        Define how long the payload should keep running inside the VM after execution starts. <br>
-                        Increase this to observe post-ex behaviors like beacon callbacks.
+                        How long the payload runs. Increase this to observe post-ex behaviors like beacon callbacks.
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="number" 
                         id="runtime" 
@@ -111,14 +131,14 @@
             </div>
             
             <!-- Password field - initially hidden -->
-            <div id="password_field" class="grid grid-cols-1 lg:grid-cols-3 gap-4 hidden">
-                <div class="lg:col-span-1">
+            <div id="password_field" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
+                <div>
                     <h3 class="text-sm font-medium text-gray-700 mb-1">Profile Password</h3>
                     <p class="text-sm text-gray-500">
                         This analysis profile requires password authentication. Enter the password to proceed with the analysis.
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="password" 
                         id="password" 
@@ -130,14 +150,14 @@
             </div>
             
             <!-- Malware path field -->
-            <div data-auth-required class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Malware Execution Path</h3>
+            <div data-auth-required class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Malware Execution Path</h3>
                     <p class="text-sm text-gray-500">
-                        Specify the target directory path where the malware should be placed and executed on the virtual machine. 
+                        The target directory path where the malware should be initially placed on the virtual machine
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="text" 
                         id="drop_path" 
@@ -156,14 +176,14 @@
             <div class="border-t border-gray-300"></div>
 
             <!-- File Source URL -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
                     <h3 class="text-sm font-medium text-gray-700 mb-1">File Source URL</h3>
                     <p class="text-sm text-gray-500">
                         [Optional] URL pointing to more information about the payload
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="url" 
                         id="source_url" 
@@ -176,14 +196,14 @@
 
             
             <!-- File Comment -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
                     <h3 class="text-sm font-medium text-gray-700 mb-1">File Comment</h3>
                     <p class="text-sm text-gray-500">
                         [Optional] description of the payload. What loader, C2 payload etc.
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <textarea 
                         id="file_comment" 
                         name="file_comment" 
@@ -195,14 +215,14 @@
             </div>
 
             <!-- Scan Comment -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
                     <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Comment</h3>
                     <p class="text-sm text-gray-500">
                         [Optional] description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <textarea 
                         id="scan_comment" 
                         name="scan_comment" 
@@ -214,14 +234,14 @@
             </div>
 
             <!-- Project -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="lg:col-span-1">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
                     <h3 class="text-sm font-medium text-gray-700 mb-1">Scan Project</h3>
                     <p class="text-sm text-gray-500">
                         [Optional] project name to group related scans together
                     </p>
                 </div>
-                <div class="lg:col-span-2">
+                <div>
                     <input 
                         type="text" 
                         id="project" 

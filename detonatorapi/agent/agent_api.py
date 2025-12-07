@@ -105,7 +105,7 @@ class AgentApi:
         return Result.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str) -> ExecutionResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> ExecutionResult:
         url = self.agent_url + "/api/execute/exec"
         
         xor_key = random.randint(64, 255)
@@ -120,8 +120,9 @@ class AgentApi:
         data = {
             "drop_path": drop_path,
             "executable_args": exec_arguments,
-            "use_additional_etw": "false",
             "xor_key": str(xor_key),
+            "execution_mode": execution_mode,
+#            "executable_name": "",
         }
         # multipart form-data
         try:

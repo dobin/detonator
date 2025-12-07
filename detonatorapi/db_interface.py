@@ -138,6 +138,7 @@ def db_create_scan(
     project: str = "",
     runtime: int = 10,
     drop_path: str = "",
+    execution_mode: str = "exec",
     user: str = "",
 ) -> int:
     """Create a scan using a profile name instead of profile_id"""
@@ -158,6 +159,7 @@ def db_create_scan(
         project=project,
         runtime=runtime,
         drop_path=drop_path,
+        execution_mode=execution_mode,
         user=user,
         detonator_srv_logs=mylog(f"DB: Scan created"),
         status="fresh",
