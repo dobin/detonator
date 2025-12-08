@@ -53,7 +53,15 @@ def db_scan_add_log(db, db_scan, log_message: str):
     db.commit()
 
 
-def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", exec_arguments: str = "", user: str = "") -> int:
+def db_create_file(
+        db, 
+        filename: str, 
+        content: bytes, 
+        source_url: str = "", 
+        comment: str = "", 
+        exec_arguments: str = "", 
+        user: str = "",
+) -> int:
     file_hash = File.calculate_hash(content)
  
     # prepend 4 random chars to filename to avoid collisions

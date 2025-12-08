@@ -110,7 +110,7 @@ async def upload_file_and_scan(
     runtime: Optional[int] = Form(None),
     drop_path: Optional[str] = Form(None),
     exec_arguments: Optional[str] = Form(None),
-    token: Optional[str] = Form(None),
+    execution_mode: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     # Determine user status based on authentication
@@ -156,6 +156,7 @@ async def upload_file_and_scan(
         project=project or "",
         runtime=runtime or 10,
         drop_path=drop_path or "",
+        execution_mode=execution_mode or "exec",
         user=user,
     )
 
