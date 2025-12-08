@@ -114,7 +114,8 @@ class AlertMonitorMde:
         
         try:
             poll_msg = f"MDE poll for scan {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
-            db_scan_add_log(db, scan, poll_msg)
+            #db_scan_add_log(db, scan, poll_msg)
+            logger.info(poll_msg)
 
             alerts = client.fetch_alerts(
                 device_id, device_hostname, time_from, time_to
