@@ -15,6 +15,7 @@ from detonatorapi.agent.agent_api import AgentApi
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
 from detonatorapi.agent.agent_api import ExecutionResult
+from detonatorapi.agent.result import Result
 
 logger = logging.getLogger(__name__)
 
@@ -154,14 +155,16 @@ def scan_file_with_agent(scan_id: int) -> bool:
 
     db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
     db_scan_add_log(thread_db, db_scan, f"Executing with for {runtime}s and path {drop_path}")
-    executionResult: ExecutionResult = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments, execution_mode)
+    exec_result = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments, execution_mode)
     is_malware = False
-    if executionResult == ExecutionResult.ERROR:
-        db_scan_add_log(thread_db, db_scan, f"Error: When executing file on DetonatorAgent")
+    if not exec_result:
+        db_scan_add_log(thread_db, db_scan, f"Error: When executing file on DetonatorAgent: {exec_result.error_message}")
         agentApi.ReleaseLock()
         thread_db.close()
         return False
-    elif executionResult == ExecutionResult.VIRUS:
+    
+    executionResult: ExecutionResult = exec_result.unwrap()
+    if executionResult == ExecutionResult.VIRUS:
         db_scan_add_log(thread_db, db_scan, f"File {filename} is detected as malware when writing to disk")
         is_malware = True
     elif executionResult == ExecutionResult.OK:

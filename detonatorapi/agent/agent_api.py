@@ -105,7 +105,7 @@ class AgentApi:
         return Result.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> ExecutionResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> Result[ExecutionResult]:
         url = self.agent_url + "/api/execute/exec"
         
         xor_key = random.randint(64, 255)
@@ -131,15 +131,21 @@ class AgentApi:
                 j = response.json()
                 if j.get("status", "") == "virus" :
                     logging.info(f"Agent: File {filename} is detected as malware")
-                    return ExecutionResult.VIRUS
-                #print("Response:", response.json())
-                return ExecutionResult.OK
+                    return Result.ok(ExecutionResult.VIRUS)
+                return Result.ok(ExecutionResult.OK)
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
-                return ExecutionResult.ERROR
+                # response.text is a json, extract message
+                try:
+                    j = response.json()
+                    error_message = j.get("message", response.text)
+                except Exception:
+                    error_message = response.text
+                logging.warning(f"Agent HTTP response error: {error_message}")
+                return Result.error(error_message)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
-            return ExecutionResult.ERROR
+            error_msg = f"Request exception: {e}"
+            logging.warning(f"Agent HTTP response error: {error_msg}")
+            return Result.error(error_msg)
         
     
     def GetLockStatus(self) -> bool:
