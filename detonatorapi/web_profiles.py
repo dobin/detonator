@@ -79,12 +79,17 @@ async def create_profile(
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
 
+        # Parse JSON in mde field if provided
         mde_dict: Optional[dict] = None
         if mde:
             try:
                 mde_dict = json.loads(mde)
             except json.JSONDecodeError:
                 raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
+            
+        # Check if profile name is alphanumeric, no spaces
+        if not name.isalnum():
+            raise HTTPException(status_code=400, detail="Profile name must be alphanumeric with no spaces")
         
         # Check if profile name already exists
         existing_profile = db.query(Profile).filter(Profile.name == name).first()
