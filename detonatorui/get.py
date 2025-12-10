@@ -42,6 +42,20 @@ def files_page():
 def scans_page():
     return render_template("scans.html")
 
+@get_bp.route("/scans/<int:scan_id>")
+def scan_detail_page(scan_id):
+    """Page to display details of a specific scan"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}", headers=_auth_headers())
+        if response.status_code == 200:
+            scan = response.json()
+        else:
+            scan = None
+    except requests.RequestException:
+        scan = None
+    
+    return render_template("scan_details.html", scan=scan)
+
 @get_bp.route("/newscan")
 def scan_page():
     # Fetch profiles list

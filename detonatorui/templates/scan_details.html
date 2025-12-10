@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Details - {{ scan.id if scan else 'Not Found' }}{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Scan Details - #{{ scan.id if scan else 'Not Found' }}</h2>
+        <div class="space-x-2">
+            <a href="/scans" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
+                Back to Scans
+            </a>
+            <button 
+                onclick="refreshScan()"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="scan-details-container">
+        {% include "partials/scan_details.html" %}
+    </div>
+</div>
+
+<script>
+function refreshScan() {
+    {% if scan %}
+    const scanId = {{ scan.id }};
+    htmx.ajax('GET', `/templates/scan-details/${scanId}`, {
+        target: '#scan-details-container',
+        swap: 'innerHTML'
+    }).then(() => {
+        // Scroll to bottom of log elements after refresh
+        document.querySelectorAll('[data-scroll-bottom]').forEach(el => {
+            el.scrollTop = el.scrollHeight;
+        });
+    });
+    {% endif %}
+}
+
+// Auto-refresh every 5 seconds if scan is running
+{% if scan and scan.status in ['fresh', 'running'] %}
+setInterval(refreshScan, 5000);
+{% endif %}
+
+// Initial scroll to bottom for logs
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-scroll-bottom]').forEach(el => {
+        el.scrollTop = el.scrollHeight;
+    });
+});
+</script>
+{% endblock %}

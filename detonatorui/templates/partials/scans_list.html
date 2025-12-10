@@ -10,7 +10,7 @@
         <div class="flex justify-between items-start">
             <div class="flex-1">
                 <div class="flex items-center space-x-3 mb-2">
-                    <h3 class="font-semibold text-lg">Scan #{{ scan.id }}</h3>
+                    <h3 class="font-semibold text-lg"><a href="/scans/{{ scan.id }}" class="text-blue-600 hover:underline">Scan #{{ scan.id }}</a></h3>
                     <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}"> Scan: {{ scan.status }}</span>
                 </div>
 
