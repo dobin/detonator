@@ -53,7 +53,7 @@ class ConnectorBase:
             if scan_file_with_agent(scan_id):
                 db_scan_change_status(scan_id, "stop")
             else:
-                db_scan_change_status(scan_id, "error", f"Could not start trace on RedEdr")
+                db_scan_change_status(scan_id, "stop", f"Could not start trace on RedEdr")
 
         threading.Thread(target=scan_thread, args=(scan_id, )).start()
 
