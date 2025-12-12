@@ -139,8 +139,20 @@ def scan_file_with_agent(scan_id: int) -> bool:
         trace_result = rededrApi.StartTrace([filename_trace])
         if not trace_result:
             db_scan_add_log(thread_db, db_scan, f"Error: Could not start trace on RedEdr, error: {trace_result.error_message}")
+
+            # Gather logs so the user can see what failed
+            logger.info("Gather Agent and Execution logs")
+            agent_logs = agentApi.GetAgentLogs()
+            execution_logs = agentApi.GetExecutionLogs()
+            db_scan.execution_logs = execution_logs
+            db_scan.agent_logs = agent_logs
+            db_scan.completed_at = datetime.utcnow()
+            thread_db.commit()
+
             agentApi.ReleaseLock()
             thread_db.close()
+
+            # Will be put into error state
             return False
         
         # let RedEdr boot up
@@ -152,7 +164,6 @@ def scan_file_with_agent(scan_id: int) -> bool:
         drop_path = "C:\\Users\\Public\\Downloads\\"
     if not exec_arguments or exec_arguments == "":
         exec_arguments = ""
-
     db_scan_add_log(thread_db, db_scan, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
     db_scan_add_log(thread_db, db_scan, f"Executing with for {runtime}s and path {drop_path}")
     exec_result = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments, execution_mode)
