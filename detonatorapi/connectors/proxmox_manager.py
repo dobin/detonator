@@ -108,6 +108,7 @@ class ProxmoxManager:
             return vmStatus["status"]
         except ResourceException as e:
             logger.error(f"Proxmox StatusVm: Error getting status for VM {vm_id}: {e}")
+            logger.error(f"Did you configure the correct node name in the config file? Current node name: {self.proxmox_node_name}")
             return "doesnotexist"
     
 
