@@ -147,7 +147,7 @@ class DetonatorClient:
             sys.stdout.write(f".")
             sys.stdout.flush()
             
-            if scan['status'] in ["finished", "error", "stopping", "removing" ]:
+            if scan['status'] in ["finished", "error"]:
                 #print(f"Scan finished with status: {scan['status']}")
                 return scan
             elif self.debug:
