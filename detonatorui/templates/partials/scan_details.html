@@ -113,14 +113,14 @@
                 <div class="space-y-3">
                     {% if scan.execution_logs.pid %}
                     <div>
-                        <div class="text-xs font-semibold text-gray-600 mb-1">PID:</div>
+                        <div class="text-xs font-semibold text-gray-600 mb-1">PID: (if available)</div>
                         <div class="bg-gray-100 p-2 rounded text-sm">{{ scan.execution_logs.pid }}</div>
                     </div>
                     {% endif %}
                     
                     {% if scan.execution_logs.stdout %}
                     <div>
-                        <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT:</div>
+                        <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT: (gathered on process exit)</div>
                         <pre class="bg-gray-100 p-2 rounded text-sm max-h-60 overflow-y-auto w-full">{{ scan.execution_logs.stdout }}</pre>
                     </div>
                     {% endif %}
