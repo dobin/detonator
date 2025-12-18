@@ -1,4 +1,4 @@
-live_rededr:
+test_live:
   connector: Live
   comment: win10 defender rededr
   edr_collector: Defender
@@ -8,10 +8,24 @@ live_rededr:
   data:
     ip: 192.168.1.1
 
-new_defender:
+test_proxmox:
+  connector: Proxmox
+  comment: Private RedEdr ETW & ETW-TI event collector
+  password: ''
+  edr_collector: defender
+  port: 8080
+  rededr_port: 8081
+  default_drop_path: C:\RedEdr\data
+  data:
+    proxmox_id: 101
+    proxmox_snapshot: latest
+    ip: 10.10.20.102
+
+
+test_azure:
   connector: NewAzure
   comment: New Azure Win11 Defender
-  edr_collector: Defender
+  edr_collector: defender
   default_drop_path: C:\RedEdr\data
   data:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def

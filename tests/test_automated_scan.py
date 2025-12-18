@@ -98,7 +98,7 @@ def test_profile_validation(client, profile_name, results):
         return None
 
 
-def test_file_upload_and_scan(client, test_file, profile_name, runtime, results):
+def test_file_upload_and_scan(client: DetonatorClient, test_file, profile_name, runtime, results):
     """Test 3: Upload file and complete scan"""
     print(f"\n[Test 3] Uploading test file and running scan...")
     print(f"  File: {test_file}")

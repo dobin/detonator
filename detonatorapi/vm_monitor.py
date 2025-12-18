@@ -72,9 +72,7 @@ class VMMonitorTask:
             status: str = scan.status
 
             # Skip finished (nothing todo)
-            if status in [ 'finished', 'polling' ]:
-                continue
-            if status in [ 'error' ]:
+            if status in [ 'finished', 'error' ]:
                 continue
 
             # get responsible VM manager, based on the profile->connector
@@ -114,6 +112,11 @@ class VMMonitorTask:
                 case "scan":
                     db_scan_change_status_quick(db, scan, "scanning")
                     connector.scan(scan_id)
+
+                case "scanning": 
+                    # handle logs?
+                    pass
+
                 case "scanned":
                     db_scan_change_status_quick(db, scan, "stop")
 
