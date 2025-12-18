@@ -3,6 +3,7 @@ import yaml
 from pathlib import Path
 
 UPLOAD_DIR = "upload/"
+AGENT_DATA_GATHER_INTERVAL = 10  # seconds
 
 
 # Load settings from settings.yaml

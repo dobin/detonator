@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 from typing import List
 import os
+from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.edr_parser.edr_parser import EdrParser
 from detonatorapi.settings import UPLOAD_DIR
@@ -16,6 +17,7 @@ from detonatorapi.agent.rededr_agent import RedEdrAgentApi
 from detonatorapi.edr_parser.parser_defender import DefenderParser
 from detonatorapi.agent.agent_api import ExecutionResult
 from detonatorapi.agent.result import Result
+from detonatorapi.settings import AGENT_DATA_GATHER_INTERVAL
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +107,9 @@ def scan_file_with_agent(scan_id: int) -> bool:
     rededrApi: RedEdrAgentApi|None = None
     if rededr_port is not None:
         rededrApi = RedEdrAgentApi(agent_ip, rededr_port)
+        if not rededrApi.IsReachable():
+            db_scan_add_log(thread_db, db_scan, f"Warning: RedEdr Agent at {agent_ip}:{rededr_port} is not reachable")
+            rededrApi = None  # disable
 
     if DO_LOCKING:
         logger.info("Attempt to acquire lock at DetonatorAgent")
@@ -305,3 +310,52 @@ def scan_file_with_agent(scan_id: int) -> bool:
     thread_db.close()
 
     return True
+
+
+def agent_local_data_gatherer(scan_id: int):
+    db = get_db_direct()
+
+    scan = db.get(Scan, scan_id)
+    if not scan:
+        logger.error(f"Scan {scan_id} not found")
+        db.close()
+        return
+
+    # IP in template?
+    if 'ip' in scan.profile.data:
+        agent_ip = scan.profile.data['ip']
+    else:
+        # IP in VM?
+        agent_ip = scan.vm_ip_address
+    if not agent_ip:
+        logger.error(f"Scan {scan.id} has no VM IP address defined")
+        db.close()
+        return False
+    agent_port = scan.profile.port  # port is always defined in the profile
+    agentApi = AgentApi(agent_ip, agent_port)
+
+    while True:
+        scan = db.get(Scan, scan_id)
+        if not scan:
+            break
+
+        # If scan is finished, we are so too
+        if scan.status in ("error", "finished"):
+            logger.warning(f"Scan {scan.id} is finished, stopping agent data gatherer")
+            break
+        # but actually, only when the VM is alive ("scanning")
+        if scan.status not in ("scanning"):
+            logger.info(f"Scan {scan.id} not scanning anymore, stopping data gather")
+            break
+        
+        # Update DB with latest EDR local logs
+        logger.info(f"Gather local EDR logs for scan {scan.id}")
+        edr_logs = agentApi.GetEdrLogs()
+        scan.edr_logs = edr_logs
+        db.commit()
+
+        # wait a bit for next time
+        time.sleep(AGENT_DATA_GATHER_INTERVAL)
+
+    db.close()
+

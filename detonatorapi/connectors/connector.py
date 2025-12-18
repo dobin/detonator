@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db_direct, Scan
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
-from detonatorapi.agent.agent_interface import connect_to_agent, scan_file_with_agent
+from detonatorapi.agent.agent_interface import connect_to_agent, scan_file_with_agent, agent_local_data_gatherer
 from detonatorapi.edr_cloud.mde_alert_monitor import AlertMonitorMde
 
 logger = logging.getLogger(__name__)
@@ -55,22 +55,23 @@ class ConnectorBase:
             else:
                 db_scan_change_status(scan_id, "stop", f"Could not start trace on RedEdr")
 
+        # boot the scan thread already
         threading.Thread(target=scan_thread, args=(scan_id, )).start()
 
-        # Check if we have MDE configured
+        # boot the agent local EDR data gatherer thread
+        threading.Thread(target=agent_local_data_gatherer, args=(scan_id, )).start()
+
+        # Check if we have MDE configured. Create a polling thread if so. 
         db = get_db_direct()
-        try:
-            scan = db.query(Scan).options(joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
-            if not scan:
-                return
-            if scan.profile and scan.profile.data.get("edr_mde"):
-                alertMonitorMde = AlertMonitorMde(scan_id)
-                alertMonitorMde.start_monitoring()
-                logger.info(f"Started Cloud-MDE alert monitoring for scan {scan_id}")
-            else:
-                logger.info(f"No Cloud-MDE configured for scan {scan_id}")
-        finally:
+        scan = db.query(Scan).options(joinedload(Scan.profile)).filter(Scan.id == scan_id).first()
+        if not scan:
             db.close()
+            return
+        if scan.profile and scan.profile.data.get("edr_mde"):
+            alertMonitorMde = AlertMonitorMde(scan_id)
+            alertMonitorMde.start_monitoring()
+            logger.info(f"Started Cloud-MDE alert monitoring for scan {scan_id}")
+        db.close()
 
 
     def stop(self, scan_id: int):

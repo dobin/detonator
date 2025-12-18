@@ -148,8 +148,6 @@ def main():
         if not secret or secret.strip() == "":
             logger.error(f"MDE configuration detected in profile \"{mde_configured}\", but MDE_AZURE_CLIENT_SECRET environment variable is not set")
             sys.exit(1)
-        
-
     
     if start_api:
         logger.info(f"Detonator API: {api_url}")
