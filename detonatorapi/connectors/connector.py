@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db_direct, Scan
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log, db_scan_change_status
-from detonatorapi.agent.agent_interface import connect_to_agent, scan_file_with_agent, agent_local_data_gatherer
+from detonatorapi.agent.agent_interface import connect_to_agent, scan_file_with_agent, thread_gatherer
 from detonatorapi.edr_cloud.mde_alert_monitor import AlertMonitorMde
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class ConnectorBase:
         threading.Thread(target=scan_thread, args=(scan_id, )).start()
 
         # boot the agent local EDR data gatherer thread
-        threading.Thread(target=agent_local_data_gatherer, args=(scan_id, )).start()
+        threading.Thread(target=thread_gatherer, args=(scan_id, )).start()
 
         # Check if we have MDE configured. Create a polling thread if so. 
         db = get_db_direct()

@@ -19,18 +19,18 @@ class RedEdrAgentApi:
         try:
             response = requests.post(url)
             if response.status_code == 404:
-                logging.info("Agent: /api/trace/reset not found. Assuming non-RedEdr agent.")
+                logger.info("Agent: /api/trace/reset not found. Assuming non-RedEdr agent.")
                 return Result.ok()
             if response.status_code == 200:
                 #print("Response:", response.json())
                 pass
             else:
                 error_msg = f"Reset error: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
+                logger.warning(f"Agent: {error_msg}")
                 return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"Reset error: {e}"
-            logging.warning(f"Agent: {error_msg}")
+            logger.warning(f"Agent: {error_msg}")
             return Result.error(error_msg)
 
         # Configure trace
@@ -44,11 +44,11 @@ class RedEdrAgentApi:
                 return Result.ok()
             else:
                 error_msg = f"StartTrace error: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
+                logger.warning(f"Agent: {error_msg}")
                 return Result.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"StartTrace error: {e}"
-            logging.warning(f"Agent: {error_msg}")
+            logger.warning(f"Agent: {error_msg}")
             return Result.error(error_msg)
 
 
@@ -60,10 +60,10 @@ class RedEdrAgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
+            logger.warning(f"Agent HTTP response error: {e}")
             return None
         
 
@@ -87,8 +87,8 @@ class RedEdrAgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
+            logger.warning(f"Agent HTTP response error: {e}")
             return None

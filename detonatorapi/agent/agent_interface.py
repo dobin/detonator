@@ -308,7 +308,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
     return True
 
 
-def agent_local_data_gatherer(scan_id: int):
+def thread_gatherer(scan_id: int):
     db = get_db_direct()
 
     scan = db.get(Scan, scan_id)
