@@ -163,6 +163,9 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         ip = db_profile.data.get('ip', '')
     elif db_profile.connector == "Proxmox":
         ip = db_profile.data.get('ip', '')
+        proxmox_id = db_profile.data.get('proxmox_id', '')
+        if ip == "" or proxmox_id == "":
+            raise HTTPException(status_code=400, detail="Profile does not have ip or proxmox_id configured")
         
         # Get Proxmox connector
         proxmox_connector = connectors.get("Proxmox")
@@ -170,7 +173,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=500, detail="Proxmox connector not available")
         proxmox_manager = proxmox_connector.proxmox_manager
 
-        status = proxmox_manager.StatusVm(db_profile.data.get('proxmox_id'))
+        status = proxmox_manager.StatusVm(proxmox_id)
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
