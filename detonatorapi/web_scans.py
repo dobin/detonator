@@ -292,7 +292,7 @@ async def rescan(
 
     # and all the possile fields
     db_scan.detonator_srv_logs = ""
-    db_scan.execution_logs = ""
+    db_scan.execution_logs = {}
     db_scan.agent_logs = ""
     db_scan.rededr_events = ""
     db_scan.edr_logs = ""

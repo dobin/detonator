@@ -74,7 +74,7 @@ class Scan(Base):
     status: Mapped[str] = Column(String(20), default="fresh", nullable=False)
 
     # OUT
-    execution_logs: Mapped[str] = Column(Text, default="", nullable=False)
+    execution_logs: Mapped[dict] = Column(JSON, default={}, nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_logs: Mapped[str] = Column(Text, default="", nullable=False)

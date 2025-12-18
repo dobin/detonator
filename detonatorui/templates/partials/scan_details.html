@@ -109,9 +109,34 @@
             
             {% if scan.execution_logs %}
             <div id="execution-logs" class="tab-content hidden">
+                {% if scan.execution_logs is mapping %}
+                <div class="space-y-3">
+                    {% if scan.execution_logs.pid %}
+                    <div>
+                        <div class="text-xs font-semibold text-gray-600 mb-1">PID:</div>
+                        <div class="bg-gray-100 p-2 rounded text-sm">{{ scan.execution_logs.pid }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scan.execution_logs.stdout %}
+                    <div>
+                        <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT:</div>
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-60 overflow-y-auto w-full">{{ scan.execution_logs.stdout }}</pre>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scan.execution_logs.stderr %}
+                    <div>
+                        <div class="text-xs font-semibold text-gray-600 mb-1">STDERR:</div>
+                        <pre class="bg-red-50 p-2 rounded text-sm max-h-60 overflow-y-auto w-full text-red-800">{{ scan.execution_logs.stderr }}</pre>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
                 >{{ scan.execution_logs|pretty_json }}
                 </pre>
+                {% endif %}
             </div>
             {% endif %}
             

@@ -126,7 +126,7 @@ class ScanResponse(BaseModel):
     user: str = ""
 
     agent_logs: Optional[str] = None
-    execution_logs: Optional[str] = None
+    execution_logs: Optional[dict] = None
     rededr_events: Optional[str] = None
     rededr_logs: Optional[str] = None
     edr_logs: Optional[str] = None

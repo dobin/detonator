@@ -196,12 +196,12 @@ class AgentApi:
             return None
 
 
-    def GetExecutionLogs(self) -> Optional[str]:
+    def GetExecutionLogs(self) -> Optional[dict]:
         url = self.agent_url + "/api/logs/execution"
         try:
             response = requests.get(url)
             if response.status_code == 200:
-                data = response.text
+                data = response.json()
                 return data
             else:
                 logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")

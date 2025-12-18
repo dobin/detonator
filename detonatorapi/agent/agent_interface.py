@@ -198,9 +198,8 @@ def scan_file_with_agent(scan_id: int) -> bool:
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SCAN)
 
-    # RedEdr (if exists): logs 
-    # before killing the process
-    # only if we actually executed it
+    # Get RedEdr Logs (if exists)
+    # before killing the process (no shutdown events)
     rededr_events = None
     rededr_logs = ""
     if rededrApi is not None and executionResult == ExecutionResult.OK:
@@ -216,10 +215,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         else:
             rededr_logs = rededr_agent_logs
 
-    # Get EDR logs
-    edr_logs = agentApi.GetEdrLogs()
-
-    # kill process (after gathering EDR events and logs, so we dont have the shutdown events)
+    # kill process
     if executionResult == ExecutionResult.OK:
         logger.info("Attempt to kill process")
         stop_result = agentApi.KillProcess()
@@ -230,8 +226,8 @@ def scan_file_with_agent(scan_id: int) -> bool:
             # no return, we dont care
 
     # Gather logs from Agent
-    # After stopping the trace, so we have all the Agent logs (including the process killing)
-    logger.info("Gather Agent and Execution logs")
+    # After killing the process, so we have all the Agent logs
+    edr_logs = agentApi.GetEdrLogs()
     agent_logs = agentApi.GetAgentLogs()
     execution_logs = agentApi.GetExecutionLogs()  # always for now
 
@@ -255,7 +251,7 @@ def scan_file_with_agent(scan_id: int) -> bool:
         rededr_events = "No RedEdr logs available"
         db_scan_add_log(thread_db, db_scan, "Warning: could not get RedEdr logs from Agent")
     if execution_logs is None:
-        execution_logs = "No Execution logs available"
+        execution_logs = {}
         db_scan_add_log(thread_db, db_scan, "Warning: could not get Execution logs from Agent")
     if edr_logs is None:
         result_is_detected = "N/A"
