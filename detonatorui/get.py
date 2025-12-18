@@ -50,8 +50,10 @@ def scan_detail_page(scan_id):
         if response.status_code == 200:
             scan = response.json()
         else:
+            logger.error(f"Failed to fetch scan {scan_id}: {response.status_code} {response.text}")
             scan = None
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching scan {scan_id}: {e}")
         scan = None
     
     return render_template("scan_details.html", scan=scan)
@@ -64,8 +66,10 @@ def scan_page():
         if response.status_code == 200:
             profiles = response.json()
         else:
+            logger.error(f"Failed to fetch profiles: {response.status_code} {response.text}")
             profiles = []
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching profiles: {e}")
         profiles = []
     
     return render_template("newscan.html", profiles=profiles)

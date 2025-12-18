@@ -165,9 +165,10 @@ async def get_scan(scan_id: int, request: Request, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Scan not found")
     
     # Check if user has access to this scan
-    user = get_user_from_request(request)
-    if user == "guest" and db_scan.user != "guest":
-        raise HTTPException(status_code=401, detail="Unauthorized access")
+    # Lets allow all for now
+    #user = get_user_from_request(request)
+    #if user == "guest" and db_scan.user != "guest":
+    #    raise HTTPException(status_code=401, detail="Unauthorized access")
     
     return db_scan
 
