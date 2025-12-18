@@ -162,7 +162,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     if db_profile.connector == "Live": 
         ip = db_profile.data.get('ip', '')
     elif db_profile.connector == "Proxmox":
-        ip = db_profile.data.get('vm_ip', '')
+        ip = db_profile.data.get('ip', '')
         
         # Get Proxmox connector
         proxmox_connector = connectors.get("Proxmox")
@@ -170,7 +170,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=500, detail="Proxmox connector not available")
         proxmox_manager = proxmox_connector.proxmox_manager
 
-        status = proxmox_manager.StatusVm(db_profile.data.get('vm_id'))
+        status = proxmox_manager.StatusVm(db_profile.data.get('proxmox_id'))
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
@@ -363,10 +363,9 @@ async def reboot(
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    ip = db_profile.data.get('vm_ip', '')
+    ip = db_profile.data.get('ip', '')
     if ip == "":
-        raise HTTPException(status_code=400, detail="Profile does not have vm_ip configured")
-
+        raise HTTPException(status_code=400, detail="Profile does not have ip configured")
     try:
         # Execute SSH reboot command
         subprocess.run(
@@ -403,11 +402,11 @@ async def revert(
         raise HTTPException(status_code=400, detail="Revert operation is only supported for Proxmox profiles")
     
     # Get VM configuration from profile data
-    vm_id = db_profile.data.get('vm_id')
-    vm_snapshot = db_profile.data.get('vm_snapshot')
+    proxmox_id = db_profile.data.get('proxmox_id')
+    proxmox_snapshot = db_profile.data.get('proxmox_snapshot')
     
-    if not vm_id or not vm_snapshot:
-        raise HTTPException(status_code=400, detail="Profile does not have vm_id or vm_snapshot configured")
+    if not proxmox_id or not proxmox_snapshot:
+        raise HTTPException(status_code=400, detail="Profile does not have proxmox_id or proxmox_snapshot configured")
     
     try:
         # Get Proxmox connector
@@ -418,22 +417,22 @@ async def revert(
         proxmox_manager = proxmox_connector.proxmox_manager
         
         # Stop VM
-        logger.info(f"Stopping VM {vm_id} for profile {profile_id} ({db_profile.name})")
-        if not proxmox_manager.StopVm(vm_id):
+        logger.info(f"Stopping VM {proxmox_id} for profile {profile_id} ({db_profile.name})")
+        if not proxmox_manager.StopVm(proxmox_id):
             raise HTTPException(status_code=500, detail="Failed to stop VM")
         
         # Revert to snapshot
-        logger.info(f"Reverting VM {vm_id} to snapshot '{vm_snapshot}' for profile {profile_id}")
-        if not proxmox_manager.RevertVm(vm_id, vm_snapshot):
+        logger.info(f"Reverting VM {proxmox_id} to snapshot '{proxmox_snapshot}' for profile {profile_id}")
+        if not proxmox_manager.RevertVm(proxmox_id, proxmox_snapshot):
             raise HTTPException(status_code=500, detail="Failed to revert VM to snapshot")
         
         # Start VM
-        logger.info(f"Starting VM {vm_id} for profile {profile_id}")
-        if not proxmox_manager.StartVm(vm_id):
+        logger.info(f"Starting VM {proxmox_id} for profile {profile_id}")
+        if not proxmox_manager.StartVm(proxmox_id):
             raise HTTPException(status_code=500, detail="Failed to start VM after revert")
         
-        logger.info(f"Successfully reverted and restarted VM {vm_id} for profile {profile_id} ({db_profile.name})")
-        return {"message": f"VM successfully reverted to snapshot '{vm_snapshot}' and restarted"}
+        logger.info(f"Successfully reverted and restarted VM {proxmox_id} for profile {profile_id} ({db_profile.name})")
+        return {"message": f"VM successfully reverted to snapshot '{proxmox_snapshot}' and restarted"}
         
     except HTTPException:
         raise

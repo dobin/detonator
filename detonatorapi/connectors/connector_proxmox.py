@@ -49,9 +49,9 @@ class ConnectorProxmox(ConnectorBase):
     def get_sample_data(self) -> Dict:
         """Return sample data for this connector"""
         return {
-            "vm_snapshot": "latest",
-            "vm_id": 100,
-            "vm_ip": "192.168.1.1",
+            "proxmox_snapshot": "latest",
+            "proxmox_id": 100,
+            "ip": "192.168.1.1",
         }
 
 
@@ -64,7 +64,7 @@ class ConnectorProxmox(ConnectorBase):
                 thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
-            vm_id = db_profile.data['vm_id']
+            proxmox_id = db_profile.data['proxmox_id']
 
             # check/wait for vm availability
             for attempt in range(INSTANCE_USED_RETRIES):
@@ -89,7 +89,7 @@ class ConnectorProxmox(ConnectorBase):
                 return
 
             # if vm is not running, wait for it. 
-            if not self.proxmox_manager.WaitForVmStatus(vm_id, "running", timeout=10):
+            if not self.proxmox_manager.WaitForVmStatus(proxmox_id, "running", timeout=10):
                 db_scan_change_status(scan_id, "error", f"Scan {scan_id}: Proxmox instance not running after waiting.")
                 thread_db.close()
                 return
@@ -99,7 +99,7 @@ class ConnectorProxmox(ConnectorBase):
                 logger.error(f"Scan {scan_id} not found")
                 thread_db.close()
                 return
-            db_scan.vm_ip_address = db_profile.data['vm_ip']
+            db_scan.vm_ip_address = db_profile.data['ip']
             db_scan_change_status_quick(thread_db, db_scan, "instantiated")
             thread_db.close()
 
@@ -129,9 +129,9 @@ class ConnectorProxmox(ConnectorBase):
                 thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
-            vm_id = db_profile.data['vm_id']
+            proxmox_id = db_profile.data['proxmox_id']
 
-            if self.proxmox_manager.StopVm(vm_id):
+            if self.proxmox_manager.StopVm(proxmox_id):
                 db_scan_change_status(scan_id, "stopped")
             else: 
                 db_scan_change_status(scan_id, "error")
@@ -153,10 +153,10 @@ class ConnectorProxmox(ConnectorBase):
                 thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
-            vm_id = db_profile.data['vm_id']
-            vm_snapshot = db_profile.data['vm_snapshot']
+            proxmox_id = db_profile.data['proxmox_id']
+            proxmox_snapshot = db_profile.data['proxmox_snapshot']
 
-            if self.proxmox_manager.RevertVm(vm_id, vm_snapshot):
+            if self.proxmox_manager.RevertVm(proxmox_id, proxmox_snapshot):
                 # keep it for now
                 #db_scan.vm_instance_name = None
                 #db_scan.vm_ip_address = None
@@ -166,7 +166,7 @@ class ConnectorProxmox(ConnectorBase):
                 thread_db.close()
                 return
 
-            if self.proxmox_manager.StartVm(vm_id):
+            if self.proxmox_manager.StartVm(proxmox_id):
                 db_scan_add_log(thread_db, db_scan, "VM successfully started")
             else:
                 db_scan_add_log(thread_db, db_scan, "VM failed starting")
@@ -192,22 +192,22 @@ class ConnectorProxmox(ConnectorBase):
                 thread_db.close()
                 return
             db_profile: Profile = db_scan.profile
-            vm_id = db_profile.data['vm_id']
-            vm_snapshot = db_profile.data['vm_snapshot']
+            proxmox_id = db_profile.data['proxmox_id']
+            proxmox_snapshot = db_profile.data['proxmox_snapshot']
             vm_name = db_scan.vm_instance_name
 
             logger.info(f"Proxmox: Killing VM {vm_name} scan {scan_id}")
 
             # Stop if running
-            powerState = self.proxmox_manager.StatusVm(vm_id)
+            powerState = self.proxmox_manager.StatusVm(proxmox_id)
             if powerState == "running":
-                if self.proxmox_manager.StopVm(vm_id):
+                if self.proxmox_manager.StopVm(proxmox_id):
                     db_scan_add_log(thread_db, db_scan, "VM successfully stopped")
                 else:
                     db_scan_add_log(thread_db, db_scan, "VM failed stopping")
 
             # Always try to revert
-            if self.proxmox_manager.RevertVm(vm_id, vm_snapshot):
+            if self.proxmox_manager.RevertVm(proxmox_id, proxmox_snapshot):
                 db_scan_add_log(thread_db, db_scan, "VM successfully killed")
             else:
                 db_scan_add_log(thread_db, db_scan, "VM failed deleting")
