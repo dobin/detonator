@@ -141,9 +141,6 @@ class ScanResponse(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime] = None
 
-    file: Optional[FileResponse] = None
-    profile: Optional[ProfileResponse] = None
-    
     class Config:
         from_attributes = True
 
@@ -179,9 +176,6 @@ class ScanResponseShort(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime] = None
 
-    file: Optional[FileResponse] = None
-    profile: Optional[ProfileResponse] = None
-    
     class Config:
         from_attributes = True
 
