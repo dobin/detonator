@@ -9,7 +9,7 @@ There are two ways to get the EDR data:
 
 This is implemented by Detonator. See its documentation how to implement it. 
 
-The data will be stored in `scan.edr_logs` as plain string. Example, for Defender, it
+The data will be stored in `submission.edr_logs` as plain string. Example, for Defender, it
 will look like this (beautified):
 ```
 <Event
@@ -76,7 +76,7 @@ will look like this (beautified):
 	</EventData>
 ```
 
-Upon receiving this `scan.edr_logs`, Detonator will attempt to parse
+Upon receiving this `submission.edr_logs`, Detonator will attempt to parse
 it will all parsers available in `detonatorapi/edr_parser`:
 
 ```
@@ -106,9 +106,9 @@ class EdrParser:
 
 To implement your own parser, use `detonatorapi/edr_parser/ExampleParser.py`. 
 
-* `is_relevant()`: Check if the data in `scan.edr_logs` is for this parser (e.g. EDR)
-* `get_summary()`: Returns a summary of `scan.edr_logs`, will be stored in `scan.edr_summary`
-* `is_detected()`: return true if `scan.edr_logs` indicate positive detection, will used to indicate `scan.result`
+* `is_relevant()`: Check if the data in `submission.edr_logs` is for this parser (e.g. EDR)
+* `get_summary()`: Returns a summary of `submission.edr_logs`, will be stored in `submission.edr_summary`
+* `is_detected()`: return true if `submission.edr_logs` indicate positive detection, will used to indicate `submission.result`
 
 
 ## Cloud Log Events

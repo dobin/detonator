@@ -21,19 +21,19 @@
     </div>
     
     <form 
-        id="create-scan-form"
-        hx-post="{{ API_BASE_URL }}/api/files/{{ file.id }}/createscan" 
-        hx-target="#create-scan-result"
-        hx-indicator="#scan-loading"
+        id="create-submission-form"
+        hx-post="{{ API_BASE_URL }}/api/files/{{ file.id }}/createsubmission" 
+        hx-target="#create-submission-result"
+        hx-indicator="#submission-loading"
         class="space-y-4"
     >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="scan_comment" class="block text-sm font-medium text-gray-700 mb-1">
-                    Scan Comment (optional)
+                <label for="submission_comment" class="block text-sm font-medium text-gray-700 mb-1">
+                    Submission Comment (optional)
                 </label>
                 <textarea 
-                    id="scan_comment" 
+                    id="submission_comment" 
                     name="comment" 
                     rows="2"
                     placeholder="e.g., Check if sgn works against elastic"
@@ -42,7 +42,7 @@
             </div>
             <div>
                 <label for="project" class="block text-sm font-medium text-gray-700 mb-1">
-                    Scan Project (optional)
+                    Submission Project (optional)
                 </label>
                 <input 
                     type="text" 
@@ -150,12 +150,12 @@
                 type="submit" 
                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex-1"
             >
-                <span id="scan-loading" class="hidden">Creating...</span>
-                <span id="scan-button-text">Create Scan</span>
+                <span id="submission-loading" class="hidden">Creating...</span>
+                <span id="submission-button-text">Create Submission</span>
             </button>
             <button 
                 type="button" 
-                onclick="closeCreateScanModal()"
+                onclick="closeCreateSubmissionModal()"
                 class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
             >
                 Cancel
@@ -163,11 +163,11 @@
         </div>
     </form>
     
-    <div id="create-scan-result" class="mt-4"></div>
+    <div id="create-submission-result" class="mt-4"></div>
 </div>
 
 <script>
-    // Profile selection handler for create scan form
+    // Profile selection handler for create submission form
     document.getElementById('profile_name').addEventListener('change', function(e) {
         const profileSelect = e.target;
         const selectedOption = profileSelect.options[profileSelect.selectedIndex];
@@ -205,20 +205,20 @@
     });
 
     // Handle form submission
-    document.getElementById('create-scan-form').addEventListener('htmx:beforeRequest', function(evt) {
+    document.getElementById('create-submission-form').addEventListener('htmx:beforeRequest', function(evt) {
         // Show loading state
-        document.getElementById('scan-loading').classList.remove('hidden');
-        document.getElementById('scan-button-text').classList.add('hidden');
+        document.getElementById('submission-loading').classList.remove('hidden');
+        document.getElementById('submission-button-text').classList.add('hidden');
     });
 
     // Handle response
-    document.getElementById('create-scan-form').addEventListener('htmx:afterRequest', function(evt) {
+    document.getElementById('create-submission-form').addEventListener('htmx:afterRequest', function(evt) {
         const xhr = evt.detail.xhr;
-        const container = document.getElementById('create-scan-result');
+        const container = document.getElementById('create-submission-result');
         
         // Hide loading state
-        document.getElementById('scan-loading').classList.add('hidden');
-        document.getElementById('scan-button-text').classList.remove('hidden');
+        document.getElementById('submission-loading').classList.add('hidden');
+        document.getElementById('submission-button-text').classList.remove('hidden');
         
         if (xhr.status === 200) {
             const response = JSON.parse(xhr.responseText);
@@ -231,9 +231,9 @@
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium text-green-800">Scan created successfully!</h3>
+                            <h3 class="text-sm font-medium text-green-800">Submission created successfully!</h3>
                             <div class="mt-2 text-sm text-green-700">
-                                <p><strong>Scan ID:</strong> ${response.id}</p>
+                                <p><strong>Submission ID:</strong> ${response.id}</p>
                                 <p>Analysis has been started with status: <strong>${response.status}</strong></p>
                                 ${response.edr_template ? '<p><strong>EDR Template:</strong> ' + response.edr_template + '</p>' : ''}
                                 ${response.project ? '<p><strong>Project:</strong> ' + response.project + '</p>' : ''}
@@ -241,11 +241,11 @@
                             </div>
                             <div class="mt-4">
                                 <div class="flex space-x-2">
-                                    <button onclick="closeCreateScanModal(); htmx.trigger('#files-container', 'load');" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                    <button onclick="closeCreateSubmissionModal(); htmx.trigger('#files-container', 'load');" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
                                         Close & Refresh
                                     </button>
-                                    <a href="/scans" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 inline-block">
-                                        View All Scans
+                                    <a href="/submissions" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 inline-block">
+                                        View All Submissions
                                     </a>
                                 </div>
                             </div>
@@ -268,7 +268,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">Scan creation failed</h3>
+                                <h3 class="text-sm font-medium text-red-800">Submission creation failed</h3>
                                 <div class="mt-2 text-sm text-red-700">
                                     <p>${response.detail || response.error || 'Unknown error occurred'}</p>
                                 </div>
@@ -286,7 +286,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">Scan creation failed</h3>
+                                <h3 class="text-sm font-medium text-red-800">Submission creation failed</h3>
                                 <div class="mt-2 text-sm text-red-700">
                                     <p>Server error: ${xhr.status} - ${xhr.statusText}</p>
                                 </div>

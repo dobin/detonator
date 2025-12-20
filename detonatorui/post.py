@@ -35,9 +35,9 @@ def handle_api_response(response, operation_name="operation"):
         return {"error": f"API error: {response.text}"}, response.status_code
 
 
-@post_bp.route("/api/upload-and-scan", methods=["POST"])
-def upload_file_and_scan():
-    """Proxy endpoint to upload files with automatic scan creation to FastAPI"""
+@post_bp.route("/api/create-submission", methods=["POST"])
+def create_submission():
+    """Proxy endpoint to upload files with automatic submission creation to FastAPI"""
     try:
         files = {}
         data = {}
@@ -67,8 +67,8 @@ def upload_file_and_scan():
         if 'file_comment' in request.form:
             data['file_comment'] = request.form['file_comment']
             
-        if 'scan_comment' in request.form:
-            data['scan_comment'] = request.form['scan_comment']
+        if 'submission_comment' in request.form:
+            data['submission_comment'] = request.form['submission_comment']
             
         if 'exec_arguments' in request.form:
             data['exec_arguments'] = request.form['exec_arguments']
@@ -104,7 +104,7 @@ def upload_file_and_scan():
         if 'execution_mode' in request.form:
             data['execution_mode'] = request.form['execution_mode']
                     
-        response = requests.post(f"{API_BASE_URL}/api/upload-and-scan", files=files, data=data, headers=headers)
-        return handle_api_response(response, "file upload and scan")
+        response = requests.post(f"{API_BASE_URL}/api/create-submission", files=files, data=data, headers=headers)
+        return handle_api_response(response, "file upload and submission")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500

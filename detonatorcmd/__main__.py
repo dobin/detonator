@@ -29,7 +29,7 @@ def print_profiles(profiles):
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
-    parser.add_argument("filename", nargs="?", help="File to scan")
+    parser.add_argument("filename", nargs="?", help="File to submit")
 
     # Connection related
     parser.add_argument("--url", default="http://localhost:8000", help="API base URL")
@@ -38,14 +38,14 @@ def main():
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--drop-path", default="", help="Path to drop malware files")
 
-    # Scan related
+    # Submission related
     parser.add_argument("--profile", "-p", default="", help="Profile to use")
     parser.add_argument("--file-comment", "-c", default="", help="Comment for the file")
-    parser.add_argument("--scan-comment", "-sc", default="", help="Comment for the scan")
-    parser.add_argument("--project", "-j", default="", help="Project name for the scan")
+    parser.add_argument("--submission-comment", "-sc", default="", help="Comment for the submission")
+    parser.add_argument("--project", "-j", default="", help="Project name for the submission")
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
     parser.add_argument("--exec_arguments", "-a", default="", help="Command line arguments (parameter or dll function) to pass to the executable")
-    #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for scan completion")
+    #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for submission completion")
     parser.add_argument("--runtime", type=int, default=10, help="Runtime in seconds")
     parser.add_argument("--no-randomize-filename", action="store_true", default=False, help="Randomize filename before upload")
     
@@ -54,7 +54,7 @@ def main():
     detClient = DetonatorClient(args.url, args.token, args.debug)
 
     if not args.filename:
-        print("Error: filename is required for scan command")
+        print("Error: filename is required")
         parser.print_help()
         return
         
@@ -70,11 +70,11 @@ def main():
         print_profiles(detClient.get_profiles())
         return
     
-    detClient.scan_file(
+    detClient.submit_file(
             args.filename,
             args.source_url,
             args.file_comment,
-            args.scan_comment,
+            args.submission_comment,
             args.project,
             args.profile,
             args.password,

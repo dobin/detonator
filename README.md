@@ -59,18 +59,18 @@ The REST API is at `http://localhost:8000`.
 
 ## Usage
 
-To scan a file on the previously configured `localdetonator`:
+To submit a file on the previously configured `localdetonator`:
 
 ```bash
-$ poetry run python -m detonatorcmd scan sample.exe --profile localdetonator
-File ID: 1, Scan ID: 1
+$ poetry run python -m detonatorcmd submission sample.exe --profile localdetonator
+File ID: 1, Submission ID: 1
 .........................
-Scan Result: not_detected
+Submission Result: not_detected
 ```
 
 All the gathered data:
 ```
-$ curl http://localhost:8000/api/scans/1 | jq
+$ curl http://localhost:8000/api/submissions/1 | jq
 {
   "id": 1,
   "file_id": 1,
@@ -90,7 +90,7 @@ $ curl http://localhost:8000/api/scans/1 | jq
   "status": "finished",
   "result": "not_detected",
 
-  "detonator_srv_logs": "[2025-12-19T09:18:14.200832] DB: Scan created...",
+  "detonator_srv_logs": "[2025-12-19T09:18:14.200832] DB: Submission created...",
   "agent_logs": "[\"[2025-12-18 20:03:41.772 UTC] DetonatorAgent 0.4 - Starting up..." ],
   "execution_logs": {
     "pid": 78352,
@@ -111,7 +111,7 @@ $ curl http://localhost:8000/api/scans/1 | jq
 You can use Detonator in three different setups: 
 * **Live**: The simplest, just attach a running DetonatorAgent instance
 * **Proxmox**: Using Proxmox to revert VMs to their snapshots
-* **Azure**: Instantiate new VM for each scan (experimental)
+* **Azure**: Instantiate new VM for each submission (experimental)
 
 ## Setup Guides
 

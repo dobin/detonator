@@ -14,8 +14,8 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 
-from detonatorapi.utils import mylog, scanid_to_vmname
-from detonatorapi.database import Scan, get_db_direct
+from detonatorapi.utils import mylog
+from detonatorapi.database import Submission, get_db_direct
 
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
@@ -25,6 +25,10 @@ logging.getLogger("azure.identity").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 CONFIG_FILE = 'azure.yaml'
+
+
+def submissionid_to_vmname(submission_id: int) -> str:
+    return f"detonator-{submission_id}"
 
 
 
@@ -72,34 +76,34 @@ class AzureManager:
         self.resource_client = ResourceManagementClient(self.credential, self.subscription_id)
         
 
-    def create_machine(self, scan_id) -> bool:
-        vm_name = scanid_to_vmname(scan_id)
+    def create_machine(self, submission_id) -> bool:
+        vm_name = submissionid_to_vmname(submission_id)
         db = get_db_direct()
 
         try:
             # All required information is in the database entry
-            db_scan = db.get(Scan, scan_id)
-            if not db_scan:
-                logger.error(f"Scan with ID {scan_id} not found in database")
+            db_submission = db.get(Submission, submission_id)
+            if not db_submission:
+                logger.error(f"Submission with ID {submission_id} not found in database")
                 # No DB to update
                 return False
             
             # DB UPDATE: Indicate we creating the VM currently
-            db_scan.vm_instance_name = vm_name
+            db_submission.vm_instance_name = vm_name
             db.commit()
             
-            logger.info(f"Azure: Creating VM: {vm_name} with profile {db_scan.profile.name}")
+            logger.info(f"Azure: Creating VM: {vm_name} with profile {db_submission.profile.name}")
             logger.info(f"Azure: This can take a few minutes")
 
             # General VM creation data (check first)
-            if 'image_reference' not in db_scan.profile.data or \
-                'admin_username' not in db_scan.profile.data or \
-                'admin_password' not in db_scan.profile.data:
-                logger.error(f"Scan {scan_id} profile data is missing required fields (image_reference, admin_username, admin_password)")
+            if 'image_reference' not in db_submission.profile.data or \
+                'admin_username' not in db_submission.profile.data or \
+                'admin_password' not in db_submission.profile.data:
+                logger.error(f"Submission {submission_id} profile data is missing required fields (image_reference, admin_username, admin_password)")
                 return False
-            image_reference = db_scan.profile.data['image_reference']
-            admin_username = db_scan.profile.data['admin_username']
-            admin_password = db_scan.profile.data['admin_password']
+            image_reference = db_submission.profile.data['image_reference']
+            admin_username = db_submission.profile.data['admin_username']
+            admin_password = db_submission.profile.data['admin_password']
             
             # Create: network security group with EDR-specific rules
             nsg_name = f"{vm_name}-nsg"
@@ -126,7 +130,7 @@ class AzureManager:
                 admin_username=admin_username,
                 admin_password=admin_password)
             if not vm_result:
-                logger.error(f"Failed to create VM for scan {scan_id}")
+                logger.error(f"Failed to create VM for submission {submission_id}")
                 return False
             
             # Get public IP address
@@ -136,14 +140,14 @@ class AzureManager:
             logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
 
             # DB UPDATE: VM details
-            db_scan.vm_exist = 1
-            db_scan.vm_ip_address = public_ip_info.ip_address
-            db_scan.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
+            db_submission.vm_exist = 1
+            db_submission.vm_ip_address = public_ip_info.ip_address
+            db_submission.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
             db.commit()
             return True
             
         except Exception as e:
-            logger.error(f"Failed to create VM for scan {scan_id}: {str(e)}")
+            logger.error(f"Failed to create VM for submission {submission_id}: {str(e)}")
             return False
         finally:
             db.close()
@@ -473,11 +477,11 @@ class AzureManager:
                             except Exception:
                                 pass  # Ignore errors getting public IP
                 
-                # Extract scan ID from VM name if it follows detonator-{scan_id} pattern
-                scan_id = None
+                # Extract submission ID from VM name if it follows detonator-{submission_id} pattern
+                submission_id = None
                 if vm.name and vm.name.startswith('detonator-'):
                     try:
-                        scan_id = int(vm.name.split('-')[1])
+                        submission_id = int(vm.name.split('-')[1])
                     except (IndexError, ValueError):
                         pass
                 
@@ -487,7 +491,7 @@ class AzureManager:
                     'location': vm.location,
                     'vm_size': vm.hardware_profile.vm_size if vm.hardware_profile else None,
                     'public_ip': public_ip,
-                    'scan_id': scan_id,
+                    'submission_id': submission_id,
                     'created_time': None  # Azure SDK doesn't always provide creation time
                 }
                 vms.append(vm_info)

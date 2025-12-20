@@ -5,11 +5,11 @@ Automated test script for Detonator server and VMs.
 This script tests the complete workflow:
 1. Connect to the Detonator server
 2. Upload a test file
-3. Wait for scan completion
+3. Wait for submission completion
 4. Verify results
 
 Usage:
-    python tests/test_automated_scan.py --url http://localhost:8000 --token YOUR_TOKEN --profile PROFILE_NAME
+    python tests/test_automated_submission.py --url http://localhost:8000 --token YOUR_TOKEN --profile PROFILE_NAME
 
 Requirements:
     - A running Detonator server
@@ -98,21 +98,21 @@ def test_profile_validation(client, profile_name, results):
         return None
 
 
-def test_file_upload_and_scan(client: DetonatorClient, test_file, profile_name, runtime, results):
-    """Test 3: Upload file and complete scan"""
-    print(f"\n[Test 3] Uploading test file and running scan...")
+def test_file_upload_and_submission(client: DetonatorClient, test_file, profile_name, runtime, results):
+    """Test 3: Upload file and complete submission"""
+    print(f"\n[Test 3] Uploading test file and running submission...")
     print(f"  File: {test_file}")
     print(f"  Profile: {profile_name}")
     print(f"  Runtime: {runtime}s")
     
-    # Run the scan
+    # Run the submission
     start_time = time.time()
     try:
-        scan_id = client.scan_file(
+        submission_id = client.submit_file(
             filename=test_file,
             source_url="automated_test",
             file_comment="automated_test",
-            scan_comment="automated_test",
+            submission_comment="automated_test",
             project="automated_test",
             profile_name=profile_name,
             password="",
@@ -120,38 +120,38 @@ def test_file_upload_and_scan(client: DetonatorClient, test_file, profile_name, 
             randomize_filename=False
         )
         
-        if not scan_id:
-            results.add_fail("File upload and scan", "Failed to create scan (scan_id is None)")
+        if not submission_id:
+            results.add_fail("File upload and submission", "Failed to create submission (submission_id is None)")
             return
         
         elapsed_time = time.time() - start_time
-        print(f"  Scan ID: {scan_id}")
-        print(f"  Upload and scan time: {elapsed_time:.2f}s")
+        print(f"  Submission ID: {submission_id}")
+        print(f"  Upload and submission time: {elapsed_time:.2f}s")
 
-        # Retrieve scan results
-        scan = client.get_scan(scan_id)
-        if not scan:
-            results.add_fail("File upload and scan", "Failed to retrieve scan results")
+        # Retrieve submission results
+        submission = client.get_submission(submission_id)
+        if not submission:
+            results.add_fail("File upload and submission", "Failed to retrieve submission results")
             return
         
-        # Verify scan status is "finished"
-        if scan.get('status') != 'finished':
-            results.add_fail("File upload and scan", 
-                           f"Expected status 'finished', got '{scan.get('status')}'")
+        # Verify submission status is "finished"
+        if submission.get('status') != 'finished':
+            results.add_fail("File upload and submission", 
+                           f"Expected status 'finished', got '{submission.get('status')}'")
             return
         
-        # Verify scan result is "not_detected"
-        if scan.get('result') != 'not_detected':
-            results.add_fail("File upload and scan", 
-                           f"Expected result 'not_detected', got '{scan.get('result')}'")
+        # Verify submission result is "not_detected"
+        if submission.get('result') != 'not_detected':
+            results.add_fail("File upload and submission", 
+                           f"Expected result 'not_detected', got '{submission.get('result')}'")
             return
         
-        results.add_pass("File upload and scan")
-        print(f"  Status: {scan.get('status')}")
-        print(f"  Result: {scan.get('result')}")
+        results.add_pass("File upload and submission")
+        print(f"  Status: {submission.get('status')}")
+        print(f"  Result: {submission.get('result')}")
         
     except Exception as e:
-        results.add_fail("File upload and scan", str(e))
+        results.add_fail("File upload and submission", str(e))
           
 
 
@@ -169,7 +169,7 @@ def main():
     
     # Optional arguments
     parser.add_argument("--runtime", type=int, default=10, 
-                       help="Scan runtime in seconds (default: 10)")
+                       help="Submission runtime in seconds (default: 10)")
     parser.add_argument("--test-file", default=None,
                        help="Path to test file (default: create temporary file)")
     parser.add_argument("--debug", action="store_true",
@@ -219,7 +219,7 @@ def main():
         print(f"\n⚠ Cannot continue without valid profile '{args.profile}'")
         return 1
     
-    test_file_upload_and_scan(client, test_file, args.profile, args.runtime, results)
+    test_file_upload_and_submission(client, test_file, args.profile, args.runtime, results)
 
     
     # Print summary and exit

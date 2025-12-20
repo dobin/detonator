@@ -6,9 +6,9 @@ import pprint
 
 from sqlalchemy.orm import Session, joinedload
 
-from ..database import get_db_direct, Scan, ScanAlert, Profile
+from ..database import get_db_direct, Submission, SubmissionAlert, Profile
 from .mde_client import MDEClient
-from ..db_interface import db_scan_add_log, db_scan_change_status_quick
+from ..db_interface import db_submission_add_log, db_submission_change_status_quick
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,8 @@ POLL_INTERVAL_SECONDS = 30  # polling interval
 
 class AlertMonitorMde:
 
-    def __init__(self, scan_id: int):
-        self.scan_id = scan_id
+    def __init__(self, submission_id: int):
+        self.submission_id = submission_id
         self.task: Optional[asyncio.Task] = None
         self.client_cache: Dict[str, MDEClient] = {}
 
@@ -35,19 +35,19 @@ class AlertMonitorMde:
             db = None
             try:
                 db = get_db_direct()
-                scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
-                if not scan:
+                submission = db.query(Submission).filter(Submission.id == self.submission_id).first()
+                if not submission:
                     break
                 
                 # check if we are done
-                if scan.status in ("error", "finished"):
+                if submission.status in ("error", "finished"):
                     # check if we are > POLLING_TIME_MINUTES after completed_at
-                    if scan.completed_at and \
-                          scan.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) < datetime.utcnow():
+                    if submission.completed_at and \
+                          submission.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) < datetime.utcnow():
                         break
 
                 # poll
-                self._poll(db, scan)
+                self._poll(db, submission)
                 db.commit()
 
                 # sleep a bit before next poll
@@ -64,73 +64,73 @@ class AlertMonitorMde:
         # We finished. Close alerts
         db = get_db_direct()
         try:
-            scan = db.query(Scan).filter(Scan.id == self.scan_id).first()
-            if scan:
-                self._finish_monitoring(db, scan)
+            submission = db.query(Submission).filter(Submission.id == self.submission_id).first()
+            if submission:
+                self._finish_monitoring(db, submission)
             db.commit()
         finally:
             db.close()
 
 
-    def _finish_monitoring(self, db: Session, scan: Scan) -> bool:
-        # Scan Info
-        if not scan.profile:
+    def _finish_monitoring(self, db: Session, submission: Submission) -> bool:
+        # Submission Info
+        if not submission.profile:
             return False
         
         # Cloud Client
-        client = self._get_client(scan.profile)
+        client = self._get_client(submission.profile)
         if not client:
             return False
         
-        logger.info("scan %s: Finalizing MDE alert monitoring", scan.id)
+        logger.info("submission %s: Finalizing MDE alert monitoring", submission.id)
 
         try:
-            self._auto_close(db, scan, client)
+            self._auto_close(db, submission, client)
         except Exception as exc:
-            logger.error(f"Failed to auto close alerts for scan {scan.id}: {exc}")
-            db_scan_add_log(db, scan, f"MDE auto-close failed: {exc}")
+            logger.error(f"Failed to auto close alerts for submission {submission.id}: {exc}")
+            db_submission_add_log(db, submission, f"MDE auto-close failed: {exc}")
 
         return True
 
 
-    def _poll(self, db: Session, scan: Scan) -> bool:
-        # Scan Info
-        if not scan.profile:
+    def _poll(self, db: Session, submission: Submission) -> bool:
+        # Submission Info
+        if not submission.profile:
             return False
-        device_info = scan.profile.data.get("edr_mde", None)
+        device_info = submission.profile.data.get("edr_mde", None)
         if not device_info:
             return False
         device_id = device_info.get("device_id", None)
         device_hostname = device_info.get("hostname", None)
         
         # Cloud Client
-        client = self._get_client(scan.profile)
+        client = self._get_client(submission.profile)
         if not client:
             return False
 
         # Determine polling window
-        time_from = scan.created_at
-        time_to = scan.completed_at or datetime.utcnow()
+        time_from = submission.created_at
+        time_to = submission.completed_at or datetime.utcnow()
         
         try:
-            poll_msg = f"MDE poll for scan {scan.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
-            #db_scan_add_log(db, scan, poll_msg)
+            poll_msg = f"MDE poll for submission {submission.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
+            #db_submission_add_log(db, submission, poll_msg)
             logger.info(poll_msg)
 
             alerts = client.fetch_alerts(
                 device_id, device_hostname, time_from, time_to
             )
             #pprint.pprint(alerts)
-            self._store_alerts(db, scan, alerts)
+            self._store_alerts(db, submission, alerts)
         except Exception as exc:
-            db_scan_add_log(db, scan, f"MDE poll: failed: {exc}")
+            db_submission_add_log(db, submission, f"MDE poll: failed: {exc}")
 
         return True
 
 
-    def _store_alerts(self, db: Session, scan: Scan, alerts_with_evidence):
+    def _store_alerts(self, db: Session, submission: Submission, alerts_with_evidence):
         """Store alerts with their evidence already included."""
-        existing_ids = {alert.alert_id for alert in scan.alerts}
+        existing_ids = {alert.alert_id for alert in submission.alerts}
         
         for alert in alerts_with_evidence:
             alert_id = alert.get("AlertId", None)
@@ -151,8 +151,8 @@ class AlertMonitorMde:
                 except ValueError:
                     detected_dt = None
             
-            scan_alert = ScanAlert(
-                scan_id=scan.id,
+            submission_alert = SubmissionAlert(
+                submission_id=submission.id,
                 alert_id=alert_id,
                 title=alert.get("Title"),
                 severity=alert.get("Severity"),
@@ -160,15 +160,15 @@ class AlertMonitorMde:
                 detection_source=alert.get("DetectionSource"),
                 detected_at=detected_dt,
             )
-            db.add(scan_alert)
-            scan.alerts.append(scan_alert)
-            logger.info(f"scan {scan.id}: New alert stored: {alert_id}")
+            db.add(submission_alert)
+            submission.alerts.append(submission_alert)
+            logger.info(f"submission {submission.id}: New alert stored: {alert_id}")
     
 
-    def _auto_close(self, db: Session, scan: Scan, client: MDEClient):
-        comment = f"Auto-Closed by Detonator (scan {scan.id})"
+    def _auto_close(self, db: Session, submission: Submission, client: MDEClient):
+        comment = f"Auto-Closed by Detonator (submission {submission.id})"
         closed_incidents = set()
-        for alert in scan.alerts:
+        for alert in submission.alerts:
             if not alert.auto_closed_at:
                 try:
                     client.resolve_alert(alert.alert_id, comment)
@@ -184,7 +184,7 @@ class AlertMonitorMde:
                     closed_incidents.add(incident_id)
                 except Exception as exc:
                     logger.error(f"Failed to resolve incident {incident_id}: {exc}")
-        db_scan_add_log(db, scan, "Detection window completed. Alerts auto-closed.")
+        db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
 
 
     def _get_client(self, profile: Profile) -> Optional[MDEClient]:

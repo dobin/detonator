@@ -20,26 +20,26 @@
                 {% endif %}
                 <p class="text-gray-500 text-xs mt-2">Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 
-                <!-- Associated Scans -->
-                {% if file.scans and file.scans|length > 0 %}
+                <!-- Associated Submissions -->
+                {% if file.submissions and file.submissions|length > 0 %}
                 <div class="mt-4 p-3 bg-gray-50 rounded">
                     <div class="space-y-2">
-                        {% for scan in file.scans|sort(attribute='id', reverse=True) %}
+                        {% for submission in file.submissions|sort(attribute='id', reverse=True) %}
                         <div class="flex items-center justify-between text-xs">
                             <div class="flex items-center space-x-2">
-                                <span class="text-gray-600">Scan #{{ scan.id }}: </span>
-                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}">{{ scan.status }}</span>
-                                {% if scan.profile %}
-                                <span class="text-gray-500">@{{ scan.profile.name }}</span>
+                                <span class="text-gray-600">Submission #{{ submission.id }}: </span>
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}">{{ submission.status }}</span>
+                                {% if submission.profile %}
+                                <span class="text-gray-500">@{{ submission.profile.name }}</span>
                                 {% endif %}
 
-                                {% if scan.result %}
-                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_scan_status_color(scan.result) }}"> {{ scan.result }}</span>
+                                {% if submission.result %}
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.result) }}"> {{ submission.result }}</span>
                                 {% endif %}
                             </div>
                             <div class="flex space-x-1">
-                                <button onclick="viewScanDetails({{ scan.id }})" class="text-blue-500 hover:text-blue-700 text-xs">View</button>
-                                <a href="/scans?scan_id={{ scan.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
+                                <button onclick="viewSubmissionDetails({{ submission.id }})" class="text-blue-500 hover:text-blue-700 text-xs">View</button>
+                                <a href="/submissions?submission_id={{ submission.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
                             </div>
                         </div>
                         {% endfor %}
@@ -47,17 +47,17 @@
                 </div>
                 {% else %}
                 <div class="mt-4 p-3 bg-gray-50 rounded">
-                    <p class="text-gray-500 text-sm">No scans yet</p>
+                    <p class="text-gray-500 text-sm">No submissions yet</p>
                 </div>
                 {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
                 <button 
                     data-auth-required
-                    onclick="createScan({{ file.id }})"
+                    onclick="createSubmission({{ file.id }})"
                     class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                 >
-                    Create Scan
+                    Create Submission
                 </button>
                 <button 
                     data-auth-required

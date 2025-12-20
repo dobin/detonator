@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Scan Details - {{ scan.id if scan else 'Not Found' }}{% endblock %}
+{% block title %}Submission Details - {{ submission.id if submission else 'Not Found' }}{% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Scan Details - #{{ scan.id if scan else 'Not Found' }}</h2>
+        <h2 class="text-2xl font-bold">Submission Details - #{{ submission.id if submission else 'Not Found' }}</h2>
         <div class="space-x-2">
-            <a href="/scans" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
-                Back to Scans
+            <a href="/submissions" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
+                Back to Submissions
             </a>
             <button 
-                onclick="refreshScan()"
+                onclick="refreshSubmission()"
                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
                 Refresh
@@ -19,17 +19,17 @@
         </div>
     </div>
 
-    <div id="scan-details-container">
-        {% include "partials/scan_details.html" %}
+    <div id="submission-details-container">
+        {% include "partials/submission_details.html" %}
     </div>
 </div>
 
 <script>
-function refreshScan() {
-    {% if scan %}
-    const scanId = {{ scan.id }};
-    htmx.ajax('GET', `/templates/scan-details/${scanId}`, {
-        target: '#scan-details-container',
+function refreshSubmission() {
+    {% if submission %}
+    const submissionId = {{ submission.id }};
+    htmx.ajax('GET', `/templates/submission-details/${submissionId}`, {
+        target: '#submission-details-container',
         swap: 'innerHTML'
     }).then(() => {
         // Scroll to bottom of log elements after refresh
@@ -40,9 +40,9 @@ function refreshScan() {
     {% endif %}
 }
 
-// Auto-refresh every 5 seconds if scan is running
-{% if scan and scan.status in ['fresh', 'running'] %}
-setInterval(refreshScan, 5000);
+// Auto-refresh every 5 seconds if submission is running
+{% if submission and submission.status in ['fresh', 'running'] %}
+setInterval(refreshSubmission, 5000);
 {% endif %}
 
 // Initial scroll to bottom for logs

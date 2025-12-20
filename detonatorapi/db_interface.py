@@ -7,48 +7,48 @@ import random
 import string
 from werkzeug.utils import secure_filename
 
-from .database import Scan, File, Profile, get_db_direct
+from .database import Submission, File, Profile, get_db_direct
 from .utils import mylog
 
 logger = logging.getLogger(__name__)
 
 
 #
-def db_scan_change_status(scan_id: int, status: str, log_message: str = ""):
+def db_submission_change_status(submission_id: int, status: str, log_message: str = ""):
     thread_db = get_db_direct()
-    db_scan = thread_db.get(Scan, scan_id)
+    db_submission = thread_db.get(Submission, submission_id)
 
-    ret = db_scan_change_status_quick(thread_db, db_scan, status, log_message)
+    ret = db_submission_change_status_quick(thread_db, db_submission, status, log_message)
     thread_db.close()
     return ret
 
 
-# Change the status of a scan in the database
+# Change the status of a submission in the database
 # Only use this when you know what you are doing:
 # - as a shortcut
-# - and not use the db_scan after this
+# - and not use the db_submission after this
 # - or before this
-def db_scan_change_status_quick(db, db_scan: Scan, status: str, log_message: str = ""):
-    log = f"Scan {db_scan.id} status change from {db_scan.status} to {status}"
+def db_submission_change_status_quick(db, db_submission: Submission, status: str, log_message: str = ""):
+    log = f"Submission {db_submission.id} status change from {db_submission.status} to {status}"
     logger.info(log)
 
-    db_scan.detonator_srv_logs += mylog(log)
-    db_scan.status = status
+    db_submission.detonator_srv_logs += mylog(log)
+    db_submission.status = status
 
     if log_message != "":
         logger.info("  " + log_message)
-        db_scan.detonator_srv_logs += mylog(log)
+        db_submission.detonator_srv_logs += mylog(log)
 
-    #db_scan.updated_at = datetime.utcnow()
+    #db_submission.updated_at = datetime.utcnow()
     db.commit()
 
 
-def db_scan_add_log(db, db_scan, log_message: str):
+def db_submission_add_log(db, db_submission, log_message: str):
     if log_message is None or log_message == "":
         return
     log = f"[{datetime.utcnow().isoformat()}] {log_message}"
     logger.info(log_message)
-    db_scan.detonator_srv_logs += log + "\n"
+    db_submission.detonator_srv_logs += log + "\n"
 
     db.commit()
 
@@ -138,7 +138,7 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(
+def db_create_submission(
     db,
     file_id: int,
     profile_name: str,
@@ -149,7 +149,7 @@ def db_create_scan(
     execution_mode: str = "exec",
     user: str = "",
 ) -> int:
-    """Create a scan using a profile name instead of profile_id"""
+    """Create a submission using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
         raise ValueError(f"Profile '{profile_name}' not found")
@@ -159,8 +159,8 @@ def db_create_scan(
     if drop_path == "" and profile.default_drop_path != "":
         drop_path = profile.default_drop_path
 
-    # Create scan directly with the profile instance
-    db_scan = Scan(
+    # Create submission directly with the profile instance
+    db_submission = Submission(
         file_id=file_id,
         profile_id=profile.id,
         comment=comment,
@@ -169,10 +169,10 @@ def db_create_scan(
         drop_path=drop_path,
         execution_mode=execution_mode,
         user=user,
-        detonator_srv_logs=mylog(f"DB: Scan created"),
+        detonator_srv_logs=mylog(f"DB: Submission created"),
         status="fresh",
     )
-    db.add(db_scan)
+    db.add(db_submission)
     db.commit()
-    logger.info(f"DB: Created scan {db_scan.id}")
-    return db_scan.id
+    logger.info(f"DB: Created submission {db_submission.id}")
+    return db_submission.id

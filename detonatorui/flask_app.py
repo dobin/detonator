@@ -44,7 +44,7 @@ def get_status_color(status):
         'error': 'bg-red-100 text-red-800',
         'instantiating': 'bg-blue-100 text-blue-800',
         'finished': 'bg-blue-100 text-blue-800',
-        'scanning': 'bg-blue-300 text-blue-800',
+        'processing': 'bg-blue-300 text-blue-800',
         'polling': 'bg-yellow-100 text-yellow-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
@@ -52,7 +52,7 @@ def get_status_color(status):
 app.jinja_env.globals.update(get_status_color=get_status_color)
 
 
-def get_scan_status_color(status):
+def get_submission_status_color(status):
     if not status:
         return 'bg-gray-100 text-gray-800'
     status_colors = {
@@ -63,7 +63,7 @@ def get_scan_status_color(status):
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
-app.jinja_env.globals.update(get_scan_status_color=get_scan_status_color)
+app.jinja_env.globals.update(get_submission_status_color=get_submission_status_color)
 
 
 def get_alert_severity_color(severity):

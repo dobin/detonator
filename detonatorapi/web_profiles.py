@@ -6,7 +6,7 @@ import json
 import requests
 import subprocess
 
-from .database import get_db, Profile, Scan
+from .database import get_db, Profile, Submission
 from .schemas import ProfileResponse, ProfileStatusResponse
 from .db_interface import db_list_profiles, db_create_profile, db_get_profile_by_id
 from .agent.agent_api import AgentApi
@@ -311,10 +311,10 @@ async def delete_profile(
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    # Check if profile is being used by any scans
-    scans_using_profile = db.query(Scan).filter(Scan.profile_id == profile_id).count()
-    if scans_using_profile > 0:
-        raise HTTPException(status_code=400, detail=f"Cannot delete profile: {scans_using_profile} scans are using this profile")
+    # Check if profile is being used by any submissions
+    submissions_using_profile = db.query(Submission).filter(Submission.profile_id == profile_id).count()
+    if submissions_using_profile > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete profile: {submissions_using_profile} submissions are using this profile")
     
     db.delete(db_profile)
     db.commit()

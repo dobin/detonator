@@ -31,7 +31,7 @@ class Profile(Base):
     password: Mapped[str] = Column(String(255), default="", nullable=False)
 
     # Relationship
-    scans: Mapped[List["Scan"]] = relationship("Scan", back_populates="profile")
+    submissions: Mapped[List["Submission"]] = relationship("Submission", back_populates="profile")
 
 
 class File(Base):
@@ -47,7 +47,7 @@ class File(Base):
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     
     # Relationship
-    scans: Mapped[List["Scan"]] = relationship("Scan", back_populates="file")
+    submissions: Mapped[List["Submission"]] = relationship("Submission", back_populates="file")
 
     @classmethod
     def calculate_hash(cls, content: bytes) -> str:
@@ -55,8 +55,8 @@ class File(Base):
         return hashlib.sha256(content).hexdigest()
 
 
-class Scan(Base):
-    __tablename__ = "scans"
+class Submission(Base):
+    __tablename__ = "submissions"
     
     # IN
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
@@ -94,16 +94,16 @@ class Scan(Base):
     completed_at: Mapped[datetime] = Column(DateTime, nullable=True)
 
     # Relationships
-    file: Mapped[File] = relationship("File", back_populates="scans")
-    profile: Mapped[Profile] = relationship("Profile", back_populates="scans")
-    alerts: Mapped[List["ScanAlert"]] = relationship("ScanAlert", back_populates="scan", cascade="all, delete-orphan")
+    file: Mapped[File] = relationship("File", back_populates="submissions")
+    profile: Mapped[Profile] = relationship("Profile", back_populates="submissions")
+    alerts: Mapped[List["SubmissionAlert"]] = relationship("SubmissionAlert", back_populates="submission", cascade="all, delete-orphan")
 
 
-class ScanAlert(Base):
-    __tablename__ = "scan_alerts"
+class SubmissionAlert(Base):
+    __tablename__ = "submission_alerts"
 
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
-    scan_id: Mapped[int] = Column(Integer, ForeignKey("scans.id"), nullable=False, index=True)
+    submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
     alert_id: Mapped[str] = Column(String(128), nullable=False)
     incident_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
     title: Mapped[Optional[str]] = Column(String(255), nullable=True)
@@ -117,7 +117,7 @@ class ScanAlert(Base):
     comment: Mapped[Optional[str]] = Column(Text, nullable=True)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    scan: Mapped[Scan] = relationship("Scan", back_populates="alerts")
+    submission: Mapped[Submission] = relationship("Submission", back_populates="alerts")
 
 
 # Create tables

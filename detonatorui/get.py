@@ -38,28 +38,28 @@ def logout_page():
 def files_page():
     return render_template("files.html")
 
-@get_bp.route("/scans")
-def scans_page():
-    return render_template("scans.html")
+@get_bp.route("/submissions")
+def submissions_page():
+    return render_template("submissions.html")
 
-@get_bp.route("/scans/<int:scan_id>")
-def scan_detail_page(scan_id):
-    """Page to display details of a specific scan"""
+@get_bp.route("/submissions/<int:submission_id>")
+def submission_detail_page(submission_id):
+    """Page to display details of a specific submission"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=_auth_headers())
         if response.status_code == 200:
-            scan = response.json()
+            submission = response.json()
         else:
-            logger.error(f"Failed to fetch scan {scan_id}: {response.status_code} {response.text}")
-            scan = None
+            logger.error(f"Failed to fetch submission {submission_id}: {response.status_code} {response.text}")
+            submission = None
     except requests.RequestException as e:
-        logger.exception(f"Exception while fetching scan {scan_id}: {e}")
-        scan = None
+        logger.exception(f"Exception while fetching submission {submission_id}: {e}")
+        submission = None
     
-    return render_template("scan_details.html", scan=scan)
+    return render_template("submission_details.html", submission=submission)
 
-@get_bp.route("/newscan")
-def scan_page():
+@get_bp.route("/newsubmission")
+def submission_page():
     # Fetch profiles list
     try:
         response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
@@ -72,7 +72,7 @@ def scan_page():
         logger.exception(f"Exception while fetching profiles: {e}")
         profiles = []
     
-    return render_template("newscan.html", profiles=profiles)
+    return render_template("newsubmission.html", profiles=profiles)
 
 @get_bp.route("/upload")
 def upload_page():
@@ -86,15 +86,15 @@ def vms_page():
 def profiles_page():
     return render_template("profiles.html")
 
-@get_bp.route("/scans-table")
-def scans_table_page():
-    return render_template("scans_table.html")
+@get_bp.route("/submissions-table")
+def submissions_table_page():
+    return render_template("submissions_table.html")
 
 
-@get_bp.route("/semidatasieve/<int:scan_id>")
-def semidatasieve(scan_id):
-    """Page to display semidatasieve results for a scan"""
-    return render_template("semidatasieve.html", scan_id=scan_id)
+@get_bp.route("/semidatasieve/<int:submission_id>")
+def semidatasieve(submission_id):
+    """Page to display semidatasieve results for a submission"""
+    return render_template("semidatasieve.html", submission_id=submission_id)
 
 # Template endpoints for HTMX (return HTML)
 
@@ -105,7 +105,7 @@ def files_template():
         response = requests.get(f"{API_BASE_URL}/api/files", headers=_auth_headers())
         if response.status_code == 200:
             files = response.json()
-            # Sort scans by ID in descending order (newest first)
+            # Sort submissions by ID in descending order (newest first)
             files = sorted(files, key=lambda file: file['id'], reverse=True)
         else:
             files = []
@@ -114,9 +114,9 @@ def files_template():
     
     return render_template("partials/files_list.html", files=files)
 
-@get_bp.route("/templates/scans")
-def scans_template():
-    """Template endpoint to render scans list via HTMX"""
+@get_bp.route("/templates/submissions")
+def submissions_template():
+    """Template endpoint to render submissions list via HTMX"""
     try:
         # Build query parameters from request args
         params = {}
@@ -154,31 +154,31 @@ def scans_template():
         if filter_status and filter_status != 'all':
             params['status'] = filter_status
         
-        response = requests.get(f"{API_BASE_URL}/api/scans", params=params, headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params, headers=_auth_headers())
         if response.status_code == 200:
-            scans = response.json()
+            submissions = response.json()
         else:
-            scans = []
+            submissions = []
     except requests.RequestException:
-        scans = []
+        submissions = []
     
-    return render_template("partials/scans_list.html", scans=scans)
+    return render_template("partials/submissions_list.html", submissions=submissions)
 
-@get_bp.route("/templates/scan-details/<int:scan_id>")
-def scan_details_template(scan_id):
-    """Template endpoint to render scan details via HTMX"""
-    scan: Optional[Dict] = {}
+@get_bp.route("/templates/submission-details/<int:submission_id>")
+def submission_details_template(submission_id):
+    """Template endpoint to render submission details via HTMX"""
+    submission: Optional[Dict] = {}
     try:
-        response = requests.get(f"{API_BASE_URL}/api/scans/{scan_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=_auth_headers())
         if response.status_code == 200:
-            scan = response.json()
+            submission = response.json()
         else:
-            scan = None
+            submission = None
     except requests.RequestException:
-        scan = None
+        submission = None
 
-    return render_template("partials/scan_details.html", 
-                           scan=scan)
+    return render_template("partials/submission_details.html", 
+                           submission=submission)
 
 @get_bp.route("/templates/vms")
 def vms_template():
@@ -260,9 +260,9 @@ def profiles_overview_template():
     
     return render_template("partials/profiles_overview.html", templates=templates)
 
-@get_bp.route("/templates/scans-table")
-def scans_table_template():
-    """Template endpoint to render scans table via HTMX"""
+@get_bp.route("/templates/submissions-table")
+def submissions_table_template():
+    """Template endpoint to render submissions table via HTMX"""
     try:
         # Build query parameters from request args
         params = {}
@@ -300,20 +300,20 @@ def scans_table_template():
         if filter_status and filter_status != 'all':
             params['status'] = filter_status
         
-        response = requests.get(f"{API_BASE_URL}/api/scans", params=params)
+        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params)
         if response.status_code == 200:
-            scans = response.json()
+            submissions = response.json()
         else:
-            scans = []
+            submissions = []
     except requests.RequestException:
-        scans = []
+        submissions = []
     
-    return render_template("partials/scans_table_list.html", scans=scans)
+    return render_template("partials/submissions_table_list.html", submissions=submissions)
 
 
-@get_bp.route("/templates/create-scan/<int:file_id>")
-def create_file_scan_template(file_id):
-    """Template endpoint to render scan creation form via HTMX"""
+@get_bp.route("/templates/create-submission/<int:file_id>")
+def create_file_submission_template(file_id):
+    """Template endpoint to render submission creation form via HTMX"""
     try:
         # Fetch file details
         file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}")
@@ -332,4 +332,4 @@ def create_file_scan_template(file_id):
         file_data = None
         profiles = {}
     
-    return render_template("partials/file_create_scan.html", file=file_data, profiles=profiles)
+    return render_template("partials/file_create_submission.html", file=file_data, profiles=profiles)

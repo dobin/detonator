@@ -36,7 +36,7 @@ defender:
     proxmox_snapshot: latest
 ```
 
-So after scanning on `defender` profile, Detonator will automatically
+So after processing on `defender` profile, Detonator will automatically
 reset the VM with id `101` (with ip `10.10.10.100`, where DetonatorAgent runs) 
 to the snapshot with name `latest`. 
 

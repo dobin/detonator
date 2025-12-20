@@ -718,7 +718,7 @@
             document.getElementById("settings").style.display = "none";
         }
 
-        function settings_load_data_from_scan_url(url) {
+        function settings_load_data_from_submission_url(url) {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
@@ -1141,7 +1141,7 @@
         }
 
         popupInit();
-        settings_load_data_from_scan_url("{{ API_BASE_URL }}/api/scans/{{scan_id}}");
+        settings_load_data_from_submission_url("{{ API_BASE_URL }}/api/submissions/{{submission_id}}");
     </script>
 </body>
 </html>

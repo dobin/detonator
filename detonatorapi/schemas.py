@@ -49,11 +49,11 @@ class ProfileStatusResponse(BaseModel):
 
 
 #################
-# Scan and File 
+# Submission and File 
 
-# upload_file_and_scan() response
-class NewScanResponse(BaseModel):
-    scan_id: int
+# create_submission() response
+class NewSubmissionResponse(BaseModel):
+    submission_id: int
     file_id: int
 
 
@@ -84,10 +84,10 @@ class FileResponse(FileBase):
 
 
 #################
-# Scan
+# Submission
 
-# create_scan() request
-class FileCreateScan(BaseModel):
+# create_submission() request
+class FileCreateSubmission(BaseModel):
     # file_id comes from path parameter
     project: Optional[str] = None
     profile_name: str
@@ -97,8 +97,8 @@ class FileCreateScan(BaseModel):
     comment: Optional[str] = None
     password: Optional[str] = None
 
-# update_scan() request
-class ScanUpdate(BaseModel):
+# update_submission() request
+class SubmissionUpdate(BaseModel):
     comment: Optional[str] = None
     project: Optional[str] = None
     profile_id: Optional[str] = None
@@ -109,9 +109,9 @@ class ScanUpdate(BaseModel):
     execution_mode: Optional[str] = None
     completed_at: Optional[datetime] = None
 
-# get_scan() response
-# update_scan() response
-class ScanResponse(BaseModel):
+# get_submission() response
+# update_submission() response
+class SubmissionResponse(BaseModel):
     id: int
     file_id: int
     profile_id: int
@@ -135,7 +135,7 @@ class ScanResponse(BaseModel):
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
-    alerts: List["ScanAlertResponse"] = []
+    alerts: List["SubmissionAlertResponse"] = []
     
     created_at: datetime
     updated_at: datetime
@@ -145,7 +145,7 @@ class ScanResponse(BaseModel):
         from_attributes = True
 
 # Without the big log fields, for listing
-class ScanResponseShort(BaseModel):
+class SubmissionResponseShort(BaseModel):
     id: int
     file_id: int
     profile_id: int
@@ -164,6 +164,10 @@ class ScanResponseShort(BaseModel):
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
 
+    # Relationships
+    file: Optional[FileResponse] = None
+    profile: Optional[ProfileResponse] = None
+
     # New
     has_rededr_events: Optional[bool] = False
     alert_count: Optional[int] = 0
@@ -180,7 +184,7 @@ class ScanResponseShort(BaseModel):
         from_attributes = True
 
 
-class ScanAlertResponse(BaseModel):
+class SubmissionAlertResponse(BaseModel):
     id: int
     alert_id: str
     incident_id: Optional[str] = None
@@ -199,8 +203,8 @@ class ScanAlertResponse(BaseModel):
         from_attributes = True
 
 
-ScanResponse.update_forward_refs()
+SubmissionResponse.update_forward_refs()
 
 # get_file() request
-class FileWithScans(FileResponse):
-    scans: List[ScanResponse] = []
+class FileWithSubmissions(FileResponse):
+    submissions: List[SubmissionResponse] = []

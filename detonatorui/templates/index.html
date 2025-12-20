@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-4">Detonator - MalDev scanning made easy</h2>
+    <h2 class="text-2xl font-bold mb-4">Detonator - MalDev processing made easy</h2>
     <p class="text-gray-600 mb-6">
-        Scan your RedTeam tools (like C2 loader) against various EDR's installed in VMs. For easy and reproducible MalDev analysis.
+        Submission your RedTeam tools (like C2 loader) against various EDR's installed in VMs. For easy and reproducible MalDev analysis.
     </p>
 
     <!-- API Status Indicator -->
@@ -70,23 +70,23 @@
         <!-- Quick Actions -->
         <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
             <h3 class="text-lg font-semibold text-blue-800 mb-3">Start Analysis</h3>
-            <p class="text-blue-700 text-sm mb-4">Upload a file and scan it with a profile. Get the feedback of its installed EDR, and/or the detection surface with RedEdr </p>
-            <a href="/newscan" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block">
-                Upload & Scan
+            <p class="text-blue-700 text-sm mb-4">Upload a file and submission it with a profile. Get the feedback of its installed EDR, and/or the detection surface with RedEdr </p>
+            <a href="/newsubmission" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block">
+                Upload & Submission
             </a>
         </div>
                 
         <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
-            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Scans</h3>
+            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Submissions</h3>
             <p class="text-purple-700 text-sm mb-4">Track the progress of your analysis jobs and view detailed results.</p>
-            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
-                View Scans
+            <a href="/submissions" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
+                View Submissions
             </a>
         </div>
 
         <div class="bg-green-50 p-6 rounded-lg border border-green-200">
             <h3 class="text-lg font-semibold text-green-800 mb-3">Manage Files</h3>
-            <p class="text-green-700 text-sm mb-4">View uploaded files, their associated scans, and manage your file collection.</p>
+            <p class="text-green-700 text-sm mb-4">View uploaded files, their associated submissions, and manage your file collection.</p>
             <a href="/files" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-block">
                 View Files
             </a>
@@ -94,7 +94,7 @@
         
         <div data-auth-required class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
             <h3 class="text-lg font-semibold text-yellow-800 mb-3">Upload Only</h3>
-            <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can scan them later).</p>
+            <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can submission them later).</p>
             <a href="/upload" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 inline-block">
                 Upload Only
             </a>

@@ -2,7 +2,7 @@ import json
 import logging
 from typing import List, Dict
 
-from detonatorapi.database import get_db, Scan
+from detonatorapi.database import get_db, Submission
 from detonatorapi.agent.agent_interface import parsers
 
 
@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 def reparse_edr_logs():
     db = get_db()
-    scans = db.query(Scan).all()
-    for scan in scans:
-        #if not scan.edr_logs:
+    submissions = db.query(Submission).all()
+    for submission in submissions:
+        #if not submission.edr_logs:
         #    continue
-        edr_logs = scan.edr_logs
+        edr_logs = submission.edr_logs
 
         edr_summary: List[Dict] = []
         result_is_detected = ""
@@ -31,7 +31,7 @@ def reparse_edr_logs():
                     if parser.is_relevant():
                         if parser.parse():
                             edr_summary = parser.get_summary()
-                            if scan.profile.edr_collector == "RedEdr":
+                            if submission.profile.edr_collector == "RedEdr":
                                 result_is_detected = ""
                             elif parser.is_detected():
                                 result_is_detected = "detected"
@@ -43,11 +43,11 @@ def reparse_edr_logs():
             logger.error(edr_logs)
             logger.error(f"Error parsing Defender XML logs: {e}")
 
-        print(f"Reparsed scan {scan.id}: {result_is_detected}")
+        print(f"Reparsed submission {submission.id}: {result_is_detected}")
         #print(f"  {edr_summary}")
 
-        scan.edr_summary = edr_summary
-        scan.result = result_is_detected
+        submission.edr_summary = edr_summary
+        submission.result = result_is_detected
         db.commit()
 
     db.close()

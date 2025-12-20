@@ -5,9 +5,9 @@ from typing import List, Optional
 import logging
 import os
 
-from .database import get_db, File, Scan
-from .schemas import FileResponse, FileWithScans
-from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
+from .database import get_db, File, Submission
+from .schemas import FileResponse, FileWithSubmissions
+from .db_interface import db_create_file, db_create_submission, db_get_profile_by_name
 from .token_auth import require_auth, get_user_from_request
 from .settings import UPLOAD_DIR
 
@@ -24,7 +24,7 @@ async def upload_file(
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
-    """Upload a file without automatically creating a scan"""
+    """Upload a file without automatically creating a submission"""
 
     actual_filename = file.filename
     if not actual_filename:
@@ -33,15 +33,15 @@ async def upload_file(
     content = await file.read()
     file_id = db_create_file(db, actual_filename, content, source_url or "", comment or "", exec_arguments or "")
 
-    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans)).first()
+    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.submissions)).first()
     
     return db_file
 
 
-@router.get("/files", response_model=List[FileWithScans])
+@router.get("/files", response_model=List[FileWithSubmissions])
 async def get_files(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Get all files with their scans"""
-    files = db.query(File).options(joinedload(File.scans).joinedload(Scan.profile)).offset(skip).limit(limit).all()
+    """Get all files with their submissions"""
+    files = db.query(File).options(joinedload(File.submissions).joinedload(Submission.profile)).offset(skip).limit(limit).all()
     
     # Filter by user if guest
     user = get_user_from_request(request)
@@ -51,10 +51,10 @@ async def get_files(request: Request, skip: int = 0, limit: int = 100, db: Sessi
     return files
 
 
-@router.get("/files/{file_id}", response_model=FileWithScans)
+@router.get("/files/{file_id}", response_model=FileWithSubmissions)
 async def get_file(file_id: int, request: Request, db: Session = Depends(get_db)):
-    """Get a specific file with its scans"""
-    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.scans).joinedload(Scan.profile)).first()
+    """Get a specific file with its submissions"""
+    db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.submissions).joinedload(Submission.profile)).first()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -72,7 +72,7 @@ async def delete_file(
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
-    """Delete a file and all its scans"""
+    """Delete a file and all its submissions"""
     db_file = db.query(File).filter(File.id == file_id).first()
     if db_file is None:
         raise HTTPException(status_code=404, detail="File not found")
@@ -86,8 +86,8 @@ async def delete_file(
         except Exception as e:
             logger.error(f"Failed to delete file from disk: {file_path}, error: {e}")
     
-    # Delete associated scans first
-    db.query(Scan).filter(Scan.file_id == file_id).delete()
+    # Delete associated submissions first
+    db.query(Submission).filter(Submission.file_id == file_id).delete()
     db.delete(db_file)
     db.commit()
     return {"message": "File deleted successfully"}

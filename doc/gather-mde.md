@@ -18,7 +18,7 @@ myfirstvm:
       device_id: "4234k4j2k3j4k23j4k2j43"
 ```
 
-Store the corresponding Azure client secret in the environment variable `MDE_AZURE_CLIENT_SECRET`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires. 
+Store the corresponding Azure client secret in the environment variable `MDE_AZURE_CLIENT_SECRET`. When configured, Detonator will poll MDE for alerts tied to the submission’s device ID during the configured detection window and automatically resolve them once the window expires. 
 
 Make sure that all components (Detonator Linux, VM etc.) have the correct time configured.
 
@@ -38,8 +38,8 @@ You can test it using `tools/mde_log_test.py` (make sure there are some alerts f
 
 ## Detection window & polling lifecycle
 
-- The poll window always runs from *scan start → now*, deduping by `AlertId`, so late-arriving alerts are still collected.
+- The poll window always runs from *submission start → now*, deduping by `AlertId`, so late-arriving alerts are still collected.
 - Right after the window closes Detonator performs a one-time “evidence hydration” query to capture the full `AlertEvidence` payload for every alert that fired.
-- Once evidence is saved it automatically resolves the alerts/incidents using the `alerts_v2` endpoint. If your app registration lacks `SecurityAlert.ReadWrite.All` or `SecurityIncident.ReadWrite.All`, the auto-close step logs a warning but the scan still finishes.
+- Once evidence is saved it automatically resolves the alerts/incidents using the `alerts_v2` endpoint. If your app registration lacks `SecurityAlert.ReadWrite.All` or `SecurityIncident.ReadWrite.All`, the auto-close step logs a warning but the submission still finishes.
 
-In the UI you’ll see the scan’s badge flip to `polling` while the detection window is active. The scans list now shows a compact Defender summary (alert count + most recent alert metadata) so you can triage at a glance; click “View Details” to see the full evidence block per alert.
+In the UI you’ll see the submission’s badge flip to `polling` while the detection window is active. The submissions list now shows a compact Defender summary (alert count + most recent alert metadata) so you can triage at a glance; click “View Details” to see the full evidence block per alert.
