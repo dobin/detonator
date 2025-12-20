@@ -4,7 +4,6 @@ import threading
 from typing import Dict, List, Optional
 
 from detonatorapi.database import get_db_direct, Submission
-from detonatorapi.utils import mylog, submissionid_to_vmname
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log, db_submission_change_status
 from detonatorapi.connectors.azure_manager import initialize_azure_manager, submissionid_to_vmname
 

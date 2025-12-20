@@ -90,17 +90,17 @@ $ curl http://localhost:8000/api/submissions/1 | jq
   "status": "finished",
   "result": "not_detected",
 
-  "detonator_srv_logs": "[2025-12-19T09:18:14.200832] DB: Submission created...",
+  "server_logs": "[2025-12-19T09:18:14.200832] DB: Submission created...",
   "agent_logs": "[\"[2025-12-18 20:03:41.772 UTC] DetonatorAgent 0.4 - Starting up..." ],
-  "execution_logs": {
+  "process_output": {
     "pid": 78352,
     "stdout": "\r\nPsExec v2.43 - Execute processes remotely\r\nCopyright (C) 2001-2023 Mark Russinovich\r\n...",
     "stderr": ""
   },
   "rededr_events": "No RedEdr logs available",
-  "rededr_logs": "",
-  "edr_logs": "{\"logs\":\"<Events>\\r\\n</Events>\\r\\n\",\"edr_version\":\"Windows Defender 1.0\",\"plugin_version\":\"1.0\"}",
-  "edr_summary": [],
+  "rededr_telemetry_raw": "",
+  "edr_telemetry_raw": "{\"logs\":\"<Events>\\r\\n</Events>\\r\\n\",\"edr_version\":\"Windows Defender 1.0\",\"plugin_version\":\"1.0\"}",
+  "edr_alerts": [],
   "alerts": [],
 }
 ```

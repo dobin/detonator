@@ -32,12 +32,12 @@ def db_submission_change_status_quick(db, db_submission: Submission, status: str
     log = f"Submission {db_submission.id} status change from {db_submission.status} to {status}"
     logger.info(log)
 
-    db_submission.detonator_srv_logs += mylog(log)
+    db_submission.server_logs += mylog(log)
     db_submission.status = status
 
     if log_message != "":
         logger.info("  " + log_message)
-        db_submission.detonator_srv_logs += mylog(log)
+        db_submission.server_logs += mylog(log)
 
     #db_submission.updated_at = datetime.utcnow()
     db.commit()
@@ -48,7 +48,7 @@ def db_submission_add_log(db, db_submission, log_message: str):
         return
     log = f"[{datetime.utcnow().isoformat()}] {log_message}"
     logger.info(log_message)
-    db_submission.detonator_srv_logs += log + "\n"
+    db_submission.server_logs += log + "\n"
 
     db.commit()
 
@@ -169,7 +169,7 @@ def db_create_submission(
         drop_path=drop_path,
         execution_mode=execution_mode,
         user=user,
-        detonator_srv_logs=mylog(f"DB: Submission created"),
+        server_logs=mylog(f"DB: Submission created"),
         status="fresh",
     )
     db.add(db_submission)

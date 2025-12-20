@@ -30,11 +30,11 @@
     </div>
     
     <!-- Logs Tabs -->
-    {% if submission.detonator_srv_logs or log or submission.edr_summary %}
+    {% if submission.server_logs or log or submission.edr_alerts %}
     <div class="w-full">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                {% if submission.detonator_srv_logs %}
+                {% if submission.server_logs %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" 
                     data-tab="detonator-logs" onclick="showTab('detonator-logs', this)"
                 >
@@ -50,7 +50,7 @@
                 </button>
                 {% endif %}
 
-                {% if submission.execution_logs %}
+                {% if submission.process_output %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="execution-logs" onclick="showTab('execution-logs', this)"
                 >
@@ -58,7 +58,7 @@
                 </button>
                 {% endif %}
 
-                {% if submission.edr_summary %}
+                {% if submission.edr_alerts %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="edr-summary" onclick="showTab('edr-summary', this)"
                 >
@@ -66,7 +66,7 @@
                 </button>
                 {% endif %}
 
-                {% if submission.edr_logs %}
+                {% if submission.edr_telemetry_raw %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="edr-logs" onclick="showTab('edr-logs', this)"
                 >
@@ -74,7 +74,7 @@
                 </button>
                 {% endif %}
 
-                {% if submission.rededr_logs %}
+                {% if submission.rededr_telemetry_raw %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="rededr-logs" onclick="showTab('rededr-logs', this)"
                 >
@@ -92,10 +92,10 @@
         </div>
         
         <div class="mt-4">
-            {% if submission.detonator_srv_logs %}
+            {% if submission.server_logs %}
             <div id="detonator-logs" class="tab-content">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.detonator_srv_logs }}</pre>
+                >{{ submission.server_logs }}</pre>
             </div>
             {% endif %}
 
@@ -107,57 +107,57 @@
             </div>
             {% endif %}
             
-            {% if submission.execution_logs %}
+            {% if submission.process_output %}
             <div id="execution-logs" class="tab-content hidden">
-                {% if submission.execution_logs is mapping %}
+                {% if submission.process_output is mapping %}
                 <div class="space-y-3">
-                    {% if submission.execution_logs.pid %}
+                    {% if submission.process_output.pid %}
                     <div>
                         <div class="text-xs font-semibold text-gray-600 mb-1">PID: (if available)</div>
-                        <div class="bg-gray-100 p-2 rounded text-sm">{{ submission.execution_logs.pid }}</div>
+                        <div class="bg-gray-100 p-2 rounded text-sm">{{ submission.process_output.pid }}</div>
                     </div>
                     {% endif %}
                     
-                    {% if submission.execution_logs.stdout %}
+                    {% if submission.process_output.stdout %}
                     <div>
                         <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT: (gathered on process exit)</div>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-60 overflow-y-auto w-full">{{ submission.execution_logs.stdout }}</pre>
+                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-60 overflow-y-auto w-full">{{ submission.process_output.stdout }}</pre>
                     </div>
                     {% endif %}
                     
-                    {% if submission.execution_logs.stderr %}
+                    {% if submission.process_output.stderr %}
                     <div>
                         <div class="text-xs font-semibold text-gray-600 mb-1">STDERR:</div>
-                        <pre class="bg-red-50 p-2 rounded text-sm max-h-60 overflow-y-auto w-full text-red-800">{{ submission.execution_logs.stderr }}</pre>
+                        <pre class="bg-red-50 p-2 rounded text-sm max-h-60 overflow-y-auto w-full text-red-800">{{ submission.process_output.stderr }}</pre>
                     </div>
                     {% endif %}
                 </div>
                 {% else %}
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.execution_logs|pretty_json }}
+                >{{ submission.process_output|pretty_json }}
                 </pre>
                 {% endif %}
             </div>
             {% endif %}
             
-            {% if submission.edr_summary %}
+            {% if submission.edr_alerts %}
             <div id="edr-summary" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.edr_summary }}</pre>
+                >{{ submission.edr_alerts }}</pre>
             </div>
             {% endif %}
 
-            {% if submission.edr_logs %}
+            {% if submission.edr_telemetry_raw %}
             <div id="edr-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
-                    >{{ submission.edr_logs|pretty_json }}</pre>
+                    >{{ submission.edr_telemetry_raw|pretty_json }}</pre>
             </div>
             {% endif %}
 
-            {% if submission.rededr_logs %}
+            {% if submission.rededr_telemetry_raw %}
             <div id="rededr-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
-                    >{{ submission.rededr_logs|pretty_json }}</pre>
+                    >{{ submission.rededr_telemetry_raw|pretty_json }}</pre>
             </div>
             {% endif %}
             {% if submission.profile and submission.profile.data.get('edr_mde') %}

@@ -5,8 +5,8 @@ class EdrParser:
     def __init__(self):
         self.edr_data: str = ""
 
-    def load(self, edr_logs: str):
-        self.edr_data = edr_logs
+    def load(self, edr_telemetry_raw: str):
+        self.edr_data = edr_telemetry_raw
         self.events = []
 
     def is_relevant(self) -> bool:

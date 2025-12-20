@@ -106,7 +106,7 @@ class DetonatorClient:
         # Non finished (error mostly)
         if final_submission.get('status') != 'finished':
             print(f"Submission did not complete successfully: {final_submission.get('status')}")
-            print(final_submission.get('detonator_srv_logs'))
+            print(final_submission.get('server_logs'))
             return None
 
         # check for RedEdr first (no result print)

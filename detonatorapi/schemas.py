@@ -121,16 +121,16 @@ class SubmissionResponse(BaseModel):
     drop_path: Optional[str] = None
     execution_mode: Optional[str] = None
 
-    detonator_srv_logs: Optional[str] = None
+    server_logs: Optional[str] = None
     status: str
     user: str = ""
 
     agent_logs: Optional[str] = None
-    execution_logs: Optional[dict] = None
+    process_output: Optional[dict] = None
     rededr_events: Optional[str] = None
-    rededr_logs: Optional[str] = None
-    edr_logs: Optional[str] = None
-    edr_summary: Optional[list] = None
+    rededr_telemetry_raw: Optional[str] = None
+    edr_telemetry_raw: Optional[str] = None
+    edr_alerts: Optional[list] = None
     result: Optional[str] = None
 
     vm_instance_name: Optional[str] = None
@@ -157,8 +157,8 @@ class SubmissionResponseShort(BaseModel):
     status: str
     user: str = ""
 
-    detonator_srv_logs: Optional[str] = None
-    edr_summary: Optional[list] = None
+    server_logs: Optional[str] = None
+    edr_alerts: Optional[list] = None
     result: Optional[str] = None
 
     vm_instance_name: Optional[str] = None

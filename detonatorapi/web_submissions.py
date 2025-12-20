@@ -291,12 +291,12 @@ async def resubmission(
     db_submission.updated_at = datetime.utcnow()
 
     # and all the possile fields
-    db_submission.detonator_srv_logs = ""
-    db_submission.execution_logs = {}
+    db_submission.server_logs = ""
+    db_submission.process_output = {}
     db_submission.agent_logs = ""
     db_submission.rededr_events = ""
-    db_submission.edr_logs = ""
-    db_submission.edr_summary = []
+    db_submission.edr_telemetry_raw = ""
+    db_submission.edr_alerts = []
     db_submission.result = ""
     db_submission.completed_at = None
     db_submission.vm_exist = 0

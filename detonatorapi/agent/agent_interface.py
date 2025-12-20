@@ -149,8 +149,8 @@ def submit_file_to_agent(submission_id: int) -> bool:
             # Gather logs so the user can see what failed
             logger.info("Gather Agent and Execution logs")
             agent_logs = agentApi.GetAgentLogs()
-            execution_logs = agentApi.GetExecutionLogs()
-            db_submission.execution_logs = execution_logs
+            process_output = agentApi.GetExecutionLogs()
+            db_submission.process_output = process_output
             db_submission.agent_logs = agent_logs
             db_submission.completed_at = datetime.utcnow()
             thread_db.commit()
@@ -202,7 +202,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # Get RedEdr Logs (if exists)
     # before killing the process (no shutdown events)
     rededr_events = None
-    rededr_logs = ""
+    rededr_telemetry_raw = ""
     if rededrApi is not None and executionResult == ExecutionResult.OK:
         logger.info("Gather EDR events from RedEdr")
         rededr_events = rededrApi.GetEvents()
@@ -214,7 +214,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
         if rededr_agent_logs is None:
             db_submission_add_log(thread_db, db_submission, "Warning: could not get RedEdr Agent logs from Agent")
         else:
-            rededr_logs = rededr_agent_logs
+            rededr_telemetry_raw = rededr_agent_logs
 
     # kill process
     if executionResult == ExecutionResult.OK:
@@ -228,9 +228,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # Gather logs from Agent
     # After killing the process, so we have all the Agent logs
-    edr_logs = agentApi.GetEdrLogs()
+    edr_telemetry_raw = agentApi.GetEdrLogs()
     agent_logs = agentApi.GetAgentLogs()
-    execution_logs = agentApi.GetExecutionLogs()  # always for now
+    process_output = agentApi.GetExecutionLogs()  # always for now
 
     # we finished 
     if DO_LOCKING:
@@ -243,7 +243,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission_add_log(thread_db, db_submission, f"All information gathered from Agents, processing logs...")
 
     # Preparse all the logs
-    edr_summary = []  # will be generated
+    edr_alerts = []  # will be generated
     result_is_detected = ""  # will be generated
     if agent_logs is None:
         agent_logs = "No Agent logs available"
@@ -251,18 +251,18 @@ def submit_file_to_agent(submission_id: int) -> bool:
     if rededr_events is None:
         rededr_events = "No RedEdr logs available"
         db_submission_add_log(thread_db, db_submission, "Warning: could not get RedEdr logs from Agent")
-    if execution_logs is None:
-        execution_logs = {}
+    if process_output is None:
+        process_output = {}
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Execution logs from Agent")
-    if edr_logs is None:
+    if edr_telemetry_raw is None:
         result_is_detected = "N/A"
-        edr_logs = ""
+        edr_telemetry_raw = ""
         db_submission_add_log(thread_db, db_submission, "Warning: could not get EDR logs from Agent")
     else:
         # get the actual EDR log
         edr_plugin_log: str = ""
         try:
-            edr_plugin_log = json.loads(edr_logs).get("logs", "")
+            edr_plugin_log = json.loads(edr_telemetry_raw).get("logs", "")
 
             # EDR logs summary
             for parser in parsers:
@@ -270,7 +270,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
                 if parser.is_relevant():
                     db_submission_add_log(thread_db, db_submission, f"Using parser {parser.__class__.__name__} for EDR logs")
                     if parser.parse():
-                        edr_summary = parser.get_summary()
+                        edr_alerts = parser.get_summary()
                         if parser.is_detected():
                             result_is_detected = "detected"
                             db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
@@ -282,7 +282,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
                     break
 
         except Exception as e:
-            logger.error(edr_logs)
+            logger.error(edr_telemetry_raw)
             logger.error(f"Error parsing Defender XML logs: {e}")
 
     # overwrite previous detection for RedEdr, we dont care
@@ -295,12 +295,12 @@ def submit_file_to_agent(submission_id: int) -> bool:
         result_is_detected = "file_detected"
 
     # write all logs to the database
-    db_submission.execution_logs = execution_logs
-    db_submission.edr_logs = edr_logs
-    db_submission.edr_summary = edr_summary
+    db_submission.process_output = process_output
+    db_submission.edr_telemetry_raw = edr_telemetry_raw
+    db_submission.edr_alerts = edr_alerts
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
-    db_submission.rededr_logs = rededr_logs
+    db_submission.rededr_telemetry_raw = rededr_telemetry_raw
     db_submission.result = result_is_detected
     db_submission.completed_at = datetime.utcnow()
     thread_db.commit()
@@ -347,8 +347,8 @@ def thread_gatherer(submission_id: int):
         
         # Update DB with latest EDR local logs
         logger.info(f"Gather local EDR logs for submission {submission.id}")
-        edr_logs = agentApi.GetEdrLogs()
-        submission.edr_logs = edr_logs
+        edr_telemetry_raw = agentApi.GetEdrLogs()
+        submission.edr_telemetry_raw = edr_telemetry_raw
         db.commit()
 
         # wait a bit for next time

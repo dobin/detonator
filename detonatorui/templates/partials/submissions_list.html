@@ -90,12 +90,12 @@
                             RedEdr Logs available.
                         {% elif submission.result != "" %}
                             <strong>EDR Summary:</strong>
-                            {% if not submission.edr_summary or submission.edr_summary|length == 0 %}
+                            {% if not submission.edr_alerts or submission.edr_alerts|length == 0 %}
                                 <p>
                                     No related EDR events identified.
                                 </p>
                             {% else %}
-                                {% for entry in submission.edr_summary %}
+                                {% for entry in submission.edr_alerts %}
                                 <div>
                                     {{ entry.name }} - {{ entry.severity }} 
                                     (<a href="{{ entry.url }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
@@ -107,7 +107,7 @@
                             {% endif %}
                         {% else %}
                             <strong>Detonator Logs:</strong>
-                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{(submission.detonator_srv_logs.strip().split('\n')[-5:]|join('\n')).strip()}}</pre>
+                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{(submission.server_logs.strip().split('\n')[-5:]|join('\n')).strip()}}</pre>
                         {% endif %}
                     </div>
                 </div>

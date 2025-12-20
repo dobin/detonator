@@ -73,13 +73,13 @@ class Submission(Base):
     status: Mapped[str] = Column(String(20), default="fresh", nullable=False)
 
     # OUT
-    detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)
-    execution_logs: Mapped[dict] = Column(JSON, default={}, nullable=False)
+    server_logs: Mapped[str] = Column(Text, nullable=False)
+    process_output: Mapped[dict] = Column(JSON, default={}, nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
-    rededr_logs: Mapped[str] = Column(Text, default="", nullable=False)
-    edr_logs: Mapped[str] = Column(Text, default="", nullable=False)
-    edr_summary: Mapped[list] = Column(JSON, default=[], nullable=False)
+    rededr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
+    edr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
+    edr_alerts: Mapped[list] = Column(JSON, default=[], nullable=False)
     result: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure

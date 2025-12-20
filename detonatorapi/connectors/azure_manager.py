@@ -142,7 +142,7 @@ class AzureManager:
             # DB UPDATE: VM details
             db_submission.vm_exist = 1
             db_submission.vm_ip_address = public_ip_info.ip_address
-            db_submission.detonator_srv_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
+            db_submission.server_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
             db.commit()
             return True
             

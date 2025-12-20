@@ -13,7 +13,7 @@ class ExampleParser(EdrParser):
         pass
 
 
-    def load(self, edr_logs: str):
+    def load(self, edr_telemetry_raw: str):
         pass
 
 

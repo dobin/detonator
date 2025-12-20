@@ -34,9 +34,9 @@ class DefenderParser(EdrParser):
         self.events: List[Dict] = []  # by self.parse()
 
 
-    def load(self, edr_logs: str):
+    def load(self, edr_telemetry_raw: str):
         self.events = []
-        self.edr_data = edr_logs
+        self.edr_data = edr_telemetry_raw
 
 
     def is_relevant(self) -> bool:
@@ -102,7 +102,7 @@ class DefenderParser(EdrParser):
     
 
     def get_summary(self) -> List[Dict]:
-        edr_summary: List[Dict] = []
+        edr_alerts: List[Dict] = []
 
         if len(self.events) == 0:
             return []
@@ -121,8 +121,8 @@ class DefenderParser(EdrParser):
                 "path": event.get('path', '?'),
                 "url": url
             }
-            edr_summary.append(summary_entry)
-        return edr_summary
+            edr_alerts.append(summary_entry)
+        return edr_alerts
 
 
     def is_detected(self) -> bool:
