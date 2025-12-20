@@ -1,107 +1,138 @@
 # Detonator
 
-Detonate your MalDev payload in a VM. 
+Orchestrate detonating your MalDev in VMs with different EDRs to see their detection surface. 
+
+Detonator provides a Web and REST interface for [DetonatorAgents](https://github.com/dobin/DetonatorAgent). It lets you choose one of your VM's with a installed EDR to execute your
+malware or inital access chain, and see what detection occur. 
+
+You can freely use it on [detonator.r00ted.ch](https://detonator.r00ted.ch). 
 
 
-## Quick Start
+## Installation
 
-1. Install DetonatorAgent on the analysis VM (RedEdr optional).
-2. Copy `profiles_init.yaml.sample` to `profiles_init.yaml`.
-3. Edit `profiles_init.yaml` so it points to the VM/connector you deployed.
-4. Install Detonator’s Python dependencies and migrate the YAML profiles into the SQLite database.
+First, install and setup [DetonatorAgent](https://github.com/dobin/DetonatorAgent) 
+on your analysis VM. I assume its localhost:
 
-```yaml
-myfirstvm:
-  type: live
-  edr_collector: defender
-  rededr: true
-  comment: My First Detonator VM
-  port: 8080
-  ip: 192.168.1.1
+```bash
+# Test if DetonatorAgent is reachable
+$ curl http://127.0.0.1:8080/api/lock/status
+{"in_use":false}
 ```
 
-Run the server:
+Install python stuff:
+
 ```bash
 # Install Deps
 $ apt install python3-poetry
 
-# Create DB
-$ poetry run python migrate_profiles_yaml.py
-
 # Install dependencies
 $ poetry install
+```
 
-# (Optional) Configure authentication password
-$ export DETONATOR_AUTH_PASSWORD="your-secure-password"
-# Or add it to .env file (see .env.example)
+Create `profiles_init.yaml` (e.g. by copying `profiles_init.yaml.sample`) 
+and configure it something like: 
 
-# Run both servers
+```yaml
+localdetonator:
+  type: Live
+  edr_collector: defender
+  comment: My First Detonator VM
+  port: 8080
+  data:
+    ip: 127.0.0.1
+```
+
+Then create the DB:
+```
+# Create DB
+$ poetry run python migrate_profiles_yaml.py
+```
+
+And run the server:
+```bash
 $ poetry run python -m detonator
 ```
 
-Access the web interface on `http://localhost:5000`.
-
-**Authentication**: If you set `DETONATOR_AUTH_PASSWORD`, you'll need to log in via the web interface or provide the password in API requests. See [doc/authentication.md](doc/authentication.md) for details.
+Access the web interface on `http://localhost:5000`. 
+The REST API is at `http://localhost:8000`. 
 
 
 ## Usage
 
-To scan a file on the previously configured `myfirstvm`:
+To scan a file on the previously configured `localdetonator`:
 
 ```bash
-$ poetry run python -m detonatorcmd scan malware.exe --edr-template myfirstvm
+$ poetry run python -m detonatorcmd scan sample.exe --profile localdetonator
+File ID: 1, Scan ID: 1
+.........................
+Scan Result: not_detected
 ```
 
-### Microsoft Defender (optional)
+All the gathered data:
+```
+$ curl http://localhost:8000/api/scans/1 | jq
+{
+  "id": 1,
+  "file_id": 1,
+  "profile_id": 2,
+  "project": "",
+  "comment": "",
+  "runtime": 10,
+  "drop_path": "",
+  "execution_mode": "exec",
+  "user": "admin",
+  "vm_instance_name": null,
+  "vm_ip_address": null,
+  "created_at": "2025-12-19T09:18:14.201803",
+  "updated_at": "2025-12-19T09:20:43.141671",
+  "completed_at": "2025-12-19T09:18:38.121769",
 
-Profiles can optionally include an `mde` block to let Detonator correlate alerts, surface the evidence inside the UI, and auto-close the detections once the window expires. Example:
+  "status": "finished",
+  "result": "not_detected",
 
-```yaml
-myfirstvm:
-  connector: Live
-  ...
-  data:
-    ...
-    edr_mde:
-      tenant_id: "00000000-0000-0000-0000-000000000000"
-      client_id: "11111111-2222-3333-4444-555555555555"
-      hostname: "DESKTOP-12356"
-      device_id: "4234k4j2k3j4k23j4k2j43"
+  "detonator_srv_logs": "[2025-12-19T09:18:14.200832] DB: Scan created...",
+  "agent_logs": "[\"[2025-12-18 20:03:41.772 UTC] DetonatorAgent 0.4 - Starting up..." ],
+  "execution_logs": {
+    "pid": 78352,
+    "stdout": "\r\nPsExec v2.43 - Execute processes remotely\r\nCopyright (C) 2001-2023 Mark Russinovich\r\n...",
+    "stderr": ""
+  },
+  "rededr_events": "No RedEdr logs available",
+  "rededr_logs": "",
+  "edr_logs": "{\"logs\":\"<Events>\\r\\n</Events>\\r\\n\",\"edr_version\":\"Windows Defender 1.0\",\"plugin_version\":\"1.0\"}",
+  "edr_summary": [],
+  "alerts": [],
+}
 ```
 
-Store the corresponding client secret in the environment variable `MDE_AZURE_CLIENT_SECRET`. When configured, Detonator will poll MDE for alerts tied to the scan’s device ID during the configured detection window and automatically resolve them once the window expires. Make sure that all components
-(Detonator Linux, VM etc.) have the correct time configured.
 
-**Entra app**
+## Architecture
 
-1. In `https://entra.microsoft.com`, create an **App Registration** (single tenant is fine).  
-2. Under **API permissions**, add application permissions for `Microsoft Graph`:  
-   - `SecurityAlert.Read.All` and `SecurityAlert.ReadWrite.All`  
-   - `SecurityIncident.Read.All` and `SecurityIncident.ReadWrite.All` *(needed if you want Detonator to auto-close related incidents)*  
-   - `ThreatHunting.Read.All`
-3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
-4. Use the app’s **Application (client) ID**, tenant ID in each profile’s `mde` block as shown above, and export `MDE_AZURE_CLIENT_SECRET`. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.
-
-You can test it using `tools/mde_log_test.py` (make sure there are some alerts for that machine). 
-
-
-#### Detection window & polling lifecycle
-
-- The poll window always runs from *scan start → now*, deduping by `AlertId`, so late-arriving alerts are still collected.
-- Right after the window closes Detonator performs a one-time “evidence hydration” query to capture the full `AlertEvidence` payload for every alert that fired.
-- Once evidence is saved it automatically resolves the alerts/incidents using the `alerts_v2` endpoint. If your app registration lacks `SecurityAlert.ReadWrite.All` or `SecurityIncident.ReadWrite.All`, the auto-close step logs a warning but the scan still finishes.
-
-In the UI you’ll see the scan’s badge flip to `polling` while the detection window is active. The scans list now shows a compact Defender summary (alert count + most recent alert metadata) so you can triage at a glance; click “View Details” to see the full evidence block per alert.
+You can use Detonator in three different setups: 
+* **Live**: The simplest, just attach a running DetonatorAgent instance
+* **Proxmox**: Using Proxmox to revert VMs to their snapshots
+* **Azure**: Instantiate new VM for each scan (experimental)
 
 ## Setup Guides
 
-Depending on your needs, there is more or less configuration required.
+More documentation:
+* [Configure with reverse proxy](https://github.com/dobin/detonator/doc/setup-reverseproxy.md)
+* [Configure MDE log gathering](https://github.com/dobin/detonator/doc/gather-mde.md)
+* [Integrating with Proxmox](https://github.com/dobin/detonator/doc/setup-proxmox.md) (stable)
+* [Integrating with Azure](https://github.com/dobin/detonator/doc/setup-azure.md) (experimental)
+* [Overview](https://github.com/dobin/detonator/doc/overview) of code architecture (mostly Claude generated. Probably obsolete)
 
-* [Simple easy single user](https://github.com/dobin/detonator/doc/setup-singleuser.md)
-* [Integrating with Azure](https://github.com/dobin/detonator/doc/setup-azure.md)
-* [Public use](https://github.com/dobin/detonator/doc/setup-public.md)
 
-There are some more docs: 
+## Other EDRs than Defender/MDE
 
-* [Overview](https://github.com/dobin/detonator/doc/overview) of architecture and stuff (mostly Claude generated. Probably obsolete)
-* 
+Only Defender/MDE is supported currently. 
+
+There are two ways to get the EDR data: 
+* Local log events gathered by DetonatorAgent, and then parsed by Detonator
+* Cloud log events gathered by Detonator
+
+To implement your own EDR, consult: 
+* [Implementing a new EDR](https://github.com/dobin/detonator/doc/implement-edr.md). 
+
+
+

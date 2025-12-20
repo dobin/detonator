@@ -1,6 +1,6 @@
 # Setup Azure
 
-THIS IS WORK IN PROGRESS. 
+THIS IS WORK IN PROGRESS. EXPERIMENTAL. TBD.
 
 This will take you many hours, if not days. Be prepared. 
 
