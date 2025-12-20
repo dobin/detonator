@@ -94,10 +94,10 @@ class EdrParser:
     def parse(self) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def get_events(self) -> List[Dict]:
+    def get_raw_events(self) -> List[Dict]:
         raise NotImplementedError("Subclasses must implement this method.")
     
-    def get_summary(self) -> List[Dict]:
+    def get_edr_alerts(self) -> List[Dict]:
         raise NotImplementedError("Subclasses must implement this method.")
     
     def is_detected(self) -> bool:
@@ -107,7 +107,7 @@ class EdrParser:
 To implement your own parser, use `detonatorapi/edr_parser/ExampleParser.py`. 
 
 * `is_relevant()`: Check if the data in `submission.edr_telemetry_raw` is for this parser (e.g. EDR)
-* `get_summary()`: Returns a summary of `submission.edr_telemetry_raw`, will be stored in `submission.edr_alerts`
+* `get_edr_alerts()`: Returns a summary of `submission.edr_telemetry_raw`, will be stored in `submission.edr_alerts`
 * `is_detected()`: return true if `submission.edr_telemetry_raw` indicate positive detection, will used to indicate `submission.edr_verdict`
 
 

@@ -25,11 +25,11 @@ class ExampleParser(EdrParser):
         return True
     
 
-    def get_events(self) -> List[Dict]:
+    def get_raw_events(self) -> List[Dict]:
         return []
     
 
-    def get_summary(self) -> List[Dict]:
+    def get_edr_alerts(self) -> List[Dict]:
         return []
 
 

@@ -149,7 +149,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
             # Gather logs so the user can see what failed
             logger.info("Gather Agent and Execution logs")
             agent_logs = agentApi.GetAgentLogs()
-            process_output = agentApi.GetExecutionLogs()
+            process_output = agentApi.GetProcessOutput()
             db_submission.process_output = process_output
             db_submission.agent_logs = agent_logs
             db_submission.completed_at = datetime.utcnow()
@@ -228,9 +228,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # Gather logs from Agent
     # After killing the process, so we have all the Agent logs
-    edr_telemetry_raw = agentApi.GetEdrLogs()
+    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()
     agent_logs = agentApi.GetAgentLogs()
-    process_output = agentApi.GetExecutionLogs()  # always for now
+    process_output = agentApi.GetProcessOutput()  # always for now
 
     # we finished 
     if DO_LOCKING:
@@ -244,7 +244,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # Preparse all the logs
     edr_alerts = []  # will be generated
-    result_is_detected = ""  # will be generated
+    edr_verdict = ""  # will be generated
     if agent_logs is None:
         agent_logs = "No Agent logs available"
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Agent logs from Agent")
@@ -255,7 +255,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
         process_output = {}
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Execution logs from Agent")
     if edr_telemetry_raw is None:
-        result_is_detected = "N/A"
+        edr_verdict = "N/A"
         edr_telemetry_raw = ""
         db_submission_add_log(thread_db, db_submission, "Warning: could not get EDR logs from Agent")
     else:
@@ -270,12 +270,12 @@ def submit_file_to_agent(submission_id: int) -> bool:
                 if parser.is_relevant():
                     db_submission_add_log(thread_db, db_submission, f"Using parser {parser.__class__.__name__} for EDR logs")
                     if parser.parse():
-                        edr_alerts = parser.get_summary()
+                        edr_alerts = parser.get_edr_alerts()
                         if parser.is_detected():
-                            result_is_detected = "detected"
+                            edr_verdict = "detected"
                             db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
                         else:
-                            result_is_detected = "not_detected"
+                            edr_verdict = "not_detected"
                             db_submission_add_log(thread_db, db_submission, "EDR logs indicate: not detected")
                     else:
                         db_submission_add_log(thread_db, db_submission, "EDR logs could not be parsed")
@@ -287,12 +287,12 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # overwrite previous detection for RedEdr, we dont care
     if db_submission.profile.edr_collector == "RedEdr":
-        result_is_detected = ""
+        edr_verdict = ""
 
     # if its already detected as malware, make sure the status is set
     # as we might not have any EDR logs
     if is_malware:
-        result_is_detected = "file_detected"
+        edr_verdict = "file_detected"
 
     # write all logs to the database
     db_submission.process_output = process_output
@@ -301,7 +301,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
     db_submission.rededr_telemetry_raw = rededr_telemetry_raw
-    db_submission.edr_verdict = result_is_detected
+    db_submission.edr_verdict = edr_verdict
     db_submission.completed_at = datetime.utcnow()
     thread_db.commit()
     thread_db.close()
@@ -347,7 +347,7 @@ def thread_gatherer(submission_id: int):
         
         # Update DB with latest EDR local logs
         logger.info(f"Gather local EDR logs for submission {submission.id}")
-        edr_telemetry_raw = agentApi.GetEdrLogs()
+        edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()
         submission.edr_telemetry_raw = edr_telemetry_raw
         db.commit()
 

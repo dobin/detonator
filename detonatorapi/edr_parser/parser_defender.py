@@ -97,11 +97,11 @@ class DefenderParser(EdrParser):
         return True
     
 
-    def get_events(self) -> List[Dict]:
+    def get_raw_events(self) -> List[Dict]:
         return self.events
     
 
-    def get_summary(self) -> List[Dict]:
+    def get_edr_alerts(self) -> List[Dict]:
         edr_alerts: List[Dict] = []
 
         if len(self.events) == 0:

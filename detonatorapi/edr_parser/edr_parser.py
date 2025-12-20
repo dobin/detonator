@@ -15,10 +15,10 @@ class EdrParser:
     def parse(self) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def get_events(self) -> List[Dict]:
+    def get_raw_events(self) -> List[Dict]:
         raise NotImplementedError("Subclasses must implement this method.")
     
-    def get_summary(self) -> List[Dict]:
+    def get_edr_alerts(self) -> List[Dict]:
         raise NotImplementedError("Subclasses must implement this method.")
     
     def is_detected(self) -> bool:

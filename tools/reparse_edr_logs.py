@@ -18,7 +18,7 @@ def reparse_edr_telemetry_raw():
         edr_telemetry_raw = submission.edr_telemetry_raw
 
         edr_alerts: List[Dict] = []
-        result_is_detected = ""
+        edr_verdict = ""
 
         edr_plugin_log: str = ""
         try:
@@ -30,24 +30,24 @@ def reparse_edr_telemetry_raw():
                     parser.load(edr_plugin_log)
                     if parser.is_relevant():
                         if parser.parse():
-                            edr_alerts = parser.get_summary()
+                            edr_alerts = parser.get_edr_alerts()
                             if submission.profile.edr_collector == "RedEdr":
-                                result_is_detected = ""
+                                edr_verdict = ""
                             elif parser.is_detected():
-                                result_is_detected = "detected"
+                                edr_verdict = "detected"
                             else:
-                                result_is_detected = "clean"
+                                edr_verdict = "clean"
                         break
 
         except Exception as e:
             logger.error(edr_telemetry_raw)
             logger.error(f"Error parsing Defender XML logs: {e}")
 
-        print(f"Reparsed submission {submission.id}: {result_is_detected}")
+        print(f"Reparsed submission {submission.id}: {edr_verdict}")
         #print(f"  {edr_alerts}")
 
         submission.edr_alerts = edr_alerts
-        submission.edr_verdict = result_is_detected
+        submission.edr_verdict = edr_verdict
         db.commit()
 
     db.close()

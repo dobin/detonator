@@ -181,7 +181,7 @@ class AgentApi:
             return None
         
 
-    def GetEdrLogs(self) -> Optional[str]:
+    def GetEdrTelemetryRaw(self) -> Optional[str]:
         url = self.agent_url + "/api/logs/edr"
         try:
             response = requests.get(url)
@@ -196,7 +196,7 @@ class AgentApi:
             return None
 
 
-    def GetExecutionLogs(self) -> Optional[dict]:
+    def GetProcessOutput(self) -> Optional[dict]:
         url = self.agent_url + "/api/logs/execution"
         try:
             response = requests.get(url)
