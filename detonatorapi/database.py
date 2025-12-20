@@ -70,10 +70,10 @@ class Scan(Base):
     user: Mapped[str] = Column(String(100), default="", nullable=False)
 
     # TRACK
-    detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)
     status: Mapped[str] = Column(String(20), default="fresh", nullable=False)
 
     # OUT
+    detonator_srv_logs: Mapped[str] = Column(Text, nullable=False)
     execution_logs: Mapped[dict] = Column(JSON, default={}, nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)

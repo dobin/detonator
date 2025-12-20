@@ -8,21 +8,22 @@ from typing import List
 import os
 from sqlalchemy.orm import Session, joinedload
 
-from detonatorapi.edr_parser.edr_parser import EdrParser
-from detonatorapi.settings import UPLOAD_DIR
+from detonatorapi.settings import UPLOAD_DIR, AGENT_DATA_GATHER_INTERVAL
 from detonatorapi.database import Scan, get_db_direct
 from detonatorapi.db_interface import db_scan_change_status_quick, db_scan_add_log
-from detonatorapi.agent.agent_api import AgentApi
+from detonatorapi.agent.agent_api import AgentApi, ExecutionResult, Result
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
+
+# Parsers
+from detonatorapi.edr_parser.edr_parser import EdrParser
 from detonatorapi.edr_parser.parser_defender import DefenderParser
-from detonatorapi.agent.agent_api import ExecutionResult
-from detonatorapi.agent.result import Result
-from detonatorapi.settings import AGENT_DATA_GATHER_INTERVAL
+from detonatorapi.edr_parser.example_parser import ExampleParser
 
 logger = logging.getLogger(__name__)
 
 parsers: List[EdrParser] = [
     DefenderParser(),
+    ExampleParser(),
 ]
 
 SLEEP_TIME_REDEDR_WARMUP = 3.0
