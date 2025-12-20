@@ -80,7 +80,7 @@ class Submission(Base):
     rededr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
     edr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
     edr_alerts: Mapped[list] = Column(JSON, default=[], nullable=False)
-    result: Mapped[str] = Column(Text, default="", nullable=False)
+    edr_verdict: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure
     # TEMP

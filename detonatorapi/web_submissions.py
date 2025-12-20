@@ -22,7 +22,7 @@ async def get_submissions_count(
     request: Request,
     status: Optional[str] = Query(None, description="Filter by submission status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
-    result: Optional[str] = Query(None, description="Filter by submission result"),
+    edr_verdict: Optional[str] = Query(None, description="Filter by submission edr_verdict"),
     search: Optional[str] = Query(None, description="Search in project, submission comment, file comment, or filename"),
     user_filter: Optional[str] = Query(None, description="Filter by user (guest/admin/all)", alias="user"),
     db: Session = Depends(get_db)
@@ -49,8 +49,8 @@ async def get_submissions_count(
     if project:
         query = query.filter(Submission.project.ilike(f"%{project}%"))
     
-    if result:
-        query = query.filter(Submission.result.ilike(f"%{result}%"))
+    if edr_verdict:
+        query = query.filter(Submission.edr_verdict.ilike(f"%{edr_verdict}%"))
     
     if search:
         # Search across multiple fields
@@ -73,7 +73,7 @@ async def get_submissions(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by submission status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
-    result: Optional[str] = Query(None, description="Filter by submission result"),
+    edr_verdict: Optional[str] = Query(None, description="Filter by submission edr_verdict"),
     search: Optional[str] = Query(None, description="Search in project, submission comment, file comment, or filename"),
     user_filter: Optional[str] = Query(None, description="Filter by user (guest/admin/all)", alias="user"),
     db: Session = Depends(get_db)
@@ -96,8 +96,8 @@ async def get_submissions(
     if project:
         query = query.filter(Submission.project.ilike(f"%{project}%"))
     
-    if result:
-        query = query.filter(Submission.result.ilike(f"%{result}%"))
+    if edr_verdict:
+        query = query.filter(Submission.edr_verdict.ilike(f"%{edr_verdict}%"))
     
     if search:
         # Search across multiple fields
@@ -297,7 +297,7 @@ async def resubmission(
     db_submission.rededr_events = ""
     db_submission.edr_telemetry_raw = ""
     db_submission.edr_alerts = []
-    db_submission.result = ""
+    db_submission.edr_verdict = ""
     db_submission.completed_at = None
     db_submission.vm_exist = 0
     db_submission.vm_instance_name = None

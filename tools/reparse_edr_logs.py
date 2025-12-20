@@ -47,7 +47,7 @@ def reparse_edr_telemetry_raw():
         #print(f"  {edr_alerts}")
 
         submission.edr_alerts = edr_alerts
-        submission.result = result_is_detected
+        submission.edr_verdict = result_is_detected
         db.commit()
 
     db.close()

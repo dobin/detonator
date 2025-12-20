@@ -65,9 +65,9 @@
                     {% if submission.status == "finished" %}
                         {% if submission.profile.edr_collector == "RedEdr" %}
                             <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
-                        {% elif submission.result %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.result) }}">
-                                {{ submission.result }}
+                        {% elif submission.edr_verdict %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">
+                                {{ submission.edr_verdict }}
                             </span>
                         {% else %}
                             <span class="text-gray-400">-</span>

@@ -109,15 +109,15 @@ class DetonatorClient:
             print(final_submission.get('server_logs'))
             return None
 
-        # check for RedEdr first (no result print)
+        # check for RedEdr first (no edr_verdict print)
         profile = self.get_profile(profile_name)
         if profile and profile.get('edr_collector') == 'RedEdr':
             print("RedEdr data available, but not printed.")
         else:
-            if final_submission.get('result'):
-                print(f"Submission Result: {final_submission['result']}")
+            if final_submission.get('edr_verdict'):
+                print(f"Submission Result: {final_submission['edr_verdict']}")
             else:
-                print("No result available?")
+                print("No edr_verdict available?")
 
         return submission_id
                     

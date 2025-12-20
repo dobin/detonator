@@ -32,7 +32,7 @@ async def test_alert_monitor(submission_id: int):
         db.close()
         return
     
-    logger.info(f"Found submission {submission_id}: status={submission.status}, result={submission.result}")
+    logger.info(f"Found submission {submission_id}: status={submission.status}, edr_verdict={submission.edr_verdict}")
     logger.info(f"Submission created at: {submission.created_at}")
     if submission.profile:
         logger.info(f"Profile: {submission.profile.name}")

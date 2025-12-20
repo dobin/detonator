@@ -88,7 +88,7 @@ $ curl http://localhost:8000/api/submissions/1 | jq
   "completed_at": "2025-12-19T09:18:38.121769",
 
   "status": "finished",
-  "result": "not_detected",
+  "edr_verdict": "not_detected",
 
   "server_logs": "[2025-12-19T09:18:14.200832] DB: Submission created...",
   "agent_logs": "[\"[2025-12-18 20:03:41.772 UTC] DetonatorAgent 0.4 - Starting up..." ],

@@ -102,7 +102,7 @@ class SubmissionUpdate(BaseModel):
     comment: Optional[str] = None
     project: Optional[str] = None
     profile_id: Optional[str] = None
-    result: Optional[str] = None
+    edr_verdict: Optional[str] = None
     status: Optional[str] = None
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
@@ -131,7 +131,7 @@ class SubmissionResponse(BaseModel):
     rededr_telemetry_raw: Optional[str] = None
     edr_telemetry_raw: Optional[str] = None
     edr_alerts: Optional[list] = None
-    result: Optional[str] = None
+    edr_verdict: Optional[str] = None
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None
@@ -159,7 +159,7 @@ class SubmissionResponseShort(BaseModel):
 
     server_logs: Optional[str] = None
     edr_alerts: Optional[list] = None
-    result: Optional[str] = None
+    edr_verdict: Optional[str] = None
 
     vm_instance_name: Optional[str] = None
     vm_ip_address: Optional[str] = None

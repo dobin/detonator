@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from detonatorapi.settings import UPLOAD_DIR, AGENT_DATA_GATHER_INTERVAL
 from detonatorapi.database import Submission, get_db_direct
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log
-from detonatorapi.agent.agent_api import AgentApi, ExecutionResult, Result
+from detonatorapi.agent.agent_api import AgentApi, ExecutionFeedback, FeedbackContainer
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
 
 # Parsers
@@ -180,11 +180,11 @@ def submit_file_to_agent(submission_id: int) -> bool:
         thread_db.close()
         return False
     
-    executionResult: ExecutionResult = exec_result.unwrap()
-    if executionResult == ExecutionResult.VIRUS:
+    executionFeedback: ExecutionFeedback = exec_result.unwrap()
+    if executionFeedback == ExecutionFeedback.VIRUS:
         db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when writing to disk")
         is_malware = True
-    elif executionResult == ExecutionResult.OK:
+    elif executionFeedback == ExecutionFeedback.OK:
         db_submission_add_log(thread_db, db_submission, f"Success executing file {filename}")
         db_submission_add_log(thread_db, db_submission, f"Waiting, runtime of {runtime} seconds...")
         thread_db.commit()
@@ -203,7 +203,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # before killing the process (no shutdown events)
     rededr_events = None
     rededr_telemetry_raw = ""
-    if rededrApi is not None and executionResult == ExecutionResult.OK:
+    if rededrApi is not None and executionFeedback == ExecutionFeedback.OK:
         logger.info("Gather EDR events from RedEdr")
         rededr_events = rededrApi.GetEvents()
         if rededr_events is None:  # single check for now
@@ -217,7 +217,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
             rededr_telemetry_raw = rededr_agent_logs
 
     # kill process
-    if executionResult == ExecutionResult.OK:
+    if executionFeedback == ExecutionFeedback.OK:
         logger.info("Attempt to kill process")
         stop_result = agentApi.KillProcess()
         if stop_result:
@@ -301,7 +301,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
     db_submission.rededr_telemetry_raw = rededr_telemetry_raw
-    db_submission.result = result_is_detected
+    db_submission.edr_verdict = result_is_detected
     db_submission.completed_at = datetime.utcnow()
     thread_db.commit()
     thread_db.close()

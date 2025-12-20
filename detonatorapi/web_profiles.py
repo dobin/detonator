@@ -39,10 +39,10 @@ async def get_profiles(db: Session = Depends(get_db)):
     profiles = db_list_profiles(db)
 
     # Convert to dict format similar to old templates
-    result = {}
+    ret = {}
     for profile in profiles:
         requires_password: bool = len(profile.password) > 0
-        result[profile.name] = {
+        ret[profile.name] = {
             "id": profile.id,
             "connector": profile.connector,
             "port": profile.port,
@@ -53,7 +53,7 @@ async def get_profiles(db: Session = Depends(get_db)):
             "data": profile.data,
             "require_password": requires_password,
         }
-    return result
+    return ret
 
 
 @router.post("/profiles")

@@ -14,7 +14,7 @@
         <div><strong>Profile:</strong> {{ submission.profile.name if submission.profile else '' }}</div>
         <div><strong>VM Instance:</strong> {{ submission.vm_instance_name or '' }}</div>
         <div><strong>VM IP:</strong> {{ submission.vm_ip_address or '' }}</div>
-        <div><strong>Result:</strong> {{ submission.result or '' }}</div>
+        <div><strong>Result:</strong> {{ submission.edr_verdict or '' }}</div>
         {% if submission.profile and submission.profile.data.get('device_info') %}
             {% set device_info = submission.profile.data.get('device_info', {}) %}
             {% if device_info.get('hostname') %}

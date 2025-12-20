@@ -140,15 +140,15 @@ def test_file_upload_and_submission(client: DetonatorClient, test_file, profile_
                            f"Expected status 'finished', got '{submission.get('status')}'")
             return
         
-        # Verify submission result is "not_detected"
-        if submission.get('result') != 'not_detected':
+        # Verify submission edr_verdict is "not_detected"
+        if submission.get('edr_verdict') != 'not_detected':
             results.add_fail("File upload and submission", 
-                           f"Expected result 'not_detected', got '{submission.get('result')}'")
+                           f"Expected edr_verdict 'not_detected', got '{submission.get('edr_verdict')}'")
             return
         
         results.add_pass("File upload and submission")
         print(f"  Status: {submission.get('status')}")
-        print(f"  Result: {submission.get('result')}")
+        print(f"  Result: {submission.get('edr_verdict')}")
         
     except Exception as e:
         results.add_fail("File upload and submission", str(e))

@@ -136,9 +136,9 @@ def submissions_template():
         if project:
             params['project'] = project
             
-        result = request.args.get('result')
-        if result:
-            params['result'] = result
+        edr_verdict = request.args.get('edr_verdict')
+        if edr_verdict:
+            params['edr_verdict'] = edr_verdict
             
         search = request.args.get('search')
         if search:
@@ -282,9 +282,9 @@ def submissions_table_template():
         if project:
             params['project'] = project
             
-        result = request.args.get('result')
-        if result:
-            params['result'] = result
+        edr_verdict = request.args.get('edr_verdict')
+        if edr_verdict:
+            params['edr_verdict'] = edr_verdict
             
         search = request.args.get('search')
         if search:

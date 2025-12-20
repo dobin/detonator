@@ -4,12 +4,12 @@ from typing import List, Optional, Dict
 import json
 import logging
 import random
-from .result import Result
+from .feedbackcontainer import FeedbackContainer
 
 logger = logging.getLogger(__name__)
 
 
-class ExecutionResult(Enum):
+class ExecutionFeedback(Enum):
     OK = 0,
     ERROR = 1,
     VIRUS = 2
@@ -56,7 +56,7 @@ class AgentApi:
             return False
         
 
-    def AcquireLock(self) -> Result[None]:
+    def AcquireLock(self) -> FeedbackContainer[None]:
         # Acquire lock
         url = self.agent_url + "/api/lock/acquire"
         try:
@@ -64,15 +64,15 @@ class AgentApi:
             if response.status_code != 200:
                 error_msg = f"LockAcquire failed: {response.status_code} {response.text}"
                 logger.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"LockAcquire error: {e}"
             logger.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-        return Result.ok()
+            return FeedbackContainer.error(error_msg)
+        return FeedbackContainer.ok()
     
 
-    def ReleaseLock(self) -> Result[None]:
+    def ReleaseLock(self) -> FeedbackContainer[None]:
         # Release lock
         url = self.agent_url + "/api/lock/release"
         try:
@@ -80,15 +80,15 @@ class AgentApi:
             if response.status_code != 200:
                 error_msg = f"LockRelease failed: {response.status_code} {response.text}"
                 logger.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"LockRelease error: {e}"
             logger.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-        return Result.ok()
+            return FeedbackContainer.error(error_msg)
+        return FeedbackContainer.ok()
 
     
-    def KillProcess(self) -> Result[None]:
+    def KillProcess(self) -> FeedbackContainer[None]:
         # kill running process
         url = self.agent_url + "/api/execute/kill"
         try:
@@ -96,16 +96,16 @@ class AgentApi:
             if response.status_code != 200:
                 error_msg = f"kill error: {response.status_code} {response.text}"
                 logger.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"kill error: {e}"
             logger.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
+            return FeedbackContainer.error(error_msg)
         
-        return Result.ok()
+        return FeedbackContainer.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> Result[ExecutionResult]:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> FeedbackContainer[ExecutionFeedback]:
         url = self.agent_url + "/api/execute/exec"
         
         xor_key = random.randint(64, 255)
@@ -131,8 +131,8 @@ class AgentApi:
                 j = response.json()
                 if j.get("status", "") == "virus" :
                     logger.info(f"Agent: File {filename} is detected as malware")
-                    return Result.ok(ExecutionResult.VIRUS)
-                return Result.ok(ExecutionResult.OK)
+                    return FeedbackContainer.ok(ExecutionFeedback.VIRUS)
+                return FeedbackContainer.ok(ExecutionFeedback.OK)
             else:
                 # response.text is a json, extract message
                 try:
@@ -141,11 +141,11 @@ class AgentApi:
                 except Exception:
                     error_message = response.text
                 logger.warning(f"Agent HTTP response error: {error_message}")
-                return Result.error(error_message)
+                return FeedbackContainer.error(error_message)
         except requests.exceptions.RequestException as e:
             error_msg = f"Request exception: {e}"
             logger.warning(f"Agent HTTP response error: {error_msg}")
-            return Result.error(error_msg)
+            return FeedbackContainer.error(error_msg)
         
     
     def GetLockStatus(self) -> bool:
