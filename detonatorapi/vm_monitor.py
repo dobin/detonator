@@ -107,12 +107,11 @@ class VMMonitorTask:
                     db_submission_change_status_quick(db, submission, "connecting")
                     connector.connect(submission_id)
                 case "connected":
-                    db_submission_change_status_quick(db, submission, "processing")
-
-                case "processing":
                     db_submission_change_status_quick(db, submission, "process")
-                    connector.submission(submission_id)
 
+                case "process":
+                    db_submission_change_status_quick(db, submission, "processing")
+                    connector.process(submission_id)
                 case "processed":
                     db_submission_change_status_quick(db, submission, "stop")
 

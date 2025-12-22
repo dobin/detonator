@@ -55,9 +55,9 @@ class ConnectorNewAzure(ConnectorBase):
         super().connect(submission_id)
 
 
-    def submission(self, submission_id: int, pre_wait: int = 0):
+    def process(self, submission_id: int, pre_wait: int = 0):
         # default agent submission
-        super().submission(submission_id, pre_wait=120)  # 2min
+        super().process(submission_id, pre_wait=120)  # 2min
 
 
     def stop(self, submission_id: int):

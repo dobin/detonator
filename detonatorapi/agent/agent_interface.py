@@ -73,37 +73,33 @@ def connect_to_agent(submission_id) -> bool:
 
 
 def submit_file_to_agent(submission_id: int) -> bool:
-    agent_ip: Optional[str] = None
     thread_db = get_db_direct()
     db_submission: Submission = thread_db.get(Submission, submission_id)
     if not db_submission:
-        logger.error(f"Submission {submission_id} not found")
-        thread_db.close()
-        return False
-    # IP in template?
-    if 'ip' in db_submission.profile.data:
-        agent_ip = db_submission.profile.data['ip']
-    else:
-        # IP in VM?
-        agent_ip = db_submission.vm_ip_address
-    if not agent_ip:
-        logger.error(f"Submission {db_submission.id} has no VM IP address defined")
-        thread_db.close()
-        return False
-    agent_port = db_submission.profile.port  # port is always defined in the profile
+        raise ValueError(f"Submission {submission_id} not found")
+    
+    # get agent IP and port
+    agent_ip, agent_port = get_agent_ip_port(db_submission)
 
+    # get all required data into local variables
     filename = db_submission.file.filename
     exec_arguments = db_submission.file.exec_arguments
-    
-    # Read file content from disk
-    file_path = os.path.join(UPLOAD_DIR, db_submission.file.filename)
-    with open(file_path, 'rb') as f:
-        file_content = f.read()
-    
     runtime = db_submission.runtime
     drop_path = db_submission.drop_path
     execution_mode = db_submission.execution_mode
     rededr_port = db_submission.profile.rededr_port
+    
+    # Read file content from disk
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.isfile(file_path):
+        # Hard error, as we cant scan anything
+        db_submission_add_log(thread_db, db_submission, f"Error: File {filename} not found on disk")
+        thread_db.close()
+        return False
+    with open(file_path, 'rb') as f:
+        file_content = f.read()
+
+    # Initialize Agent APIs    
     agentApi = AgentApi(agent_ip, agent_port)
     rededrApi: RedEdrAgentApi|None = None
     if rededr_port is not None:
@@ -112,57 +108,24 @@ def submit_file_to_agent(submission_id: int) -> bool:
             db_submission_add_log(thread_db, db_submission, f"Warning: RedEdr Agent at {agent_ip}:{rededr_port} is not reachable")
             rededrApi = None  # disable
 
-    if DO_LOCKING:
-        logger.info("Attempt to acquire lock at DetonatorAgent")
-        # Try to acquire lock 4 times with 30 second intervals
-        lock_acquired = False
-        attempts = 6
-        for attempt in range(attempts):
-            if agentApi.IsInUse():
-                db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: DetonatorAgent at {agent_ip} is currently in use")
-            else:
-                lock_result = agentApi.AcquireLock()
-                if lock_result:
-                    db_submission_add_log(thread_db, db_submission, f"Successfully acquired lock on attempt {attempt + 1}")
-                    lock_acquired = True
-                    break
-                else:
-                    db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Could not lock DetonatorAgent at {agent_ip}: {lock_result.error_message}")
-            
-            if attempt < attempts - 1:  # Don't sleep after the last attempt
-                db_submission_add_log(thread_db, db_submission, f"Waiting 30 seconds before retry...")
-                time.sleep(30)
-        
-        if not lock_acquired:
-            db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
-            thread_db.close()
-            return False
+    # Acquire lock on DetonatorAgent
+    if DO_LOCKING and not aquire_lock(thread_db, db_submission, agentApi):
+        db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
+        thread_db.close()
+        return False
 
-    # RedEdr (if exist): Set the process name we gonna trace
+    # RedEdr: Set the process name we gonna trace
     if rededrApi is not None:
         filename_trace = filename.rsplit('.', 1)[0] # remove file extension for trace
         db_submission_add_log(thread_db, db_submission, f"RedEdr: Start trace for process: {filename_trace}")
         trace_result = rededrApi.StartTrace([filename_trace])
         if not trace_result:
             db_submission_add_log(thread_db, db_submission, f"Error: Could not start trace on RedEdr, error: {trace_result.error_message}")
-
-            # Gather logs so the user can see what failed
-            logger.info("Gather Agent and Execution logs")
-            agent_logs = agentApi.GetAgentLogs()
-            process_output = agentApi.GetProcessOutput()
-            db_submission.process_output = process_output
-            db_submission.agent_logs = agent_logs
-            db_submission.completed_at = datetime.utcnow()
-            thread_db.commit()
-
-            agentApi.ReleaseLock()
-            thread_db.close()
-
-            # Will be put into error state
-            return False
-        
-        # let RedEdr boot up
-        time.sleep(SLEEP_TIME_REDEDR_WARMUP)
+            rededrApi = None
+            # Ignore failed/missing RedEdr, lets still do the rest
+        else:
+            # let RedEdr boot up
+            time.sleep(SLEEP_TIME_REDEDR_WARMUP)
     thread_db.commit()
 
     # Execute file on DetonatorAgent
@@ -176,10 +139,17 @@ def submit_file_to_agent(submission_id: int) -> bool:
     is_malware = False
     if not exec_result:
         db_submission_add_log(thread_db, db_submission, f"Error: When executing file on DetonatorAgent: {exec_result.error_message}")
+        # our main task failed. grab the logs from agent to see whats up
+        logger.info("Gather Agent and Execution logs")
+        agent_logs = agentApi.GetAgentLogs()
+        process_output = agentApi.GetProcessOutput()
+        db_submission.process_output = process_output
+        db_submission.agent_logs = agent_logs
+        db_submission.completed_at = datetime.utcnow()
+        thread_db.commit()
         agentApi.ReleaseLock()
         thread_db.close()
         return False
-    
     executionFeedback: ExecutionFeedback = exec_result.unwrap()
     if executionFeedback == ExecutionFeedback.VIRUS:
         db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when writing to disk")
@@ -196,13 +166,14 @@ def submit_file_to_agent(submission_id: int) -> bool:
         db_submission_add_log(thread_db, db_submission, f"Runtime completed")
         thread_db.commit()
 
-    # give some time for windows to submission, deliver the virus ETW alert events n stuff
+    # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SUBMISSION)
 
-    # Get RedEdr Logs (if exists)
+    # Get RedEdr Events (if exists)
     # before killing the process (no shutdown events)
+    # & Agent logs themselves
     rededr_events = None
-    rededr_telemetry_raw = ""
+    rededr_logs = None
     if rededrApi is not None and executionFeedback == ExecutionFeedback.OK:
         logger.info("Gather EDR events from RedEdr")
         rededr_events = rededrApi.GetEvents()
@@ -210,11 +181,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
             db_submission_add_log(thread_db, db_submission, "Warning: could not get RedEdr logs from Agent - RedEdr crashed?")
             # no return, we still want to try to get other logs
 
-        rededr_agent_logs = rededrApi.GetAgentLogs()
-        if rededr_agent_logs is None:
+        rededr_logs = rededrApi.GetAgentLogs()
+        if rededr_logs is None:
             db_submission_add_log(thread_db, db_submission, "Warning: could not get RedEdr Agent logs from Agent")
-        else:
-            rededr_telemetry_raw = rededr_agent_logs
 
     # kill process
     if executionFeedback == ExecutionFeedback.OK:
@@ -228,9 +197,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # Gather logs from Agent
     # After killing the process, so we have all the Agent logs
-    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()
     agent_logs = agentApi.GetAgentLogs()
-    process_output = agentApi.GetProcessOutput()  # always for now
+    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()  # always for now
+    process_output = agentApi.GetProcessOutput()       # always for now
 
     # we finished 
     if DO_LOCKING:
@@ -250,40 +219,40 @@ def submit_file_to_agent(submission_id: int) -> bool:
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Agent logs from Agent")
     if rededr_events is None:
         rededr_events = "No RedEdr logs available"
-        db_submission_add_log(thread_db, db_submission, "Warning: could not get RedEdr logs from Agent")
     if process_output is None:
         process_output = {}
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Execution logs from Agent")
+    if rededr_logs is None:
+        rededr_logs = "No RedEdr Agent logs available"
     if edr_telemetry_raw is None:
         edr_verdict = "N/A"
         edr_telemetry_raw = ""
         db_submission_add_log(thread_db, db_submission, "Warning: could not get EDR logs from Agent")
     else:
         # get the actual EDR log
-        edr_plugin_log: str = ""
-        try:
-            edr_plugin_log = json.loads(edr_telemetry_raw).get("logs", "")
+        edr_plugin_log = json.loads(edr_telemetry_raw).get("logs", "")
 
-            # EDR logs summary
-            for parser in parsers:
-                parser.load(edr_plugin_log)
-                if parser.is_relevant():
-                    db_submission_add_log(thread_db, db_submission, f"Using parser {parser.__class__.__name__} for EDR logs")
-                    if parser.parse():
-                        edr_alerts = parser.get_edr_alerts()
-                        if parser.is_detected():
-                            edr_verdict = "detected"
-                            db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
-                        else:
-                            edr_verdict = "not_detected"
-                            db_submission_add_log(thread_db, db_submission, "EDR logs indicate: not detected")
-                    else:
-                        db_submission_add_log(thread_db, db_submission, "EDR logs could not be parsed")
-                    break
-
-        except Exception as e:
-            logger.error(edr_telemetry_raw)
-            logger.error(f"Error parsing Defender XML logs: {e}")
+        # EDR logs summary
+        chosen_parser: Optional[EdrParser] = None
+        for parser in parsers:
+            parser.load(edr_plugin_log)
+            if parser.is_relevant():
+                chosen_parser = parser
+                break
+        if not chosen_parser:
+            db_submission_add_log(thread_db, db_submission, "No suitable EDR parser found for the collected EDR logs")
+        else:
+            db_submission_add_log(thread_db, db_submission, f"Using parser {chosen_parser.__class__.__name__} for EDR logs")
+            if chosen_parser.parse():
+                edr_alerts = chosen_parser.get_edr_alerts()
+                if chosen_parser.is_detected():
+                    edr_verdict = "detected"
+                    db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
+                else:
+                    edr_verdict = "not_detected"
+                    db_submission_add_log(thread_db, db_submission, "EDR logs indicate: not detected")
+            else:
+                db_submission_add_log(thread_db, db_submission, "EDR logs could not be parsed")
 
     # overwrite previous detection for RedEdr, we dont care
     if db_submission.profile.edr_collector == "RedEdr":
@@ -300,7 +269,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission.edr_alerts = edr_alerts
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
-    db_submission.rededr_telemetry_raw = rededr_telemetry_raw
+    db_submission.rededr_logs = rededr_logs
     db_submission.edr_verdict = edr_verdict
     db_submission.completed_at = datetime.utcnow()
     thread_db.commit()
@@ -312,43 +281,34 @@ def submit_file_to_agent(submission_id: int) -> bool:
 def thread_gatherer(submission_id: int):
     db = get_db_direct()
 
-    submission = db.get(Submission, submission_id)
-    if not submission:
+    db_submission = db.get(Submission, submission_id)
+    if not db_submission:
         logger.error(f"Submission {submission_id} not found")
         db.close()
         return
 
-    # IP in template?
-    if 'ip' in submission.profile.data:
-        agent_ip = submission.profile.data['ip']
-    else:
-        # IP in VM?
-        agent_ip = submission.vm_ip_address
-    if not agent_ip:
-        logger.error(f"Submission {submission.id} has no VM IP address defined")
-        db.close()
-        return False
-    agent_port = submission.profile.port  # port is always defined in the profile
+    # get agent IP and port
+    agent_ip, agent_port = get_agent_ip_port(db_submission)
     agentApi = AgentApi(agent_ip, agent_port)
 
     while True:
-        submission = db.get(Submission, submission_id)
-        if not submission:
+        db_submission = db.get(Submission, submission_id)
+        if not db_submission:
             break
 
         # If submission is finished, we are so too
-        if submission.status in ("error", "finished"):
-            logger.warning(f"Submission {submission.id} is finished, stopping agent data gatherer")
+        if db_submission.status in ("error", "finished"):
+            logger.warning(f"Submission {db_submission.id} is finished, stopping agent data gatherer")
             break
         # but actually, only when the VM is alive ("processing")
-        if submission.status not in ("processing"):
-            logger.info(f"Submission {submission.id} not processing anymore, stopping data gather")
+        if db_submission.status not in ("processing"):
+            logger.info(f"Submission {db_submission.id} not processing anymore, stopping data gather")
             break
         
         # Update DB with latest EDR local logs
-        logger.info(f"Gather local EDR logs for submission {submission.id}")
+        logger.info(f"Gather local EDR logs for submission {db_submission.id}")
         edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()
-        submission.edr_telemetry_raw = edr_telemetry_raw
+        db_submission.edr_telemetry_raw = edr_telemetry_raw
         db.commit()
 
         # wait a bit for next time
@@ -356,3 +316,46 @@ def thread_gatherer(submission_id: int):
 
     db.close()
 
+
+def get_agent_ip_port(db_submission: Submission) -> tuple[str, int]:
+    agent_ip: Optional[str] = None
+
+    # IP in template?
+    if 'ip' in db_submission.profile.data:
+        agent_ip = db_submission.profile.data['ip']
+    else:
+        # IP in VM?
+        agent_ip = db_submission.vm_ip_address
+
+    if not agent_ip:
+        raise ValueError(f"Submission {db_submission.id} has no VM IP address defined")
+
+    agent_port = db_submission.profile.port  # port should always defined in the profile
+    if not agent_port or agent_port == 0:
+        raise ValueError(f"Submission {db_submission.id} has no profile port defined")
+
+    return agent_ip, agent_port
+
+
+def aquire_lock(thread_db: Session, db_submission: Submission, agentApi: AgentApi) -> bool:
+    logger.info("Attempt to acquire lock at DetonatorAgent")
+    # Try to acquire lock 4 times with 30 second intervals
+    lock_acquired = False
+    attempts = 6
+    for attempt in range(attempts):
+        if agentApi.IsInUse():
+            db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Agent is currently in use")
+        else:
+            lock_result = agentApi.AcquireLock()
+            if lock_result:
+                db_submission_add_log(thread_db, db_submission, f"Successfully acquired lock on attempt {attempt + 1}")
+                lock_acquired = True
+                break
+            else:
+                db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Could not lock Agent: {lock_result.error_message}")
+        
+        if attempt < attempts - 1:  # Don't sleep after the last attempt
+            db_submission_add_log(thread_db, db_submission, f"Waiting 30 seconds before retry...")
+            time.sleep(30)
+    
+    return lock_acquired

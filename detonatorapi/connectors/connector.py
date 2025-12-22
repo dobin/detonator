@@ -34,6 +34,7 @@ class ConnectorBase:
     def instantiate(self, submission_id: int):
         raise NotImplementedError("This method should be overridden by subclasses")
 
+
     def connect(self, submission_id: int):
         def connect_thread(submission_id: int):
             if connect_to_agent(submission_id):
@@ -43,20 +44,21 @@ class ConnectorBase:
 
         threading.Thread(target=connect_thread, args=(submission_id, )).start()
 
-    def submission(self, submission_id: int, pre_wait: int = 0):
-        def submission_thread(submission_id: int):
+
+    def process(self, submission_id: int, pre_wait: int = 0):
+        def process_thread(submission_id: int):
             # This is to handle Azure VM startup weirdness
-            # Just because we could connect, doesnt mean we want to immediately submission
+            # Just because we could connect, doesnt mean we want to immediately process
             # Let the VM start up for a bit
             time.sleep(pre_wait)
 
             if submit_file_to_agent(submission_id):
-                db_submission_change_status(submission_id, "stop")
+                db_submission_change_status(submission_id, "processed")
             else:
                 db_submission_change_status(submission_id, "stop", f"Could not start trace on RedEdr")
 
-        # boot the submission thread already
-        threading.Thread(target=submission_thread, args=(submission_id, )).start()
+        # boot the process thread already
+        threading.Thread(target=process_thread, args=(submission_id, )).start()
 
         # boot the agent local EDR data gatherer thread
         threading.Thread(target=thread_gatherer, args=(submission_id, )).start()

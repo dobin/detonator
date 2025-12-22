@@ -98,7 +98,7 @@ $ curl http://localhost:8000/api/submissions/1 | jq
     "stderr": ""
   },
   "rededr_events": "No RedEdr logs available",
-  "rededr_telemetry_raw": "",
+  "rededr_logs": "",
   "edr_telemetry_raw": "{\"logs\":\"<Events>\\r\\n</Events>\\r\\n\",\"edr_version\":\"Windows Defender 1.0\",\"plugin_version\":\"1.0\"}",
   "edr_alerts": [],
   "alerts": [],

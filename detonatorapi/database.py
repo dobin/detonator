@@ -74,10 +74,12 @@ class Submission(Base):
 
     # OUT
     server_logs: Mapped[str] = Column(Text, nullable=False)
-    process_output: Mapped[dict] = Column(JSON, default={}, nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
+    process_output: Mapped[dict] = Column(JSON, default={}, nullable=False)
+
+    rededr_logs: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_events: Mapped[str] = Column(Text, default="", nullable=False)
-    rededr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
+    
     edr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
     edr_alerts: Mapped[list] = Column(JSON, default=[], nullable=False)
     edr_verdict: Mapped[str] = Column(Text, default="", nullable=False)
