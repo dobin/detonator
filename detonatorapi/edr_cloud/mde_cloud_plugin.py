@@ -1,34 +1,52 @@
-import asyncio
 import logging
+import threading
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 import pprint
-
 from sqlalchemy.orm import Session, joinedload
+import time
 
-from ..database import get_db_direct, Submission, SubmissionAlert, Profile
-from .mde_client import MDEClient
-from ..db_interface import db_submission_add_log, db_submission_change_status_quick
+from detonatorapi.database import get_db_direct, Submission, SubmissionAlert, Profile
+from detonatorapi.db_interface import db_submission_add_log, db_submission_change_status_quick
+from detonatorapi.edr_cloud.mde_cloud_client import MDEClient
+from .edr_cloud import EdrCloud
+
 
 logger = logging.getLogger(__name__)
 
 POLLING_TIME_MINUTES = 2  # post end monitoring duration
 POLL_INTERVAL_SECONDS = 30  # polling interval
 
-class AlertMonitorMde:
 
-    def __init__(self, submission_id: int):
-        self.submission_id = submission_id
-        self.task: Optional[asyncio.Task] = None
+class CloudMdePlugin(EdrCloud):
+
+    def __init__(self):
+        super().__init__()
+        self.thread: Optional[threading.Thread] = None
         self.client_cache: Dict[str, MDEClient] = {}
 
 
-    def start_monitoring(self):
-        self.task = asyncio.create_task(self._monitor_loop())
-        logger.info("Alert monitoring task started")
+    @staticmethod
+    def is_relevant(profile_data: dict) -> bool:
+        edr_info = profile_data.get("edr_mde", None)
+
+        # TODO: Add more checks?
+
+        return edr_info is not None
 
 
-    async def _monitor_loop(self):
+    def start_monitoring_thread(self, submission_id: int):
+        self.submission_id = submission_id
+        self.thread = threading.Thread(
+            target=self._monitor_loop,
+            name=f"mde-monitor-{submission_id}",
+            daemon=True,
+        )
+        self.thread.start()
+        logger.info("Alert monitoring thread started")
+
+
+    def _monitor_loop(self):
         #start_time = datetime.utcnow()
         #while start_time + timedelta(minutes=POLLING_TIME_MINUTES) > datetime.utcnow():
         while True:
@@ -51,12 +69,9 @@ class AlertMonitorMde:
                 db.commit()
 
                 # sleep a bit before next poll
-                await asyncio.sleep(POLL_INTERVAL_SECONDS)
-            except asyncio.CancelledError:
-                break
+                time.sleep(POLL_INTERVAL_SECONDS)
             except Exception as exc:
                 logger.error(f"Alert monitor loop error: {exc}")
-                await asyncio.sleep(5)
             finally:
                 if db:
                     db.close()

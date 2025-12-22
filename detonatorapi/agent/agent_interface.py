@@ -1,30 +1,24 @@
 import logging
 import requests
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import time
 import json
 from datetime import datetime
-from typing import List
 import os
 from sqlalchemy.orm import Session, joinedload
+import threading
 
 from detonatorapi.settings import UPLOAD_DIR, AGENT_DATA_GATHER_INTERVAL
 from detonatorapi.database import Submission, get_db_direct
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log
 from detonatorapi.agent.agent_api import AgentApi, ExecutionFeedback, FeedbackContainer
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
+from detonatorapi.edr_parser.edr_parser_manager import EdrParser, get_relevant_edr_parser
+from detonatorapi.edr_cloud.edr_cloud import EdrCloud
+from detonatorapi.edr_cloud.edr_cloud_manager import get_relevant_edr_cloud_plugin
 
-# Parsers
-from detonatorapi.edr_parser.edr_parser import EdrParser
-from detonatorapi.edr_parser.parser_defender import DefenderParser
-from detonatorapi.edr_parser.example_parser import ExampleParser
 
 logger = logging.getLogger(__name__)
-
-parsers: List[EdrParser] = [
-    DefenderParser(),
-    ExampleParser(),
-]
 
 SLEEP_TIME_REDEDR_WARMUP = 3.0
 SLEEP_TIME_POST_SUBMISSION = 10.0
@@ -155,11 +149,29 @@ def submit_file_to_agent(submission_id: int) -> bool:
         db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when writing to disk")
         is_malware = True
     elif executionFeedback == ExecutionFeedback.OK:
+        # process is being executed. 
         db_submission_add_log(thread_db, db_submission, f"Success executing file {filename}")
         db_submission_add_log(thread_db, db_submission, f"Waiting, runtime of {runtime} seconds...")
         thread_db.commit()
 
-        # process is being executed. 
+        # boot the agent local EDR data gatherer thread
+        # this will regularly update: submission.edr_telemetry_raw 
+        # (especially for long running processes)
+        # BUT: we gonna overwrite it at the end of the function
+        # ALSO: we dont create submission.edr_alerts and submission.edr_verdict in here
+        # ENDS: on submission state change
+        db_submission_add_log(thread_db, db_submission, f"Starting local EDR data gatherer")
+        threading.Thread(target=thread_local_edr_gatherer, args=(submission_id, )).start()
+
+        # boot the relevant EDR Cloud monitoring plugin if any
+        edr_cloud_plugin: Optional[EdrCloud] = get_relevant_edr_cloud_plugin(db_submission.profile.data)
+        if edr_cloud_plugin is not None:
+            db_submission_add_log(thread_db, db_submission, f"Starting EDR Cloud plugin: {edr_cloud_plugin.__class__.__name__}")
+            # It will start a new thread
+            # ENDS: on submission state change
+            edr_cloud_plugin.start_monitoring_thread(submission_id)
+
+        # let it cook
         time.sleep(runtime)
         
         # enough execution.
@@ -233,19 +245,14 @@ def submit_file_to_agent(submission_id: int) -> bool:
         edr_plugin_log = json.loads(edr_telemetry_raw).get("logs", "")
 
         # EDR logs summary
-        chosen_parser: Optional[EdrParser] = None
-        for parser in parsers:
-            parser.load(edr_plugin_log)
-            if parser.is_relevant():
-                chosen_parser = parser
-                break
-        if not chosen_parser:
+        edr_parser: Optional[EdrParser] = get_relevant_edr_parser(edr_plugin_log)
+        if not edr_parser:
             db_submission_add_log(thread_db, db_submission, "No suitable EDR parser found for the collected EDR logs")
         else:
-            db_submission_add_log(thread_db, db_submission, f"Using parser {chosen_parser.__class__.__name__} for EDR logs")
-            if chosen_parser.parse():
-                edr_alerts = chosen_parser.get_edr_alerts()
-                if chosen_parser.is_detected():
+            db_submission_add_log(thread_db, db_submission, f"Using parser {edr_parser.__class__.__name__} for EDR logs")
+            if edr_parser.parse():
+                edr_alerts = edr_parser.get_edr_alerts()
+                if edr_parser.is_detected():
                     edr_verdict = "detected"
                     db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
                 else:
@@ -278,7 +285,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     return True
 
 
-def thread_gatherer(submission_id: int):
+def thread_local_edr_gatherer(submission_id: int):
     db = get_db_direct()
 
     db_submission = db.get(Submission, submission_id)

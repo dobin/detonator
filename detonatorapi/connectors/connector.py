@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db_direct, Submission
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log, db_submission_change_status
-from detonatorapi.agent.agent_interface import connect_to_agent, submit_file_to_agent, thread_gatherer
-from detonatorapi.edr_cloud.mde_alert_monitor import AlertMonitorMde
+from detonatorapi.agent.agent_interface import connect_to_agent, submit_file_to_agent, thread_local_edr_gatherer
+from detonatorapi.edr_cloud.mde_cloud_plugin import CloudMdePlugin
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class ConnectorBase:
 
     def process(self, submission_id: int, pre_wait: int = 0):
         def process_thread(submission_id: int):
-            # This is to handle Azure VM startup weirdness
+            # TODO This is to handle Azure VM startup weirdness
             # Just because we could connect, doesnt mean we want to immediately process
             # Let the VM start up for a bit
             time.sleep(pre_wait)
@@ -57,23 +57,7 @@ class ConnectorBase:
             else:
                 db_submission_change_status(submission_id, "stop", f"Could not start trace on RedEdr")
 
-        # boot the process thread already
         threading.Thread(target=process_thread, args=(submission_id, )).start()
-
-        # boot the agent local EDR data gatherer thread
-        threading.Thread(target=thread_gatherer, args=(submission_id, )).start()
-
-        # Check if we have MDE configured. Create a polling thread if so. 
-        db = get_db_direct()
-        submission = db.query(Submission).options(joinedload(Submission.profile)).filter(Submission.id == submission_id).first()
-        if not submission:
-            db.close()
-            return
-        if submission.profile and submission.profile.data.get("edr_mde"):
-            alertMonitorMde = AlertMonitorMde(submission_id)
-            alertMonitorMde.start_monitoring()
-            logger.info(f"Started Cloud-MDE alert monitoring for submission {submission_id}")
-        db.close()
 
 
     def stop(self, submission_id: int):
