@@ -8,7 +8,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-class MDEClient:
+class MdeCloudClient:
     def __init__(self, tenant_config: Dict[str, any]):
         self.tenant_id = tenant_config.get("tenant_id")
         if not self.tenant_id:
@@ -82,9 +82,9 @@ class MDEClient:
         hostname: Optional[str],
         start_time: datetime,
         end_time: datetime,
-    ):
+    ) -> List[dict]:
         if not device_id and not hostname:
-            return {}
+            return []
 
         start_iso = self._fmt_datetime(start_time)
         end_iso = self._fmt_datetime(end_time)
@@ -113,7 +113,7 @@ class MDEClient:
         return results
     
 
-    def _run_hunting_query(self, query: str):
+    def _run_hunting_query(self, query: str) -> List[dict]:
         payload = {"query": query}
         response = self._request("POST", "/beta/security/runHuntingQuery", json=payload)
         data = response.json()

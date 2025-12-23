@@ -1,14 +1,14 @@
 import logging
 import threading
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
 import pprint
-from sqlalchemy.orm import Session, joinedload
 import time
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple, List
+from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db_direct, Submission, SubmissionAlert, Profile
 from detonatorapi.db_interface import db_submission_add_log, db_submission_change_status_quick
-from detonatorapi.edr_cloud.mde_cloud_client import MDEClient
+from detonatorapi.edr_cloud.mde_cloud_client import MdeCloudClient
 from .edr_cloud import EdrCloud
 
 
@@ -23,7 +23,7 @@ class CloudMdePlugin(EdrCloud):
     def __init__(self):
         super().__init__()
         self.thread: Optional[threading.Thread] = None
-        self.client_cache: Dict[str, MDEClient] = {}
+        self.client_cache: Dict[str, MdeCloudClient] = {}
 
 
     @staticmethod
@@ -93,7 +93,7 @@ class CloudMdePlugin(EdrCloud):
             return False
         
         # Cloud Client
-        client = self._get_client(submission.profile)
+        client = self._get_mdeclient(submission.profile)
         if not client:
             return False
         
@@ -119,7 +119,7 @@ class CloudMdePlugin(EdrCloud):
         device_hostname = device_info.get("hostname", None)
         
         # Cloud Client
-        client = self._get_client(submission.profile)
+        client = self._get_mdeclient(submission.profile)
         if not client:
             return False
 
@@ -143,11 +143,11 @@ class CloudMdePlugin(EdrCloud):
         return True
 
 
-    def _store_alerts(self, db: Session, submission: Submission, alerts_with_evidence):
+    def _store_alerts(self, db: Session, submission: Submission, alerts: List[dict]):
         """Store alerts with their evidence already included."""
         existing_ids = {alert.alert_id for alert in submission.alerts}
         
-        for alert in alerts_with_evidence:
+        for alert in alerts:
             alert_id = alert.get("AlertId", None)
             if not alert_id:
                 continue
@@ -180,7 +180,7 @@ class CloudMdePlugin(EdrCloud):
             logger.info(f"submission {submission.id}: New alert stored: {alert_id}")
     
 
-    def _auto_close(self, db: Session, submission: Submission, client: MDEClient):
+    def _auto_close(self, db: Session, submission: Submission, client: MdeCloudClient):
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
         closed_incidents = set()
         for alert in submission.alerts:
@@ -202,7 +202,7 @@ class CloudMdePlugin(EdrCloud):
         db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
 
 
-    def _get_client(self, profile: Profile) -> Optional[MDEClient]:
+    def _get_mdeclient(self, profile: Profile) -> Optional[MdeCloudClient]:
         cfg = profile.data.get("edr_mde") or {}
         if not cfg:
             return None
@@ -211,7 +211,7 @@ class CloudMdePlugin(EdrCloud):
         if client:
             return client
         try:
-            client = MDEClient(cfg)
+            client = MdeCloudClient(cfg)
             self.client_cache[cache_key] = client
             return client
         except Exception as exc:

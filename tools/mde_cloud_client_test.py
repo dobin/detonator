@@ -13,8 +13,8 @@ from pathlib import Path
 # Add parent directory to path to import detonatorapi
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from detonatorapi.edr_cloud.mde_client import MDEClient
-from detonatorapi.database import get_db, Profile
+from detonatorapi.edr_cloud.mde_cloud_client import MdeCloudClient
+from detonatorapi.database import get_db_direct, Profile
 
 # Configure logging
 logging.basicConfig(
@@ -51,7 +51,7 @@ def test_mde_client(profile_name: str = "win10dev"):
     print_section("MDE Client Test Script")
     
     # Load configuration from database
-    db = get_db()
+    db = get_db_direct()
     try:
         profile = db.query(Profile).filter(Profile.name == profile_name).first()
         if not profile:
@@ -103,7 +103,7 @@ def test_mde_client(profile_name: str = "win10dev"):
     try:
         # Initialize the client
         print_section("Step 1: Initialize MDEClient")
-        client = MDEClient(config)
+        client = MdeCloudClient(config)
         print("✓ Client initialized successfully")
         
         # Test authentication
@@ -119,15 +119,14 @@ def test_mde_client(profile_name: str = "win10dev"):
         print(f"  Since: {start_time.isoformat()}Z")
         print()
         
-        alerts, server_time = client.fetch_alerts(
+        alerts = client.fetch_alerts(
             device_id=config.get('device_id'),
             hostname=config.get('hostname'),
-            start_time=start_time
+            start_time=start_time,
+            end_time=datetime.utcnow(),
         )
         
         print(f"✓ Found {len(alerts)} alert(s)")
-        if server_time:
-            print(f"  MDE Server Time: {server_time}")
         print()
         
         if alerts:
@@ -145,78 +144,13 @@ def test_mde_client(profile_name: str = "win10dev"):
         else:
             print("ℹ No alerts found in the specified time range")
             print("  Try increasing the 'days_back' value or check the device configuration")
-        
-        # Fetch alert evidence if we have alerts
-        if alerts:
-            print_section("Step 4: Fetch Alert Evidence")
-            alert_ids = [str(alert.get("AlertId")) for alert in alerts if alert.get("AlertId")]
-            
-            if alert_ids:
-                print(f"Fetching evidence for {len(alert_ids)} alert(s)...")
-                print(f"Alert IDs: {', '.join(str(aid) for aid in alert_ids[:5])}" + 
-                      (f" ... and {len(alert_ids) - 5} more" if len(alert_ids) > 5 else ""))
-                print()
                 
-                evidence_rows = client.fetch_alert_evidence(
-                    alert_ids=alert_ids,
-                    start_time=start_time,
-                    chunk_size=20
-                )
-                
-                print(f"✓ Found {len(evidence_rows)} evidence row(s)")
-                print()
-                
-                if evidence_rows:
-                    # Group evidence by alert
-                    evidence_by_alert = {}
-                    for row in evidence_rows:
-                        alert_id = row.get("AlertId")
-                        if alert_id:
-                            evidence_by_alert.setdefault(alert_id, []).append(row)
-                    
-                    print(f"Evidence grouped by alert:")
-                    for alert_id, evidence_list in evidence_by_alert.items():
-                        print(f"  Alert {alert_id}: {len(evidence_list)} evidence item(s)")
-                    print()
-                    
-                    # Show first evidence item in detail
-                    print("First Evidence Item (full data):")
-                    print_json(evidence_rows[0])
-                    print()
-                    
-                    # Show evidence statistics
-                    print("Evidence Statistics:")
-                    entity_types = {}
-                    evidence_roles = {}
-                    for row in evidence_rows:
-                        entity_type = row.get("EntityType", "Unknown")
-                        entity_types[entity_type] = entity_types.get(entity_type, 0) + 1
-                        
-                        evidence_role = row.get("EvidenceRole", "Unknown")
-                        evidence_roles[evidence_role] = evidence_roles.get(evidence_role, 0) + 1
-                    
-                    print("  Entity Types:")
-                    for entity_type, count in sorted(entity_types.items()):
-                        print(f"    {entity_type}: {count}")
-                    
-                    print("  Evidence Roles:")
-                    for role, count in sorted(evidence_roles.items()):
-                        print(f"    {role}: {count}")
-                else:
-                    print("ℹ No evidence found for the alerts")
-            else:
-                print("⚠ No valid alert IDs found to fetch evidence")
-        
         print_section("Test Completed Successfully")
         print("✓ All tests passed!")
         print()
         print("Summary:")
         print(f"  - Authenticated successfully")
         print(f"  - Found {len(alerts)} alert(s)")
-        if alerts:
-            alert_ids = [str(alert.get("AlertId")) for alert in alerts if alert.get("AlertId")]
-            evidence_rows = client.fetch_alert_evidence(alert_ids, start_time) if alert_ids else []
-            print(f"  - Found {len(evidence_rows)} evidence row(s)")
         
         return True
         

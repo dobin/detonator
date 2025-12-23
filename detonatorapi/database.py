@@ -105,20 +105,19 @@ class SubmissionAlert(Base):
     __tablename__ = "submission_alerts"
 
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
-    submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
+    submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False)
+
+    # Type, local or cloud?
+
     alert_id: Mapped[str] = Column(String(128), nullable=False)
-    incident_id: Mapped[Optional[str]] = Column(String(128), nullable=True)
     title: Mapped[Optional[str]] = Column(String(255), nullable=True)
     severity: Mapped[Optional[str]] = Column(String(64), nullable=True)
-    status: Mapped[Optional[str]] = Column(String(64), nullable=True)
     category: Mapped[Optional[str]] = Column(String(128), nullable=True)
     detection_source: Mapped[Optional[str]] = Column(String(128), nullable=True)
     detected_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
-    raw_alert: Mapped[dict] = Column(JSON, default={}, nullable=False)
-    auto_closed_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
-    comment: Mapped[Optional[str]] = Column(Text, nullable=True)
-    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    additional_data: Mapped[dict] = Column(JSON, default={}, nullable=False)
 
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     submission: Mapped[Submission] = relationship("Submission", back_populates="alerts")
 
 
