@@ -14,7 +14,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from detonatorapi.edr_cloud.mde_cloud_client import MdeCloudClient
-from detonatorapi.database import get_db_direct, Profile
+from detonatorapi.edr_cloud.mde_cloud_plugin import CloudMdePlugin
+from detonatorapi.database import Submission, get_db_direct, Profile
 
 # Configure logging
 logging.basicConfig(
@@ -36,7 +37,7 @@ def print_json(data, indent=2):
     print(json.dumps(data, indent=indent, default=str))
 
 
-def test_mde_client(profile_name: str = "win10dev"):
+def test_mde_client(profile_name: str, submission_to_inject: int) -> bool:
     """
     Test the MDEClient with configuration from a database profile.
     
@@ -129,21 +130,40 @@ def test_mde_client(profile_name: str = "win10dev"):
         print(f"✓ Found {len(alerts)} alert(s)")
         print()
         
-        if alerts:
-            print("Alert Summary:")
-            for idx, alert in enumerate(alerts, 1):
-                alert_id = alert.get("AlertId")
-                timestamp = alert.get("Timestamp")
-                print(f"  {idx}. Alert ID: {alert_id}")
-                print(f"     Timestamp: {timestamp}")
-            print()
-            
-            # Show first alert in detail
-            print("First Alert (full data):")
-            print_json(alerts[0])
-        else:
+        if not alerts:
             print("ℹ No alerts found in the specified time range")
             print("  Try increasing the 'days_back' value or check the device configuration")
+            return False
+        
+        print("Alert Summary:")
+        for idx, alert in enumerate(alerts, 1):
+            alert_id = alert.get("AlertId")
+            timestamp = alert.get("Timestamp")
+            print(f"  {idx}. Alert ID: {alert_id}")
+            print(f"     Timestamp: {timestamp}")
+        print()
+
+        # Inject a submission alert if requested
+        if submission_to_inject > 0:
+            print_section(f"Step 4: Inject Alert into Submission ID {submission_to_inject}")
+            db = get_db_direct()
+            try:
+                submission = db.get(Submission, submission_to_inject)
+                if not submission:
+                    print(f"❌ Submission ID {submission_to_inject} not found!")
+                    return False
+                
+                plugin = CloudMdePlugin()
+                plugin._store_alerts(db, submission, alerts)
+                db.commit()
+                
+                print(f"✓ Injected {len(alerts)} alert(s) into submission ID {submission_to_inject}")
+            finally:
+                db.close()
+        
+        # Show first alert in detail
+        print("First Alert (full data):")
+        print_json(alerts[0])
                 
         print_section("Test Completed Successfully")
         print("✓ All tests passed!")
@@ -176,8 +196,9 @@ if __name__ == "__main__":
     
     # Allow profile name as command line argument
     profile_name = sys.argv[1] if len(sys.argv) > 1 else "win10dev"
+    submission_to_inject = 1
     
-    success = test_mde_client(profile_name)
+    success = test_mde_client(profile_name, submission_to_inject)
     
     if success:
         print("\n✓ Test completed successfully!")

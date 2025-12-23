@@ -106,16 +106,16 @@ class SubmissionAlert(Base):
 
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
     submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False)
-
-    # Type, local or cloud?
+    source: Mapped[str] = Column(String(64), nullable=False)
+    raw: Mapped[str] = Column(Text, nullable=False)
 
     alert_id: Mapped[str] = Column(String(128), nullable=False)
-    title: Mapped[Optional[str]] = Column(String(255), nullable=True)
-    severity: Mapped[Optional[str]] = Column(String(64), nullable=True)
-    category: Mapped[Optional[str]] = Column(String(128), nullable=True)
-    detection_source: Mapped[Optional[str]] = Column(String(128), nullable=True)
-    detected_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
-    additional_data: Mapped[dict] = Column(JSON, default={}, nullable=False)
+    title: Mapped[Optional[str]] = Column(String(256), nullable=False)
+    severity: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    category: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    detection_source: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    detected_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=False)
+    additional_data: Mapped[dict] = Column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     submission: Mapped[Submission] = relationship("Submission", back_populates="alerts")

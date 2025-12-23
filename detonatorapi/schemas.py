@@ -137,45 +137,11 @@ class SubmissionResponse(BaseModel):
     vm_ip_address: Optional[str] = None
     alerts: List["SubmissionAlertResponse"] = []
     
-    created_at: datetime
-    updated_at: datetime
-    completed_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-# Without the big log fields, for listing
-class SubmissionResponseShort(BaseModel):
-    id: int
-    file_id: int
-    profile_id: int
-    project: Optional[str] = None
-    comment: Optional[str] = None
-    runtime: Optional[int] = None
-    drop_path: Optional[str] = None
-    execution_mode: Optional[str] = None
-    status: str
-    user: str = ""
-
-    server_logs: Optional[str] = None
-    edr_alerts: Optional[list] = None
-    edr_verdict: Optional[str] = None
-
-    vm_instance_name: Optional[str] = None
-    vm_ip_address: Optional[str] = None
-
     # Relationships
     file: Optional[FileResponse] = None
     profile: Optional[ProfileResponse] = None
+    alerts: List["SubmissionAlertResponse"] = []
 
-    # New
-    has_rededr_events: Optional[bool] = False
-    alert_count: Optional[int] = 0
-    latest_alert_title: Optional[str] = None
-    latest_alert_severity: Optional[str] = None
-    latest_alert_detected_at: Optional[datetime] = None
-    recent_alerts: Optional[list] = []
-    
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
@@ -187,16 +153,13 @@ class SubmissionResponseShort(BaseModel):
 class SubmissionAlertResponse(BaseModel):
     id: int
     alert_id: str
-    incident_id: Optional[str] = None
+
+    source: str
     title: Optional[str] = None
     severity: Optional[str] = None
-    status: Optional[str] = None
     category: Optional[str] = None
     detection_source: Optional[str] = None
     detected_at: Optional[datetime] = None
-    auto_closed_at: Optional[datetime] = None
-    comment: Optional[str] = None
-    raw_alert: dict
     created_at: datetime
 
     class Config:

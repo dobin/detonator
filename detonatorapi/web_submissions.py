@@ -7,7 +7,7 @@ import logging
 
 from detonatorapi.db_interface import db_submission_change_status_quick
 from .database import get_db, File, Submission
-from .schemas import SubmissionResponse, SubmissionUpdate, FileCreateSubmission, SubmissionResponseShort
+from .schemas import SubmissionResponse, SubmissionUpdate, FileCreateSubmission
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_submission, db_get_profile_by_name, db_submission_add_log
 from .utils import sanitize_runtime_seconds
@@ -66,7 +66,7 @@ async def get_submissions_count(
     return {"count": count}
 
 
-@router.get("/submissions", response_model=List[SubmissionResponseShort])
+@router.get("/submissions", response_model=List[SubmissionResponse])
 async def get_submissions(
     request: Request,
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -79,7 +79,7 @@ async def get_submissions(
     db: Session = Depends(get_db)
 ):
     """Get submissions with filtering capabilities"""
-    query = db.query(Submission).options(joinedload(Submission.file), joinedload(Submission.profile))
+    query = db.query(Submission).options(joinedload(Submission.file), joinedload(Submission.profile), joinedload(Submission.alerts))
     
     # Filter by user if guest
     user = get_user_from_request(request)
@@ -111,49 +111,6 @@ async def get_submissions(
     
     # Order by ID descending (newest first) and apply pagination
     submissions = query.order_by(Submission.id.desc()).offset(skip).limit(limit).all()
-
-    # Submission overview need this information too
-    for submission in submissions:
-        # Flag RedEdr logs
-        submission.has_rededr_events = len(submission.rededr_events or "") > 220
-
-        # Summarize Defender alerts for the UI
-        alerts_sorted = sorted(
-            submission.alerts,
-            key=lambda alert: alert.detected_at or datetime.min,
-            reverse=True,
-        )
-        submission.alert_count = len(alerts_sorted)
-        submission.recent_alerts = []
-        if alerts_sorted:
-            latest = alerts_sorted[0]
-            raw = latest.raw_alert or {}
-            submission.latest_alert_title = (
-                latest.title
-                or raw.get("Title")
-                or raw.get("ThreatFamilyName")
-                or "Defender alert"
-            )
-            submission.latest_alert_severity = latest.severity or raw.get("Severity") or ""
-            submission.latest_alert_detected_at = latest.detected_at
-            for entry in alerts_sorted[:5]:
-                payload = entry.raw_alert or {}
-                submission.recent_alerts.append(
-                    {
-                        "title": entry.title
-                        or payload.get("Title")
-                        or payload.get("ThreatFamilyName")
-                        or "Defender alert",
-                        "severity": entry.severity or payload.get("Severity") or "",
-                        "detected_at": entry.detected_at,
-                    }
-                )
-        else:
-            submission.latest_alert_title = None
-            submission.latest_alert_severity = None
-            submission.latest_alert_detected_at = None
-            submission.recent_alerts = []
-
     return submissions
 
 

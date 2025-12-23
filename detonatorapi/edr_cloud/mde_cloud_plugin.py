@@ -153,27 +153,43 @@ class CloudMdePlugin(EdrCloud):
                 continue
             if alert_id in existing_ids:
                 continue
-
-            # somehow we have a lot of duplicates in the list?
             existing_ids.add(alert_id)
 
-            # Extract metadata from first evidence row
             detected_at = alert.get("Timestamp")
+
             detected_dt = None
             if detected_at:
                 try:
-                    detected_dt = datetime.fromisoformat(detected_at.replace("Z", "+00:00"))
+                    # Handle Microsoft's ISO 8601 format with up to 7 decimal places
+                    # Remove 'Z' and parse, then truncate microseconds if needed
+                    timestamp_str = detected_at.rstrip('Z')
+                    detected_dt = datetime.fromisoformat(timestamp_str)
                 except ValueError:
-                    detected_dt = None
-            
+                    # Fallback: try with explicit format parsing
+                    try:
+                        # Try parsing with strptime, handling variable fractional seconds
+                        detected_dt = datetime.strptime(detected_at[:26] + 'Z', "%Y-%m-%dT%H:%M:%S.%fZ")
+                    except ValueError:
+                        logger.warning(f"submission {submission.id}: Invalid alert detected_at format: {detected_at}")
+                        # Use current time as fallback to avoid NULL constraint violation
+                        detected_dt = datetime.utcnow()
+            else:
+                # If no timestamp provided, use current time
+                detected_dt = datetime.utcnow()
+                logger.warning(f"submission {submission.id}: No timestamp in alert, using current time")
+
             submission_alert = SubmissionAlert(
                 submission_id=submission.id,
+                source="MDE Cloud Plugin",
+                raw="",
+                
                 alert_id=alert_id,
                 title=alert.get("Title"),
                 severity=alert.get("Severity"),
-                category=alert.get("Categories"),
+                category=",".join(alert.get("Categories", [])),  # it seems to be a list, even with one entry
                 detection_source=alert.get("DetectionSource"),
                 detected_at=detected_dt,
+                additional_data={},
             )
             db.add(submission_alert)
             submission.alerts.append(submission_alert)
@@ -182,24 +198,25 @@ class CloudMdePlugin(EdrCloud):
 
     def _auto_close(self, db: Session, submission: Submission, client: MdeCloudClient):
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
-        closed_incidents = set()
-        for alert in submission.alerts:
-            if not alert.auto_closed_at:
-                try:
-                    client.resolve_alert(alert.alert_id, comment)
-                    alert.status = "Resolved"
-                    alert.auto_closed_at = datetime.utcnow()
-                    alert.comment = comment
-                except Exception as exc:
-                    logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
-            incident_id = alert.incident_id
-            if incident_id and incident_id not in closed_incidents:
-                try:
-                    client.resolve_incident(incident_id, comment)
-                    closed_incidents.add(incident_id)
-                except Exception as exc:
-                    logger.error(f"Failed to resolve incident {incident_id}: {exc}")
-        db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
+        
+        #closed_incidents = set()
+        #for alert in submission.alerts:
+        #    if not alert.auto_closed_at:
+        #        try:
+        #            client.resolve_alert(alert.alert_id, comment)
+        #            alert.status = "Resolved"
+        #            alert.auto_closed_at = datetime.utcnow()
+        #            alert.comment = comment
+        #        except Exception as exc:
+        #            logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
+        #    incident_id = alert.incident_id
+        #    if incident_id and incident_id not in closed_incidents:
+        #        try:
+        #            client.resolve_incident(incident_id, comment)
+        #            closed_incidents.add(incident_id)
+        #        except Exception as exc:
+        #            logger.error(f"Failed to resolve incident {incident_id}: {exc}")
+        #db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
 
 
     def _get_mdeclient(self, profile: Profile) -> Optional[MdeCloudClient]:

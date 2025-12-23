@@ -1,41 +1,70 @@
 {% if submission %}
 <div class="space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <div><strong>Submission ID:</strong> {{ submission.id }}</div>
-        <div><strong>File ID:</strong> {{ submission.file_id }}</div>
-        {% if submission.file and submission.file.comment %}
-        <div><strong>File Comment:</strong> {{ submission.file.comment }}</div>
-        {% endif %}
-        {% if submission.comment %}
-        <div><strong>Submission Comment:</strong> {{ submission.comment }}</div>
-        {% endif %}
-        <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></div>
-        <div><strong>Project:</strong> {{ submission.project or '' }}</div>
-        <div><strong>Profile:</strong> {{ submission.profile.name if submission.profile else '' }}</div>
-        <div><strong>VM Instance:</strong> {{ submission.vm_instance_name or '' }}</div>
-        <div><strong>VM IP:</strong> {{ submission.vm_ip_address or '' }}</div>
-        <div><strong>Result:</strong> {{ submission.edr_verdict or '' }}</div>
-        {% if submission.profile and submission.profile.data.get('device_info') %}
-            {% set device_info = submission.profile.data.get('device_info', {}) %}
-            {% if device_info.get('hostname') %}
-            <div><strong>Agent Hostname:</strong> {{ device_info.get('hostname') }}</div>
-            {% endif %}
-            {% if device_info.get('os_version') %}
-            <div><strong>Agent OS:</strong> {{ device_info.get('os_version') }}</div>
-            {% endif %}
-            {% if device_info.get('device_id') %}
-            <div><strong>Device ID (Sense):</strong> <span class="font-mono text-xs break-all">{{ device_info.get('device_id') }}</span></div>
-            {% endif %}
-        {% endif %}
-    </div>
+    <table class="min-w-full text-sm border border-gray-200">
+        <tbody class="bg-white">
+            <tr>
+                <td class="px-3 py-2 font-semibold text-gray-700 w-1/4">Submission ID:</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.id }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">File ID:</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.file_id }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Created:</td>
+                <td class="px-3 py-2 text-gray-500">{{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+
+            <tr>
+                <td class="px-3 py-2 font-semibold text-gray-700">Submission Comment:</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.comment }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">File Comment:</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.file.comment }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Updated:</td>
+                <td class="px-3 py-2 text-gray-500">{{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+
+            <tr>
+                <td class="px-3 py-2 font-semibold text-gray-700">Submission Status:</td>
+                <td class="px-3 py-2 border-r border-gray-200"><span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Profile:</td>
+                <td class="px-3 py-2">{{ submission.profile.name if submission.profile else '' }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Completed:</td>
+                <td class="px-3 py-2 text-gray-500">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+
+            <tr>
+                <td class="px-3 py-2 font-semibold text-gray-700">EDR Verdict:</td>
+                <td class="px-3 py-2"><span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span></td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Project:</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.project or '' }}</td>
+
+                <td class="px-3 py-2 font-semibold text-gray-700">Runtime (s):</td>
+                <td class="px-3 py-2 text-gray-500">{{ submission.runtime }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+
     
     <!-- Logs Tabs -->
     {% if submission.server_logs or log or submission.edr_alerts %}
     <div class="w-full">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                {% if submission.server_logs %}
+                {% if submission.alerts and submission.alerts|length > 0 %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" 
+                    data-tab="detonator-alerts" onclick="showTab('detonator-alerts', this)"
+                >
+                    Alerts
+                </button>
+                {% endif %}
+
+                {% if submission.server_logs %}
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="detonator-logs" onclick="showTab('detonator-logs', this)"
                 >
                     Server Logs
@@ -81,19 +110,59 @@
                     RedEdr Logs
                 </button>
                 {% endif %}
-                {% if submission.profile and submission.profile.data.get('edr_mde') %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
-                    data-tab="mde-alerts" onclick="showTab('mde-alerts', this)"
-                >
-                    MDE Alerts
-                </button>
-                {% endif %}
             </nav>
         </div>
         
         <div class="mt-4">
+            {% if submission.alerts and submission.alerts|length > 0 %}
+            <div id="detonator-alerts" class="tab-content">
+                <div class="text-gray-700 text-sm mt-2 space-y-3">
+                    <div>
+                        <strong>Alerts: </strong>
+                        <span class="font-semibold">{{ submission.alerts|length }}</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Title</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Category</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Detection Source</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Detected At</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                {% for alert in submission.alerts %}
+                                <tr>
+                                    <td class="px-3 py-2 whitespace-nowrap">{{ alert.source or 'N/A' }}</td>
+                                    <td class="px-3 py-2">{{ alert.title or 'Defender alert' }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
+                                            {{ alert.severity or 'Unknown' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 py-2">{{ alert.category or 'N/A' }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">{{ alert.detection_source or 'N/A' }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        {% if alert.detected_at %}
+                                        {{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             {% if submission.server_logs %}
-            <div id="detonator-logs" class="tab-content">
+            <div id="detonator-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.server_logs }}</pre>
             </div>
@@ -160,146 +229,6 @@
                     >{{ submission.rededr_logs|pretty_json }}</pre>
             </div>
             {% endif %}
-            {% if submission.profile and submission.profile.data.get('edr_mde') %}
-            <div id="mde-alerts" class="tab-content hidden">
-                {% if submission.alerts %}
-                <div class="space-y-4">
-                    {% for alert in submission.alerts %}
-                    <div class="border border-gray-200 rounded-lg p-4 bg-white shadow-sm space-y-3">
-                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                            <div>
-                                <div class="text-xs uppercase tracking-wide text-gray-500">Alert</div>
-                                <div class="text-base font-semibold text-gray-900">
-                                    {{ alert.title or 'Defender Alert' }}
-                                </div>
-                                <div class="text-sm text-gray-600">
-                                    {{ alert.category or 'Uncategorized' }}
-                                </div>
-                            </div>
-                            <div class="text-sm text-gray-600 md:text-right">
-                                <div><strong>Detected:</strong> {{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') if alert.detected_at else 'Pending' }}</div>
-                                <div><strong>Severity:</strong> {{ alert.severity or 'N/A' }}</div>
-                                <div><strong>Source:</strong> {{ alert.detection_source or 'Unknown' }}</div>
-                                <div><strong>ID:</strong> <span class="font-mono text-xs break-all">{{ alert.alert_id }}</span></div>
-                            </div>
-                        </div>
-
-                        {% set evidence = [] %}
-                        {% if alert.raw_alert and alert.raw_alert.get('evidence') %}
-                            {% set evidence = alert.raw_alert.get('evidence') %}
-                        {% endif %}
-
-                        {% if evidence %}
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Timestamp</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Role</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Entity</th>
-                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    {% for ev in evidence %}
-                                    <tr class="align-top">
-                                        <td class="px-3 py-2 whitespace-nowrap">
-                                            {{ ev.Timestamp or 'N/A' }}
-                                        </td>
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ ev.EvidenceRole or 'Unknown' }}</td>
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ ev.EntityType or 'Unknown' }}</td>
-                                        <td class="px-3 py-2 space-y-1">
-                                            {% set meta = namespace(shown=False) %}
-                                            {% if ev.DeviceName or ev.DeviceId %}
-                                                <div><span class="font-medium text-gray-700">Device:</span> {{ ev.DeviceName or ev.DeviceId }}</div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.FileName %}
-                                                {% set file_hash = ev.FileSha256 or ev.FileSHA256 or ev.SHA256 or ev.Sha256 %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">File:</span>
-                                                    {{ ev.FileName }}{% if file_hash %} <span class="text-xs text-gray-500">({{ file_hash }})</span>{% endif %}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.ProcessCommandLine %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Command:</span>
-                                                    <span class="font-mono text-xs break-all">{{ ev.ProcessCommandLine }}</span>
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.AccountName %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Account:</span>
-                                                    {{ ev.AccountDomain ~ '\\' if ev.AccountDomain else '' }}{{ ev.AccountName }}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.RemoteUrl or ev.RemoteIP %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Remote:</span>
-                                                    {{ ev.RemoteUrl or ev.RemoteIP }}
-                                                    {% if ev.RemotePort %}:{{ ev.RemotePort }}{% endif %}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.RegistryKey or ev.RegistryValueName %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Registry:</span>
-                                                    {{ ev.RegistryKey }}{% if ev.RegistryValueName %} ({{ ev.RegistryValueName }}){% endif %}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.FolderPath %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Path:</span>
-                                                    {{ ev.FolderPath }}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if ev.ThreatFamilyName %}
-                                                <div>
-                                                    <span class="font-medium text-gray-700">Threat:</span>
-                                                    {{ ev.ThreatFamilyName }}
-                                                </div>
-                                                {% set meta.shown = True %}
-                                            {% endif %}
-                                            {% if not meta.shown %}
-                                                <div class="text-gray-500">No additional attributes reported.</div>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="bg-gray-50 border border-dashed border-gray-300 rounded p-3 text-sm text-gray-600">
-                            No detailed evidence has been returned for this alert yet.
-                        </div>
-                        {% endif %}
-
-                        {% if alert.raw_alert and alert.raw_alert.get('evidence_refreshed_at') %}
-                        <div class="text-xs text-gray-500">
-                            Evidence refreshed: {{ alert.raw_alert.get('evidence_refreshed_at')|strftime('%Y-%m-%d %H:%M:%S') }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="bg-gray-50 border border-gray-200 rounded p-4 text-sm text-gray-600">
-                    <p>No Defender alerts collected yet.</p>
-                    <p class="mt-2">
-                        Detonator polls Microsoft Defender for some minutes after execution completes.
-                        If detections occur during that window they will appear here automatically.
-                    </p>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
     </div>
     
     <script>
@@ -329,14 +258,6 @@
         }
     </script>
     {% endif %}
-    
-    <div class="text-sm text-gray-500">
-        <p>Created: {{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
-        <p>Updated: {{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
-        {% if submission.completed_at %}
-        <p>Completed: {{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
-        {% endif %}
-    </div>
 </div>
 
 {% else %}
