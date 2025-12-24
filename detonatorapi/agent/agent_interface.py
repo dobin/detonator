@@ -241,11 +241,8 @@ def submit_file_to_agent(submission_id: int) -> bool:
         edr_telemetry_raw = ""
         db_submission_add_log(thread_db, db_submission, "Warning: could not get EDR logs from Agent")
     else:
-        # get the actual EDR log
-        edr_plugin_log = json.loads(edr_telemetry_raw).get("logs", "")
-
         # EDR logs summary
-        edr_parser: Optional[EdrParser] = get_relevant_edr_parser(edr_plugin_log)
+        edr_parser: Optional[EdrParser] = get_relevant_edr_parser(edr_telemetry_raw)
         if not edr_parser:
             db_submission_add_log(thread_db, db_submission, "No suitable EDR parser found for the collected EDR logs")
         else:
