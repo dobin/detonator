@@ -107,6 +107,10 @@ def submit_file_to_agent(submission_id: int) -> bool:
         db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
         thread_db.close()
         return False
+    
+    # Clear logs on DetonatorAgent
+    if not agentApi.ClearAgentLogs():
+        db_submission_add_log(thread_db, db_submission, f"Warning: Could not clear Agent logs on DetonatorAgent at {agent_ip}")
 
     # RedEdr: Set the process name we gonna trace
     if rededrApi is not None:

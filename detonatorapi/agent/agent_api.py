@@ -181,6 +181,20 @@ class AgentApi:
             return None
         
 
+    def ClearAgentLogs(self) -> bool:
+        url = self.agent_url + "/api/logs/agent"
+        try:
+            response = requests.delete(url)
+            if response.status_code == 200:
+                return True
+            else:
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Agent HTTP response error: {e}")
+            return False
+        
+
     def GetEdrTelemetryRaw(self) -> Optional[str]:
         url = self.agent_url + "/api/logs/edr"
         try:
