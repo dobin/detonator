@@ -29,15 +29,12 @@ def db_submission_change_status(submission_id: int, status: str, log_message: st
 # - and not use the db_submission after this
 # - or before this
 def db_submission_change_status_quick(db, db_submission: Submission, status: str, log_message: str = ""):
-    log = f"Submission {db_submission.id} status change from {db_submission.status} to {status}"
-    logger.info(log)
-
-    db_submission.server_logs += mylog(log)
+    logger.info(f"Submission {db_submission.id} status change from {db_submission.status} to {status}")
+    
     db_submission.status = status
 
     if log_message != "":
         logger.info("  " + log_message)
-        db_submission.server_logs += mylog(log)
 
     #db_submission.updated_at = datetime.utcnow()
     db.commit()
