@@ -29,7 +29,7 @@
                 <td class="px-3 py-2 border-r border-gray-200"><span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></td>
 
                 <td class="px-3 py-2 font-semibold text-gray-700">Profile:</td>
-                <td class="px-3 py-2">{{ submission.profile.name if submission.profile else '' }}</td>
+                <td class="px-3 py-2 border-r border-gray-200">{{ submission.profile.name if submission.profile else '' }}</td>
 
                 <td class="px-3 py-2 font-semibold text-gray-700">Completed:</td>
                 <td class="px-3 py-2 text-gray-500">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -37,7 +37,7 @@
 
             <tr>
                 <td class="px-3 py-2 font-semibold text-gray-700">EDR Verdict:</td>
-                <td class="px-3 py-2"><span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span></td>
+                <td class="px-3 py-2 border-r border-gray-200"><span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span></td>
 
                 <td class="px-3 py-2 font-semibold text-gray-700">Project:</td>
                 <td class="px-3 py-2 border-r border-gray-200">{{ submission.project or '' }}</td>
@@ -48,20 +48,16 @@
         </tbody>
     </table>
 
-
-    
     <!-- Logs Tabs -->
     {% if submission.server_logs or log or submission.edr_alerts %}
     <div class="w-full">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                {% if submission.alerts and submission.alerts|length > 0 %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" 
                     data-tab="detonator-alerts" onclick="showTab('detonator-alerts', this)"
                 >
                     Alerts
                 </button>
-                {% endif %}
 
                 {% if submission.server_logs %}
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
@@ -114,14 +110,11 @@
         </div>
         
         <div class="mt-4">
-            {% if submission.alerts and submission.alerts|length > 0 %}
             <div id="detonator-alerts" class="tab-content">
                 <div class="text-gray-700 text-sm mt-2 space-y-3">
-                    <div>
-                        <strong>Alerts: </strong>
-                        <span class="font-semibold">{{ submission.alerts|length }}</span>
-                    </div>
                     <div class="overflow-x-auto">
+
+                        {% if submission.alerts and submission.alerts|length > 0 %}
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -156,21 +149,24 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+
+                        {% else %}
+                        <div class="text-gray-700 text-sm mt-2">No alerts.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             {% if submission.server_logs %}
             <div id="detonator-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.server_logs }}</pre>
             </div>
             {% endif %}
 
             {% if submission.agent_logs %}
             <div id="agent-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.agent_logs|pretty_json }}
                 </pre>
             </div>
@@ -190,19 +186,19 @@
                     {% if submission.process_output.stdout %}
                     <div>
                         <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT: (gathered on process exit)</div>
-                        <pre class="bg-gray-100 p-2 rounded text-sm max-h-60 overflow-y-auto w-full">{{ submission.process_output.stdout }}</pre>
+                        <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full">{{ submission.process_output.stdout }}</pre>
                     </div>
                     {% endif %}
                     
                     {% if submission.process_output.stderr %}
                     <div>
                         <div class="text-xs font-semibold text-gray-600 mb-1">STDERR:</div>
-                        <pre class="bg-red-50 p-2 rounded text-sm max-h-60 overflow-y-auto w-full text-red-800">{{ submission.process_output.stderr }}</pre>
+                        <pre class="bg-red-50 p-2 rounded text-sm overflow-y-auto w-full text-red-800">{{ submission.process_output.stderr }}</pre>
                     </div>
                     {% endif %}
                 </div>
                 {% else %}
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.process_output|pretty_json }}
                 </pre>
                 {% endif %}
@@ -211,21 +207,21 @@
             
             {% if submission.edr_alerts %}
             <div id="edr-summary" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.edr_alerts }}</pre>
             </div>
             {% endif %}
 
             {% if submission.edr_telemetry_raw %}
             <div id="edr-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
                     >{{ submission.edr_telemetry_raw|pretty_json }}</pre>
             </div>
             {% endif %}
 
             {% if submission.rededr_logs %}
             <div id="rededr-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm max-h-80 overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
                     >{{ submission.rededr_logs|pretty_json }}</pre>
             </div>
             {% endif %}
