@@ -229,13 +229,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
     if agent_logs is None:
         agent_logs = "No Agent logs available"
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Agent logs from Agent")
-    if rededr_events is None:
-        rededr_events = "No RedEdr logs available"
     if process_output is None:
         process_output = {}
         db_submission_add_log(thread_db, db_submission, "Warning: could not get Execution logs from Agent")
-    if rededr_logs is None:
-        rededr_logs = "No RedEdr Agent logs available"
     if edr_telemetry_raw is None:
         edr_verdict = "N/A"
         edr_telemetry_raw = ""

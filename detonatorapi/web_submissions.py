@@ -251,7 +251,8 @@ async def resubmission(
     db_submission.server_logs = ""
     db_submission.process_output = {}
     db_submission.agent_logs = ""
-    db_submission.rededr_events = ""
+    db_submission.rededr_events = None
+    db_submission.rededr_logs = None
     db_submission.edr_telemetry_raw = ""
     db_submission.edr_alerts = []
     db_submission.edr_verdict = ""
