@@ -80,28 +80,47 @@ $ curl http://localhost:8000/api/submissions/1 | jq
   "runtime": 10,
   "drop_path": "",
   "execution_mode": "exec",
-  "user": "admin",
-  "vm_instance_name": null,
-  "vm_ip_address": null,
-  "created_at": "2025-12-19T09:18:14.201803",
-  "updated_at": "2025-12-19T09:20:43.141671",
-  "completed_at": "2025-12-19T09:18:38.121769",
-
+  "server_logs": "[2025-12-25T15:54:19.106464] DB: Submission created\n...",
   "status": "finished",
-  "edr_verdict": "not_detected",
-
-  "server_logs": "[2025-12-19T09:18:14.200832] DB: Submission created...",
-  "agent_logs": "[\"[2025-12-18 20:03:41.772 UTC] DetonatorAgent 0.4 - Starting up..." ],
+  "user": "admin",
+  "agent_logs": "[2025-12-25 15:54:39.306 UTC] information: Exec: Execute request received for file: 74As_U3lf_mimikatz.exe\n...",
   "process_output": {
-    "pid": 78352,
-    "stdout": "\r\nPsExec v2.43 - Execute processes remotely\r\nCopyright (C) 2001-2023 Mark Russinovich\r\n...",
+    "pid": 0,
+    "stdout": "",
     "stderr": ""
   },
-  "rededr_events": "No RedEdr logs available",
-  "rededr_logs": "",
-  "edr_telemetry_raw": "{\"logs\":\"<Events>\\r\\n</Events>\\r\\n\",\"edr_version\":\"Windows Defender 1.0\",\"plugin_version\":\"1.0\"}",
-  "edr_alerts": [],
-  "alerts": [],
+  "rededr_events": null,
+  "rededr_logs": null,
+  "edr_verdict": "detected",
+  "vm_instance_name": null,
+  "vm_ip_address": null,
+  "alerts": [
+    {
+      "id": 2,
+      "alert_id": "{2A4B3551-632C-4CB6-8363-553BF2B43FFB}",
+      "source": "Defender Local Plugin",
+      "title": "HackTool:Win32/Mimikatz!pz",
+      "severity": "High",
+      "category": "Tool",
+      "detection_source": "Real-Time Protection",
+      "detected_at": "2025-12-25T15:54:39.617000",
+      "created_at": "2025-12-25T15:54:49.880929"
+    }
+  ],
+  "file": {
+    "filename": "74As_U3lf_mimikatz.exe",
+    "source_url": "",
+    "comment": "",
+    "exec_arguments": "",
+    "user": "admin",
+    "created_at": "2025-12-25T15:54:19.090903",
+    "id": 14,
+    "file_hash": "61c0810a23580cf492a6ba4f7654566108331e7a4134c968c2d6a05261b2d8a1"
+  },
+  "profile": {...},
+  "created_at": "2025-12-25T15:54:19.106841",
+  "updated_at": "2025-12-25T15:54:52.415311",
+  "completed_at": "2025-12-25T15:54:49.896003"
 }
 ```
 

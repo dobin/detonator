@@ -49,7 +49,6 @@
     </table>
 
     <!-- Logs Tabs -->
-    {% if submission.server_logs or log or submission.edr_alerts %}
     <div class="w-full">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
@@ -79,23 +78,7 @@
                 <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
                     data-tab="execution-logs" onclick="showTab('execution-logs', this)"
                 >
-                    Execution Logs
-                </button>
-                {% endif %}
-
-                {% if submission.edr_alerts %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
-                    data-tab="edr-summary" onclick="showTab('edr-summary', this)"
-                >
-                    EDR Summary
-                </button>
-                {% endif %}
-
-                {% if submission.edr_telemetry_raw %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
-                    data-tab="edr-logs" onclick="showTab('edr-logs', this)"
-                >
-                    EDR Raw
+                    Process Output
                 </button>
                 {% endif %}
 
@@ -119,7 +102,7 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Title</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Threat</th>
                                     <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
                                     <th class="px-3 py-2 text-left font-medium text-gray-700">Category</th>
                                     <th class="px-3 py-2 text-left font-medium text-gray-700">Detection Source</th>
@@ -205,20 +188,6 @@
             </div>
             {% endif %}
             
-            {% if submission.edr_alerts %}
-            <div id="edr-summary" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.edr_alerts }}</pre>
-            </div>
-            {% endif %}
-
-            {% if submission.edr_telemetry_raw %}
-            <div id="edr-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
-                    >{{ submission.edr_telemetry_raw|pretty_json }}</pre>
-            </div>
-            {% endif %}
-
             {% if submission.rededr_logs %}
             <div id="rededr-logs" class="tab-content hidden">
                 <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
@@ -253,7 +222,6 @@
             clickedButton.classList.add('border-blue-500', 'text-blue-600');
         }
     </script>
-    {% endif %}
 </div>
 
 {% else %}

@@ -7,10 +7,11 @@ There are two ways to get the EDR data:
 
 ## Local Log Events
 
-This is implemented by Detonator. See its documentation how to implement it. 
+This is implemented by DetonatorAgent. See its documentation how to implement it. 
 
-The data will be stored in `submission.edr_telemetry_raw` as plain string. Example, for Defender, it
-will look like this (beautified):
+The DetonatorAgent API `/api/logs/edr` will return the data as string.
+
+For example, for Defender, it will look like this (beautified XML):
 ```
 <Event
 	xmlns='http://schemas.microsoft.com/win/2004/08/events/event'>
@@ -76,39 +77,45 @@ will look like this (beautified):
 	</EventData>
 ```
 
-Upon receiving this `submission.edr_telemetry_raw`, Detonator will attempt to parse
-it will all parsers available in `detonatorapi/edr_parser`:
+Detonator will attempt to parse with all parsers available in `detonatorapi/edr_parser/`:
 
 ```
 class EdrParser:
-    def __init__(self):
-        self.edr_data: str = ""
-
-    def load(self, edr_telemetry_raw: str):
-        self.edr_data = edr_telemetry_raw
-        self.events = []
-
-    def is_relevant(self) -> bool:
+    @staticmethod
+    def is_relevant(edr_data: str) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def parse(self) -> bool:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    def get_raw_events(self) -> List[Dict]:
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    def get_edr_alerts(self) -> List[Dict]:
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    def is_detected(self) -> bool:
+    @staticmethod
+    def parse(edr_data: str) -> Tuple[bool, List[SubmissionAlert], bool]:
         raise NotImplementedError("Subclasses must implement this method.")
 ```
 
 To implement your own parser, use `detonatorapi/edr_parser/ExampleParser.py`. 
 
-* `is_relevant()`: Check if the data in `submission.edr_telemetry_raw` is for this parser (e.g. EDR)
-* `get_edr_alerts()`: Returns a summary of `submission.edr_telemetry_raw`, will be stored in `submission.edr_alerts`
-* `is_detected()`: return true if `submission.edr_telemetry_raw` indicate positive detection, will used to indicate `submission.edr_verdict`
+* `is_relevant()`: Check if the data returned by is for this parser / EDR
+* `parse()`: Will generate `SubmissionAlert`s (submission_alerts table in DB)
+
+It will look like this:
+```
+class SubmissionAlert(Base):
+    __tablename__ = "submission_alerts"
+
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False)
+    source: Mapped[str] = Column(String(64), nullable=False)
+    raw: Mapped[str] = Column(Text, nullable=False)
+
+    alert_id: Mapped[str] = Column(String(128), nullable=False)
+    title: Mapped[Optional[str]] = Column(String(256), nullable=False)
+    severity: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    category: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    detection_source: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    detected_at: Mapped[Optional[datetime]] = Column(DateTime, nullable=False)
+    additional_data: Mapped[dict] = Column(JSON, nullable=True)
+
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
+    submission: Mapped[Submission] = relationship("Submission", back_populates="alerts")
+```
 
 
 ## Cloud Log Events
@@ -116,6 +123,22 @@ To implement your own parser, use `detonatorapi/edr_parser/ExampleParser.py`.
 Some EDRs may (also) generate logs not locally, but in the cloud. 
 Detonator can retrieve these logs too. 
 
+See `detonatorapi/edr_cloud/`, mostly with the API: 
 
+```
+class EdrCloud:
+    def __init__(self):
+        self.submission_id: int = 0
 
+    @staticmethod
+    def is_relevant(profile_data: dict) -> bool:
+        return False
+    
+    def start_monitoring_thread(self, submission_id: int):
+        pass
+```
+
+Where: 
+* `is_relevant()`: Checks in the profile if that specific EDR is configured
+* `start_monitoring_thread()`: Starts a thread which will periodically check in the background for new events in the cloud, and translate it into `SubmissionAlert`s in the DB as above. 
 

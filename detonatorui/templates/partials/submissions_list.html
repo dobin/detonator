@@ -60,27 +60,32 @@
                         </div>
                     </div>
                     <div class="col-span-8">
-                        {% if submission.status == "finished" and submission.profile.edr_collector == "RedEdr" %}
-                            RedEdr Logs available.
-                        {% elif submission.edr_verdict != "" %}
-                            <strong>EDR Summary:</strong>
-                            {% if not submission.edr_alerts or submission.edr_alerts|length == 0 %}
-                                <p>
-                                    No related EDR events identified.
-                                </p>
-                            {% else %}
-                                {% for entry in submission.edr_alerts %}
-                                <div>
-                                    {{ entry.name }} - {{ entry.severity }} 
-                                    (<a href="{{ entry.url }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
-                                </div>
-                                <div class="text-gray-500 text-xs mt-2">
-                                    Path: {{ entry.path if entry.path }}
-                                </div>
+                        {% if submission.alerts and submission.alerts|length > 0 %}
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Threat</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                {% for alert in submission.alerts %}
+                                <tr>
+                                    <td class="px-3 py-2">{{ alert.title or 'Defender alert' }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
+                                            {{ alert.severity or 'Unknown' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 py-2 whitespace-nowrap">{{ alert.source or 'N/A' }}</td>
+                                </tr>
                                 {% endfor %}
-                            {% endif %}
+                            </tbody>
+                        </table>
+                        {% elif submission.status == "finished" %}
+                            No detection.
                         {% else %}
-                            <strong>Detonator Logs:</strong>
                             <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{(submission.server_logs.strip().split('\n')[-5:]|join('\n')).strip()}}</pre>
                         {% endif %}
                     </div>

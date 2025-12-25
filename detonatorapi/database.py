@@ -80,8 +80,6 @@ class Submission(Base):
     rededr_logs: Mapped[str] = Column(Text, nullable=True)
     rededr_events: Mapped[str] = Column(Text, nullable=True)
     
-    edr_telemetry_raw: Mapped[str] = Column(Text, default="", nullable=False)
-    edr_alerts: Mapped[list] = Column(JSON, default=[], nullable=False)
     edr_verdict: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure

@@ -1,6 +1,6 @@
 import logging
 import requests
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Type
 import time
 import json
 from datetime import datetime
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 import threading
 
 from detonatorapi.settings import UPLOAD_DIR, AGENT_DATA_GATHER_INTERVAL
-from detonatorapi.database import Submission, get_db_direct
+from detonatorapi.database import Submission, SubmissionAlert, get_db_direct
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log
 from detonatorapi.agent.agent_api import AgentApi, ExecutionFeedback, FeedbackContainer
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
@@ -134,7 +134,6 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission_add_log(thread_db, db_submission, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
     db_submission_add_log(thread_db, db_submission, f"Executing with for {runtime}s and path {drop_path}")
     exec_result = agentApi.ExecFile(filename, file_content, drop_path, exec_arguments, execution_mode)
-    is_malware = False
     if not exec_result:
         db_submission_add_log(thread_db, db_submission, f"Error: When executing file on DetonatorAgent: {exec_result.error_message}")
         # our main task failed. grab the logs from agent to see whats up
@@ -150,8 +149,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
         return False
     executionFeedback: ExecutionFeedback = exec_result.unwrap()
     if executionFeedback == ExecutionFeedback.VIRUS:
-        db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when writing to disk")
-        is_malware = True
+        db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when attempting to execute")
     elif executionFeedback == ExecutionFeedback.OK:
         # process is being executed. 
         db_submission_add_log(thread_db, db_submission, f"Success executing file {filename}")
@@ -159,13 +157,13 @@ def submit_file_to_agent(submission_id: int) -> bool:
         thread_db.commit()
 
         # boot the agent local EDR data gatherer thread
-        # this will regularly update: submission.edr_telemetry_raw 
-        # (especially for long running processes)
+        # this will regularly update: submission.alerts
+        #   (especially for long running processes)
         # BUT: we gonna overwrite it at the end of the function
-        # ALSO: we dont create submission.edr_alerts and submission.edr_verdict in here
+        # ALSO: we dont create submission.alerts and submission.edr_verdict in here
         # ENDS: on submission state change
         db_submission_add_log(thread_db, db_submission, f"Starting local EDR data gatherer")
-        threading.Thread(target=thread_local_edr_gatherer, args=(submission_id, )).start()
+        threading.Thread(target=thread_local_edr_gatherer, args=(submission_id, agentApi )).start()
 
         # boot the relevant EDR Cloud monitoring plugin if any
         edr_cloud_plugin: Optional[EdrCloud] = get_relevant_edr_cloud_plugin(db_submission.profile.data)
@@ -214,7 +212,6 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # Gather logs from Agent
     # After killing the process, so we have all the Agent logs
     agent_logs = agentApi.GetAgentLogs()
-    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()  # always for now
     process_output = agentApi.GetProcessOutput()       # always for now
 
     # we finished 
@@ -227,54 +224,14 @@ def submit_file_to_agent(submission_id: int) -> bool:
             db_submission_add_log(thread_db, db_submission, f"Successfully released lock")
     db_submission_add_log(thread_db, db_submission, f"All information gathered from Agents, processing logs...")
 
-    # Preparse all the logs
-    edr_alerts = []  # will be generated
-    edr_verdict = ""  # will be generated
-    if agent_logs is None:
-        agent_logs = "No Agent logs available"
-        db_submission_add_log(thread_db, db_submission, "Warning: could not get Agent logs from Agent")
-    if process_output is None:
-        process_output = {}
-        db_submission_add_log(thread_db, db_submission, "Warning: could not get Execution logs from Agent")
-    if edr_telemetry_raw is None:
-        edr_verdict = "N/A"
-        edr_telemetry_raw = ""
-        db_submission_add_log(thread_db, db_submission, "Warning: could not get EDR logs from Agent")
-    else:
-        # EDR logs summary
-        edr_parser: Optional[EdrParser] = get_relevant_edr_parser(edr_telemetry_raw)
-        if not edr_parser:
-            db_submission_add_log(thread_db, db_submission, "No suitable EDR parser found for the collected EDR logs")
-        else:
-            db_submission_add_log(thread_db, db_submission, f"Using parser {edr_parser.__class__.__name__} for EDR logs")
-            if edr_parser.parse():
-                edr_alerts = edr_parser.get_edr_alerts()
-                if edr_parser.is_detected():
-                    edr_verdict = "detected"
-                    db_submission_add_log(thread_db, db_submission, "EDR logs indicate: detected")
-                else:
-                    edr_verdict = "not_detected"
-                    db_submission_add_log(thread_db, db_submission, "EDR logs indicate: not detected")
-            else:
-                db_submission_add_log(thread_db, db_submission, "EDR logs could not be parsed")
-
-    # overwrite previous detection for RedEdr, we dont care
-    if db_submission.profile.edr_collector == "RedEdr":
-        edr_verdict = ""
-
-    # if its already detected as malware, make sure the status is set
-    # as we might not have any EDR logs
-    if is_malware:
-        edr_verdict = "file_detected"
+    # EDR local telemetry processing
+    absorb_agent_edr_data(submission_id, agentApi)
 
     # write all logs to the database
     db_submission.process_output = process_output
-    db_submission.edr_telemetry_raw = edr_telemetry_raw
-    db_submission.edr_alerts = edr_alerts
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
     db_submission.rededr_logs = rededr_logs
-    db_submission.edr_verdict = edr_verdict
     db_submission.completed_at = datetime.utcnow()
     thread_db.commit()
     thread_db.close()
@@ -282,23 +239,18 @@ def submit_file_to_agent(submission_id: int) -> bool:
     return True
 
 
-def thread_local_edr_gatherer(submission_id: int):
+def thread_local_edr_gatherer(submission_id: int, agentApi: AgentApi):
     db = get_db_direct()
-
-    db_submission = db.get(Submission, submission_id)
-    if not db_submission:
-        logger.error(f"Submission {submission_id} not found")
-        db.close()
-        return
-
-    # get agent IP and port
-    agent_ip, agent_port = get_agent_ip_port(db_submission)
-    agentApi = AgentApi(agent_ip, agent_port)
 
     while True:
         db_submission = db.get(Submission, submission_id)
         if not db_submission:
             break
+
+        logger.info(f"Local EDR data gatherer for submission: {submission_id}: {db_submission.status}")
+
+        # Force reload from database to bypass SQLAlchemy cache ffs
+        db.refresh(db_submission)
 
         # If submission is finished, we are so too
         if db_submission.status in ("error", "finished"):
@@ -311,13 +263,63 @@ def thread_local_edr_gatherer(submission_id: int):
         
         # Update DB with latest EDR local logs
         logger.info(f"Gather local EDR logs for submission {db_submission.id}")
-        edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()
-        db_submission.edr_telemetry_raw = edr_telemetry_raw
-        db.commit()
+        absorb_agent_edr_data(submission_id, agentApi)
 
         # wait a bit for next time
         time.sleep(AGENT_DATA_GATHER_INTERVAL)
 
+    db.close()
+
+
+def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
+    # Gather logs from Agent
+    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()  # always for now
+    if edr_telemetry_raw is None:
+        logger.warning(f"Submission {submission_id}: could not get EDR logs from Agent")
+        return
+
+    # Get the correct parser    
+    edr_parser: Optional[Type[EdrParser]] = get_relevant_edr_parser(edr_telemetry_raw)
+    if not edr_parser:
+        logger.info(f"Submission {submission_id}: No suitable EDR parser found for the collected EDR logs")
+        return
+    
+    # parse
+    logger.info(f"Submission {submission_id}: Using parser {edr_parser.__name__} for EDR logs")
+    ok, alerts, is_detected = edr_parser.parse(edr_telemetry_raw)
+    if not ok:
+        logger.info(f"Submission {submission_id}: EDR logs could not be parsed")
+        return
+
+    # insert all non-existing alerts into DB
+    db = get_db_direct()
+    db_submission: Submission = db.get(Submission, submission_id)
+    if not db_submission:
+        logger.error(f"Submission {submission_id} not found")
+        db.close()
+        return
+    
+    for alert in alerts:
+        exists = False
+        for existing_alert in db_submission.alerts:
+            if existing_alert.alert_id == alert.alert_id:
+                exists = True
+                break
+        if exists:
+            continue
+
+        logger.info(f"Submission {db_submission.id}: New EDR alert: {alert.alert_id} - {alert.title}")
+        db_submission.alerts.append(alert)
+
+    if is_detected:
+        logger.info(f"Submission {db_submission.id}: EDR logs indicate: detected")
+        edr_verdict = "detected"
+    else:
+        logger.info(f"Submission {db_submission.id}: EDR logs indicate: not detected")
+        edr_verdict = "not_detected"
+
+    db_submission.edr_verdict = edr_verdict
+    db.commit()
     db.close()
 
 

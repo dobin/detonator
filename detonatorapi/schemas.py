@@ -129,8 +129,6 @@ class SubmissionResponse(BaseModel):
     process_output: Optional[dict] = None
     rededr_events: Optional[str] = None
     rededr_logs: Optional[str] = None
-    edr_telemetry_raw: Optional[str] = None
-    edr_alerts: Optional[list] = None
     edr_verdict: Optional[str] = None
 
     vm_instance_name: Optional[str] = None

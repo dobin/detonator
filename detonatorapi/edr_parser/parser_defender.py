@@ -1,9 +1,12 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import xml.etree.ElementTree as ET
 import logging
 import json
 import urllib.parse
+from datetime import datetime
+
 from .edr_parser import EdrParser
+from detonatorapi.database import get_db_direct, Submission, SubmissionAlert, Profile
 
 logger = logging.getLogger(__name__)
 
@@ -29,31 +32,23 @@ def parse_windows_event(event):
 
 
 class DefenderParser(EdrParser):
-    def __init__(self):
-        self.edr_data = ""
-        self.events: List[Dict] = []  # by self.parse()
-
-
-    def load(self, edr_telemetry_raw: str):
-        self.events = []
-        self.edr_data = edr_telemetry_raw
-
-
-    def is_relevant(self) -> bool:
+    @staticmethod
+    def is_relevant(edr_data: str) -> bool:
         #return 'http://schemas.microsoft.com/win/2004/08/events/event' in self.edr_data
-        return '<Events>' in self.edr_data
+        return '<Events>' in edr_data
 
-
-    def parse(self) -> bool:
-        xml_string: str = self.edr_data
-        if not xml_string or xml_string.strip() == "":
+    @staticmethod
+    def parse(edr_data: str) -> Tuple[bool, List[SubmissionAlert], bool]:
+        if not edr_data or edr_data.strip() == "":
             logger.warning("No XML data provided for parsing.")
-
-        # important
-        xml_string = xml_string.replace("xmlns='http://schemas.microsoft.com/win/2004/08/events/event'", "")
-
+            return False, [], False
+    
         # parse the XML
-        xml_root = ET.fromstring(xml_string)
+        # important
+        edr_data = edr_data.replace("xmlns='http://schemas.microsoft.com/win/2004/08/events/event'", "")
+        xml_root = ET.fromstring(edr_data)
+
+        alerts: List[SubmissionAlert] = []
         for xml_event in xml_root.findall('Event'):
             parsed_event: Dict = parse_windows_event(xml_event)
             event_data = parsed_event.get("EventData", {})
@@ -62,68 +57,41 @@ class DefenderParser(EdrParser):
             if not 'Threat ID' in event_data:
                 continue
 
+            detection_id = event_data.get("Detection ID", "Unknown")
             category_name = event_data.get("Category Name", "Unknown")
-            detection_time = event_data.get("Detection Time", "Unknown")
-            engine_version = event_data.get("Engine Version", "Unknown")
-            detection_time = event_data.get("Detection Time", "Unknown")
-            detection_user = event_data.get("Detection User", "Unknown")
-            product_version = event_data.get("Product Version", "Unknown")
-            severity_id = event_data.get("Severity ID", "Unknown")
+            detection_time_str = event_data.get("Detection Time", "Unknown")
             severity_name = event_data.get("Severity Name", "Unknown")
-            threat_id = event_data.get("Threat ID", "Unknown")
             threat_name = event_data.get("Threat Name", "Unknown")
-            type_id = event_data.get("Type ID", "Unknown")
-            type_name = event_data.get("Type Name", "Unknown")
-            path = str(event_data.get("Path", "Unknown"))
-            event = {
-                "category_name": category_name,
-                "detection_time": detection_time,
-                "engine_version": engine_version,
-                "detection_user": detection_user,
-                "product_version": product_version,
-                "severity_id": severity_id,
-                "severity_name": severity_name,
-                "threat_id": threat_id,
-                "threat_name": threat_name,
-                "type_id": type_id,
-                "type_name": type_name,
-                "path": path,
-            }
+            source_name = event_data.get("Source Name", "Unknown")
 
-            # check if we didnt already have this event in self.events
-            if not any(e.get('threat_name') == threat_name for e in self.events):
-                self.events.append(event)
-                                                                 
-        return True
-    
+            # Convert detection time to datetime object
+            detection_time: datetime | None = None
+            if detection_time_str != "Unknown":
+                try:
+                    # Parse ISO 8601 format: 2025-07-04T14:55:37.511Z
+                    detection_time = datetime.fromisoformat(detection_time_str.replace('Z', '+00:00'))
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Failed to parse detection time '{detection_time_str}': {e}")
+                    detection_time = None
 
-    def get_raw_events(self) -> List[Dict]:
-        return self.events
-    
+            submission_alert = SubmissionAlert(
+                submission_id = 0,
+                source = "Defender Local Plugin",
+                raw = json.dumps(event_data),
+                
+                alert_id = detection_id,
+                title = threat_name,
+                severity = severity_name,
+                category = category_name,
 
-    def get_edr_alerts(self) -> List[Dict]:
-        edr_alerts: List[Dict] = []
+                detection_source = source_name,
+                detected_at = detection_time,
+                additional_data = {},
+            )
+            alerts.append(submission_alert)
 
-        if len(self.events) == 0:
-            return []
+        is_detected = False
+        if 'Suspicious' in edr_data or 'Threat ID' in edr_data:
+            is_detected = True
 
-        for event in self.events:
-            # Behavior:Win32/Meterpreter.gen!A
-            threat_name_short = event.get('threat_name', '')
-            if ':' in threat_name_short:
-                threat_name_short = threat_name_short.split(':', 1)[1].strip()
-            threat_name_short_urlencoded = urllib.parse.quote(threat_name_short)
-            url = f"https://defendersearch.r00ted.ch/search?threat_name={threat_name_short_urlencoded}"
-
-            summary_entry = {
-                "name": event.get('threat_name', '?'),
-                "severity": event.get('severity_name', '?'),
-                "path": event.get('path', '?'),
-                "url": url
-            }
-            edr_alerts.append(summary_entry)
-        return edr_alerts
-
-
-    def is_detected(self) -> bool:
-        return 'Suspicious' in self.edr_data or 'Threat ID' in self.edr_data
+        return True, alerts, is_detected

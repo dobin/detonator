@@ -187,6 +187,7 @@ class CloudMdePlugin(EdrCloud):
                 title=alert.get("Title"),
                 severity=alert.get("Severity"),
                 category=",".join(alert.get("Categories", [])),  # it seems to be a list, even with one entry
+                
                 detection_source=alert.get("DetectionSource"),
                 detected_at=detected_dt,
                 additional_data={},

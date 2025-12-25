@@ -1,26 +1,13 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
+
+from detonatorapi.database import SubmissionAlert
 
 
 class EdrParser:
-    def __init__(self):
-        self.edr_data: str = ""
-
-    def load(self, edr_telemetry_raw: str):
-        self.edr_data = edr_telemetry_raw
-        self.events = []
-
-    def is_relevant(self) -> bool:
+    @staticmethod
+    def is_relevant(edr_data: str) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def parse(self) -> bool:
+    @staticmethod
+    def parse(edr_data: str) -> Tuple[bool, List[SubmissionAlert], bool]:
         raise NotImplementedError("Subclasses must implement this method.")
-
-    def get_raw_events(self) -> List[Dict]:
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    def get_edr_alerts(self) -> List[Dict]:
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    def is_detected(self) -> bool:
-        raise NotImplementedError("Subclasses must implement this method.")
-
