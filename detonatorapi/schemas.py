@@ -126,7 +126,7 @@ class SubmissionResponse(BaseModel):
     user: str = ""
 
     agent_logs: Optional[str] = None
-    process_output: Optional[dict] = None
+    process_output: Optional[str] = None
     rededr_events: Optional[str] = None
     rededr_logs: Optional[str] = None
     edr_verdict: Optional[str] = None

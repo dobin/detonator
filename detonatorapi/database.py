@@ -75,12 +75,10 @@ class Submission(Base):
     # OUT
     server_logs: Mapped[str] = Column(Text, nullable=False)
     agent_logs: Mapped[str] = Column(Text, default="", nullable=False)
-    process_output: Mapped[dict] = Column(JSON, default={}, nullable=False)
-
+    process_output: Mapped[str] = Column(Text, nullable=True)
+    edr_verdict: Mapped[str] = Column(Text, default="", nullable=False)
     rededr_logs: Mapped[str] = Column(Text, nullable=True)
     rededr_events: Mapped[str] = Column(Text, nullable=True)
-    
-    edr_verdict: Mapped[str] = Column(Text, default="", nullable=False)
     
     # Set by Instantiate, for Azure
     # TEMP

@@ -249,7 +249,7 @@ async def resubmission(
 
     # and all the possile fields
     db_submission.server_logs = ""
-    db_submission.process_output = {}
+    db_submission.process_output = None
     db_submission.agent_logs = ""
     db_submission.rededr_events = None
     db_submission.rededr_logs = None

@@ -254,7 +254,7 @@ def thread_local_edr_gatherer(submission_id: int, agentApi: AgentApi):
 
         # If submission is finished, we are so too
         if db_submission.status in ("error", "finished"):
-            logger.warning(f"Submission {db_submission.id} is finished, stopping agent data gatherer")
+            logger.info(f"Submission {db_submission.id} is finished, stopping agent data gatherer")
             break
         # but actually, only when the VM is alive ("processing")
         if db_submission.status not in ("processing"):

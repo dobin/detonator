@@ -157,34 +157,9 @@
             
             {% if submission.process_output %}
             <div id="execution-logs" class="tab-content hidden">
-                {% if submission.process_output is mapping %}
-                <div class="space-y-3">
-                    {% if submission.process_output.pid %}
-                    <div>
-                        <div class="text-xs font-semibold text-gray-600 mb-1">PID: (if available)</div>
-                        <div class="bg-gray-100 p-2 rounded text-sm">{{ submission.process_output.pid }}</div>
-                    </div>
-                    {% endif %}
-                    
-                    {% if submission.process_output.stdout %}
-                    <div>
-                        <div class="text-xs font-semibold text-gray-600 mb-1">STDOUT: (gathered on process exit)</div>
-                        <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full">{{ submission.process_output.stdout }}</pre>
-                    </div>
-                    {% endif %}
-                    
-                    {% if submission.process_output.stderr %}
-                    <div>
-                        <div class="text-xs font-semibold text-gray-600 mb-1">STDERR:</div>
-                        <pre class="bg-red-50 p-2 rounded text-sm overflow-y-auto w-full text-red-800">{{ submission.process_output.stderr }}</pre>
-                    </div>
-                    {% endif %}
-                </div>
-                {% else %}
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.process_output|pretty_json }}
+                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom>
+                    {{ submission.process_output }}
                 </pre>
-                {% endif %}
             </div>
             {% endif %}
             

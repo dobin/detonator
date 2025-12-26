@@ -84,11 +84,7 @@ $ curl http://localhost:8000/api/submissions/1 | jq
   "status": "finished",
   "user": "admin",
   "agent_logs": "[2025-12-25 15:54:39.306 UTC] information: Exec: Execute request received for file: 74As_U3lf_mimikatz.exe\n...",
-  "process_output": {
-    "pid": 0,
-    "stdout": "",
-    "stderr": ""
-  },
+  "process_output": "",
   "rededr_events": null,
   "rededr_logs": null,
   "edr_verdict": "detected",
