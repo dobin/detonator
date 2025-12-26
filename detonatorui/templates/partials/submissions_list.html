@@ -97,9 +97,8 @@
                 {% if submission.has_rededr_events %}
                 <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
                 {% endif %}
-                {% if submission.status == "error" %}
-                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" title="Resubmission">Resubmission</button>
-                {% endif %}
+
+                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" title="Resubmit">Resubmit</button>
                 <button data-auth-required onclick="deleteSubmission({{ submission.id }})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" title="Delete Submission">Delete</button>
             </div>
         </div>

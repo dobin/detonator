@@ -132,6 +132,12 @@
     <script>
         // Authentication helper functions
         function isAuthenticated() {
+            // If no auth is configured, always return true
+            if (! AUTH_ENABLED) {
+                return true;
+            }
+
+            // Otherwise check for stored password
             return !!localStorage.getItem('detonator_auth_password');
         }
 
