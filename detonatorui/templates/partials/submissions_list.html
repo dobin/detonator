@@ -69,10 +69,13 @@
                                     <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 bg-white">
+                            <tbody class="divide-y divide-gray-200">
                                 {% for alert in submission.alerts %}
                                 <tr>
-                                    <td class="px-3 py-2">{{ alert.title or 'Defender alert' }}</td>
+                                    <td class="px-3 py-2">
+                                        {{ alert.title or 'Defender alert' }}
+                                        (<a href="https://defendersearch.r00ted.ch/search?threat_name={{ alert.title }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
+                                    </td>
                                     <td class="px-3 py-2 whitespace-nowrap">
                                         <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
                                             {{ alert.severity or 'Unknown' }}
