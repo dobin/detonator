@@ -12,14 +12,14 @@
                 <div class="flex items-center space-x-3 mb-2">
                     <h3 class="font-semibold text-lg">Submission #{{ submission.id }}</h3>
                     <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}"> 
-                        Submission: {{ submission.status }}
+                        {{ submission.status }}
                     </span>
                 </div>
 
                 <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-light rounded">
                     <div class="col-span-4">
                         <p class="text-secondary text-sm">
-                            File: {{ submission.file.filename }} 
+                            <strong>{{ submission.file.filename }}</strong> 
                             <a href="/files/{{ submission.file_id }}" class="link-info hover:underline">
                                 ({{ submission.file_id }})
                             </a>
@@ -35,10 +35,7 @@
                         <p class="text-secondary text-sm">Submission Comment: {{ submission.comment }}</p>
                         {% endif %}
                         {% if submission.profile %}
-                        <p class="text-secondary text-sm">Profile: {{ submission.profile.name }}</p>
-                        {% endif %}
-                        {% if submission.runtime %}
-                        <p class="text-secondary text-sm">Runtime: {{ submission.runtime }} seconds</p>
+                        <p class="text-secondary text-sm">Executed @ {{ submission.profile.name }} (for {{submission.runtime}}s)</p>
                         {% endif %}
                         {% if submission.drop_path %}
                         <p class="text-secondary text-sm">Malware Path: {{ submission.drop_path }}</p>
@@ -48,14 +45,13 @@
                         <p class="text-secondary text-sm">VM IP: {{ submission.vm_ip_address }}</p>
                         {% endif %}
                         {% if submission.edr_verdict %}
-                        <p class="text-label mt-2"><strong>Result:</strong> 
+                        <p class="text-label mt-2">
                             <span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span>
                         </p>
                         {% endif %}
                         
                         <div class="text-description text-xs mt-2">
                             <p>Created: {{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                            <p>Updated: {{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                             {% if submission.completed_at %}
                             <p>Completed: {{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                             {% endif %}
