@@ -1,34 +1,34 @@
 {% if templates %}
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+        <thead class="bg-subtle">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connector</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EDR</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RedEdr Port</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Connector</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">EDR</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Port</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">RedEdr Port</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Details</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Password</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Actions</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-table divide-y divide-dark">
             {% for template_name, template in templates.items() %}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-table-hover">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ template_name }}</div>
+                    <div class="text-sm font-medium text-heading">{{ template_name }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ template.connector }}</div>
+                    <div class="text-sm text-heading">{{ template.connector }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ template.edr_collector or 'N/A' }}</div>
+                    <div class="text-sm text-heading">{{ template.edr_collector or 'N/A' }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-900">{{ template.port or 'N/A' }}</span>
+                        <span class="text-sm text-heading">{{ template.port or 'N/A' }}</span>
                         {% if template.available == "Reachable" %}
                             <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" title="Reachable">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -38,7 +38,7 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                             </svg>
                         {% elif template.available == "In use" %}
-                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20" title="In use">
+                            <svg class="w-4 h-4 icon-active" fill="currentColor" viewBox="0 0 20 20" title="In use">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
                             </svg>
                         {% endif %}
@@ -46,7 +46,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-2">
-                        <span class="text-sm text-gray-900">{{ template.rededr_port or '-' }}</span>
+                        <span class="text-sm text-heading">{{ template.rededr_port or '-' }}</span>
                         {% if template.rededr_port %}
                             {% if template.rededr_available == "Reachable" %}
                                 <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20" title="Reachable">
@@ -57,7 +57,7 @@
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                 </svg>
                             {% elif template.rededr_available == "In use" %}
-                                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20" title="In use">
+                                <svg class="w-4 h-4 icon-active" fill="currentColor" viewBox="0 0 20 20" title="In use">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
                                 </svg>
                             {% endif %}
@@ -65,27 +65,27 @@
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">
+                    <div class="text-sm text-heading">
                         {% if template.status %}
                             <div class="mb-1">Status: {{ template.status }}</div>
                         {% endif %}
                         {% if template.default_drop_path %}
-                            <div class="text-xs text-gray-500 mt-1">DropPath: {{ template.default_drop_path }}</div>
+                            <div class="text-xs text-description mt-1">DropPath: {{ template.default_drop_path }}</div>
                         {% endif %}
                     </div>
                 </td>
                 <td class="px-6 py-4">
                     {% if template.comment %}
-                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
                     {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-muted">-</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4">
                     {% if template.require_password %}
-                        <div class="text-sm text-gray-900">Yes</div>
+                        <div class="text-sm text-heading">Yes</div>
                     {% else %}
-                        <span class="text-gray-400">No</span>
+                        <span class="text-muted">No</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -94,7 +94,7 @@
                         <button 
                             data-auth-required
                             onclick="editProfileById({{ template.id }}, '{{ template_name }}')"
-                            class="text-blue-600 hover:text-blue-900" 
+                            class="link-info hover:underline" 
                             title="Edit Profile">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -149,8 +149,8 @@
 </div>
 {% else %}
 <div class="text-center py-12">
-    <div class="text-gray-400 text-6xl mb-4">🛡️</div>
-    <h3 class="text-lg font-medium text-gray-900 mb-2">No Profiles Found</h3>
-    <p class="text-gray-500">No profiles are currently configured.</p>
+    <div class="text-muted text-6xl mb-4">🛡️</div>
+    <h3 class="text-lg font-medium text-heading mb-2">No Profiles Found</h3>
+    <p class="text-description">No profiles are currently configured.</p>
 </div>
 {% endif %}

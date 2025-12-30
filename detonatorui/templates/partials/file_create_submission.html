@@ -1,18 +1,18 @@
 {% if file %}
 <div class="space-y-4">
-    <div class="border-b border-gray-200 pb-4">
-        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+    <div class="border-b border-card pb-4">
+        <div class="mt-2 p-3 info-box rounded-md">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="h-5 w-5 info-box-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 <div class="ml-3">
-                    <p class="mt-1 text-sm text-blue-700">
+                    <p class="mt-1 text-sm info-box-text">
                         <strong>{{ file.filename }}</strong><br>
                         {% if file.comment %}Comment: {{ file.comment }}<br>{% endif %}
-                        {% if file.exec_arguments %}exec_arguments: <code class="bg-gray-100 px-1 rounded">{{ file.exec_arguments }}</code><br>{% endif %}
+                        {% if file.exec_arguments %}exec_arguments: <code class="bg-code px-1 rounded">{{ file.exec_arguments }}</code><br>{% endif %}
                         Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}
                     </p>
                 </div>
@@ -29,7 +29,7 @@
     >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="submission_comment" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="submission_comment" class="block text-sm font-medium text-label mb-1">
                     Submission Comment (optional)
                 </label>
                 <textarea 
@@ -37,11 +37,11 @@
                     name="comment" 
                     rows="2"
                     placeholder="e.g., Check if sgn works against elastic"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="input"
                 ></textarea>
             </div>
             <div>
-                <label for="project" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="project" class="block text-sm font-medium text-label mb-1">
                     Submission Project (optional)
                 </label>
                 <input 
@@ -49,20 +49,20 @@
                     id="project" 
                     name="project" 
                     placeholder="e.g., metasploit_1 research"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="input"
                 >
             </div>
         </div>
         
         <div>
-            <label for="profile_name" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="profile_name" class="block text-sm font-medium text-label mb-1">
                 Profile *
             </label>
             <select 
                 id="profile_name" 
                 name="profile_name"
                 required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
                 <option value="">Select a profile...</option>
                 {% for profile_name, profile in profiles.items() %}
@@ -80,7 +80,7 @@
         
         <!-- Password field - initially hidden -->
         <div id="password_field" class="hidden">
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="password" class="block text-sm font-medium text-label mb-1">
                 Password *
             </label>
             <input 
@@ -88,13 +88,13 @@
                 id="password" 
                 name="password" 
                 placeholder="Enter profile password"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-            <p class="mt-1 text-xs text-gray-500">This profile requires a password for authentication</p>
+            <p class="mt-1 text-xs text-description">This profile requires a password for authentication</p>
         </div>
 
         <div>
-            <label for="runtime_seconds" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="runtime_seconds" class="block text-sm font-medium text-label mb-1">
                 Runtime (seconds)
             </label>
             <input 
@@ -105,16 +105,16 @@
                 max="7200" 
                 step="10" 
                 value="10"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-description">
                 Accepted range: 10 - 7200 seconds. Default 10 seconds.
             </p>
         </div>
 
         <!-- Malware path field -->
         <div>
-            <label for="drop_path" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="drop_path" class="block text-sm font-medium text-label mb-1">
                 Malware Path (optional)
             </label>
             <input 
@@ -122,25 +122,25 @@
                 id="drop_path" 
                 name="drop_path" 
                 placeholder="e.g., C:\Users\Public\"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-            <p class="mt-1 text-xs text-gray-500">Specify the target path where the malware should be executed on the VM</p>
+            <p class="mt-1 text-xs text-description">Specify the target path where the malware should be executed on the VM</p>
         </div>
 
         <!-- Execution Mode -->
         <div>
-            <label for="execution_mode" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="execution_mode" class="block text-sm font-medium text-label mb-1">
                 Execution Mode
             </label>
             <select 
                 id="execution_mode" 
                 name="execution_mode"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-                <option value="exec" selected>exec - Direct execution</option>
-                <option value="autoit">autoit - Execute via AutoIt</option>
+                <option value="exec" selected>Direct</option>
+                <option value="autoit">AutoIt</option>
             </select>
-            <p class="mt-1 text-xs text-gray-500">Select how the malware should be executed on the virtual machine</p>
+            <p class="mt-1 text-xs text-description">Select how the malware should be executed on the virtual machine</p>
         </div>
         
         <div id="edr_template_info_container"></div>
@@ -148,7 +148,7 @@
         <div class="flex space-x-4 pt-4">
             <button 
                 type="submit" 
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex-1"
+                class="btn-primary flex-1"
             >
                 <span id="submission-loading" class="hidden">Creating...</span>
                 <span id="submission-button-text">Create Submission</span>
@@ -156,7 +156,7 @@
             <button 
                 type="button" 
                 onclick="closeCreateSubmissionModal()"
-                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                class="btn-gray"
             >
                 Cancel
             </button>
@@ -187,16 +187,16 @@
         // Add template description if a template is selected
         if (templateSelect.value && description) {
             container.innerHTML = `
-                <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div class="p-3 info-box rounded-md">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="h-5 w-5 info-box-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h4 class="text-sm font-medium text-blue-800">${selectedOption.text}</h4>
-                            <p class="mt-1 text-sm text-blue-700">${description}</p>
+                            <h4 class="text-sm font-medium info-box-text">${selectedOption.text}</h4>
+                            <p class="mt-1 text-sm info-box-text">${description}</p>
                         </div>
                     </div>
                 </div>
@@ -241,10 +241,10 @@
                             </div>
                             <div class="mt-4">
                                 <div class="flex space-x-2">
-                                    <button onclick="closeCreateSubmissionModal(); htmx.trigger('#files-container', 'load');" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                    <button onclick="closeCreateSubmissionModal(); htmx.trigger('#files-container', 'load');" class="btn-success text-sm">
                                         Close & Refresh
                                     </button>
-                                    <a href="/submissions" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 inline-block">
+                                    <a href="/submissions" class="btn-info text-sm inline-block">
                                         View All Submissions
                                     </a>
                                 </div>

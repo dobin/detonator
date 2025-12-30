@@ -5,18 +5,15 @@
 {% block content %}
 <div class="mx-auto">
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="card card-header mb-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-800">Submissions Table</h2>
+            <h2 class="text-2xl font-bold text-heading">Submissions Table</h2>
             <div class="space-x-3">
                 <button 
                     onclick="refreshTable()"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    class="btn-outline">
                     Refresh
                 </button>
-                <a href="/submissions" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-                    Card View
-                </a>
             </div>
         </div>
         
@@ -24,19 +21,19 @@
         <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-end">
             <!-- Search Bar -->
             <div class="flex-1">
-                <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <label for="search-input" class="block text-sm font-medium text-label mb-1">Search</label>
                 <input 
                     type="text" 
                     id="search-input"
-                    placeholder="Search by project, submission comment, file comment, or filename..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder=""
+                    class="input"
                 />
             </div>
             
             <!-- Status Filter -->
             <div class="w-full md:w-40">
-                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select id="status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="status-filter" class="block text-sm font-medium text-label mb-1">Status</label>
+                <select id="status-filter" class="select">
                     <option value="all">All Statuses</option>
                     <option value="fresh">Fresh</option>
                     <option value="running">Running</option>
@@ -47,19 +44,19 @@
             
             <!-- Project Filter -->
             <div class="w-full md:w-48">
-                <label for="project-filter" class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                <label for="project-filter" class="block text-sm font-medium text-label mb-1">Project</label>
                 <input 
                     type="text" 
                     id="project-filter"
-                    placeholder="Filter by project..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder=""
+                    class="input"
                 />
             </div>
             
             <!-- User Filter -->
             <div class="w-full md:w-32">
-                <label for="user-filter" class="block text-sm font-medium text-gray-700 mb-1">User</label>
-                <select id="user-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="user-filter" class="block text-sm font-medium text-label mb-1">User</label>
+                <select id="user-filter" class="select">
                     <option value="all">All</option>
                     <option value="guest" {% if AUTH_ENABLED %}selected{% endif %}>Guest</option>
                     <option value="admin">Admin</option>
@@ -68,8 +65,8 @@
             
             <!-- Limit Filter -->
             <div class="w-full md:w-32">
-                <label for="limit-filter" class="block text-sm font-medium text-gray-700 mb-1">Limit</label>
-                <select id="limit-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="limit-filter" class="block text-sm font-medium text-label mb-1">Limit</label>
+                <select id="limit-filter" class="select">
                     <option value="5">5</option>
                     <option value="10" selected>10</option>
                     <option value="25">25</option>
@@ -82,7 +79,7 @@
             <div>
                 <button 
                     onclick="clearFilters()"
-                    class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                    class="btn-outline"
                 >
                     Clear
                 </button>
@@ -91,11 +88,11 @@
     </div>
 
     <!-- Submissions Table Container -->
-    <div class="bg-white rounded-lg shadow">
+    <div class="card">
         <div id="submissions-table-container">
             <div class="p-6 text-center">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                <p class="mt-2 text-gray-500">Loading submissions...</p>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 spinner-border mx-auto"></div>
+                <p class="mt-2 text-description">Loading submissions...</p>
             </div>
         </div>
     </div>

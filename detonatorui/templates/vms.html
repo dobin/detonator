@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="card card-header">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Azure Virtual Machines</h2>
+            <h2 class="text-2xl font-bold text-heading">Azure Virtual Machines</h2>
             <button 
                 hx-get="/templates/vms" 
                 hx-target="#vms-list"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                class="btn-primary">
                 Refresh
             </button>
         </div>
@@ -20,8 +20,8 @@
              hx-trigger="load, every 3s"
              hx-swap="innerHTML">
             <div class="text-center py-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p class="mt-2 text-gray-600">Loading VMs...</p>
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 spinner-border"></div>
+                <p class="mt-2 text-secondary">Loading VMs...</p>
             </div>
         </div>
     </div>

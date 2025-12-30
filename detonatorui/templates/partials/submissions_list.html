@@ -1,57 +1,59 @@
 {% if submissions|length == 0 %}
-<div class="text-center text-gray-500 py-8">
-    No submissions found. <a href="/upload" class="text-blue-500 hover:underline">Upload a file</a> to start analysis.
+<div class="text-center text-description py-8">
+    No submissions found. <a href="/upload" class="link-info hover:underline">Upload a file</a> to start analysis.
 </div>
 {% else %}
 
 <div class="grid grid-cols-1 gap-4">
     {% for submission in submissions %}
-    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="border border-card rounded-lg p-4 hover:shadow-md transition-shadow">
         <div class="flex justify-between items-start">
             <div class="flex-1">
                 <div class="flex items-center space-x-3 mb-2">
-                    <h3 class="font-semibold text-lg"><a href="/submissions/{{ submission.id }}" class="text-blue-600 hover:underline">Submission #{{ submission.id }}</a></h3>
-                    <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}"> Submission: {{ submission.status }}</span>
+                    <h3 class="font-semibold text-lg">Submission #{{ submission.id }}</h3>
+                    <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}"> 
+                        Submission: {{ submission.status }}
+                    </span>
                 </div>
 
-                <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 rounded">
+                <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-light rounded">
                     <div class="col-span-4">
-                        <p class="text-gray-600 text-sm">
+                        <p class="text-secondary text-sm">
                             File: {{ submission.file.filename }} 
-                            <a href="/files/{{ submission.file_id }}" class="text-blue-500 hover:underline">
+                            <a href="/files/{{ submission.file_id }}" class="link-info hover:underline">
                                 ({{ submission.file_id }})
                             </a>
                         </p>
                         {% if submission.file and submission.file.comment %}
-                        <p class="text-gray-600 text-sm">File Comment: {{ submission.file.comment }}</p>
+                        <p class="text-secondary text-sm">File Comment: {{ submission.file.comment }}</p>
                         {% endif %}
 
                         {% if submission.project %}
-                        <p class="text-gray-600 text-sm">Submission project: {{ submission.project }}</p>
+                        <p class="text-secondary text-sm">Submission project: {{ submission.project }}</p>
                         {% endif %}
                         {% if submission.comment %}
-                        <p class="text-gray-600 text-sm">Submission Comment: {{ submission.comment }}</p>
+                        <p class="text-secondary text-sm">Submission Comment: {{ submission.comment }}</p>
                         {% endif %}
                         {% if submission.profile %}
-                        <p class="text-gray-600 text-sm">Profile: {{ submission.profile.name }}</p>
+                        <p class="text-secondary text-sm">Profile: {{ submission.profile.name }}</p>
                         {% endif %}
                         {% if submission.runtime %}
-                        <p class="text-gray-600 text-sm">Runtime: {{ submission.runtime }} seconds</p>
+                        <p class="text-secondary text-sm">Runtime: {{ submission.runtime }} seconds</p>
                         {% endif %}
                         {% if submission.drop_path %}
-                        <p class="text-gray-600 text-sm">Malware Path: {{ submission.drop_path }}</p>
+                        <p class="text-secondary text-sm">Malware Path: {{ submission.drop_path }}</p>
                         {% endif %}
 
                         {% if submission.vm_ip_address %}
-                        <p class="text-gray-600 text-sm">VM IP: {{ submission.vm_ip_address }}</p>
+                        <p class="text-secondary text-sm">VM IP: {{ submission.vm_ip_address }}</p>
                         {% endif %}
                         {% if submission.edr_verdict %}
-                        <p class="text-gray-700 mt-2"><strong>Result:</strong> 
+                        <p class="text-label mt-2"><strong>Result:</strong> 
                             <span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span>
                         </p>
                         {% endif %}
                         
-                        <div class="text-gray-500 text-xs mt-2">
+                        <div class="text-description text-xs mt-2">
                             <p>Created: {{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                             <p>Updated: {{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                             {% if submission.completed_at %}
@@ -62,11 +64,11 @@
                     <div class="col-span-8">
                         {% if submission.alerts and submission.alerts|length > 0 %}
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Threat</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Threat</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Severity</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Source</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -74,7 +76,7 @@
                                 <tr>
                                     <td class="px-3 py-2">
                                         {{ alert.title or 'Defender alert' }}
-                                        (<a href="https://defendersearch.r00ted.ch/search?threat_name={{ alert.title }}" class="text-blue-500 hover:underline" target="_blank">DefenderDB</a>)
+                                        (<a href="https://defendersearch.r00ted.ch/search?threat_name={{ alert.title }}" class="link-info hover:underline" target="_blank">DefenderDB</a>)
                                     </td>
                                     <td class="px-3 py-2 whitespace-nowrap">
                                         <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
@@ -89,20 +91,23 @@
                         {% elif submission.status == "finished" %}
                             No detection.
                         {% else %}
-                            <pre class="bg-gray-100 p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom>{{(submission.server_logs.strip().split('\n')[-5:]|join('\n')).strip()}}</pre>
+                            <pre class="bg-card-header p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
+                                >{{(submission.server_logs.strip().split('\n')[-5:]|join('\n')).strip()}}
+                            </pre>
                         {% endif %}
                     </div>
                 </div>
             </div>
             
             <div class="flex flex-col space-y-2 ml-4">
-                <button onclick="viewSubmissionDetails({{ submission.id }})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">View Details</button>
+                <button onclick="viewSubmissionDetails({{ submission.id }})" class="btn-primary text-sm">View</button>
+                <button onclick="window.location.href='/submissions/{{ submission.id }}'" class="btn-primary text-sm">Open</button>
                 {% if submission.has_rededr_events %}
-                <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
+                <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
                 {% endif %}
 
-                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" title="Resubmit">Resubmit</button>
-                <button data-auth-required onclick="deleteSubmission({{ submission.id }})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" title="Delete Submission">Delete</button>
+                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="px-3 py-1 rounded text-sm text-white" style="background-color: var(--warning);" title="Resubmit">Resubmit</button>
+                <button data-auth-required onclick="deleteSubmission({{ submission.id }})" class="btn-danger text-sm" title="Delete Submission">Delete</button>
             </div>
         </div>
     </div>

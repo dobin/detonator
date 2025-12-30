@@ -1,65 +1,65 @@
 {% if submission %}
 <div class="space-y-4">
-    <table class="min-w-full text-sm border border-gray-200">
-        <tbody class="bg-white">
+    <table class="min-w-full text-sm border border-card">
+        <tbody class="bg-table">
             <tr>
-                <td class="px-3 py-2 font-semibold text-gray-700 w-1/4">Submission ID:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.id }}</td>
+                <td class="px-3 py-2 font-semibold text-label w-1/4">Submission ID:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.id }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">File ID:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.file_id }}</td>
+                <td class="px-3 py-2 font-semibold text-label">File ID:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.file_id }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Created:</td>
-                <td class="px-3 py-2 text-gray-500">{{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Created:</td>
+                <td class="px-3 py-2 text-timestamp">{{ submission.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
             </tr>
 
             <tr>
-                <td class="px-3 py-2 font-semibold text-gray-700">Submission Comment:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.comment }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Submission Comment:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.comment }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">File Comment:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.file.comment }}</td>
+                <td class="px-3 py-2 font-semibold text-label">File Comment:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.file.comment }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Updated:</td>
-                <td class="px-3 py-2 text-gray-500">{{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Updated:</td>
+                <td class="px-3 py-2 text-timestamp">{{ submission.updated_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
             </tr>
 
             <tr>
-                <td class="px-3 py-2 font-semibold text-gray-700">Submission Status:</td>
-                <td class="px-3 py-2 border-r border-gray-200"><span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></td>
+                <td class="px-3 py-2 font-semibold text-label">Submission Status:</td>
+                <td class="px-3 py-2 border-r border-card"><span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Profile:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.profile.name if submission.profile else '' }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Profile:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.profile.name if submission.profile else '' }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Completed:</td>
-                <td class="px-3 py-2 text-gray-500">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Completed:</td>
+                <td class="px-3 py-2 text-timestamp">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
             </tr>
 
             <tr>
-                <td class="px-3 py-2 font-semibold text-gray-700">EDR Verdict:</td>
-                <td class="px-3 py-2 border-r border-gray-200"><span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span></td>
+                <td class="px-3 py-2 font-semibold text-label">EDR Verdict:</td>
+                <td class="px-3 py-2 border-r border-card"><span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span></td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Project:</td>
-                <td class="px-3 py-2 border-r border-gray-200">{{ submission.project or '' }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Project:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.project or '' }}</td>
 
-                <td class="px-3 py-2 font-semibold text-gray-700">Runtime (s):</td>
-                <td class="px-3 py-2 text-gray-500">{{ submission.runtime }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Runtime (s):</td>
+                <td class="px-3 py-2 text-timestamp">{{ submission.runtime }}</td>
             </tr>
         </tbody>
     </table>
 
     <!-- Logs Tabs -->
     <div class="w-full">
-        <div class="border-b border-gray-200">
+        <div class="border-b border-card">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" 
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm tab-active" 
                     data-tab="detonator-alerts" onclick="showTab('detonator-alerts', this)"
                 >
                     Alerts
                 </button>
 
                 {% if submission.server_logs %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-description hover:text-label hover:border-divider" 
                     data-tab="detonator-logs" onclick="showTab('detonator-logs', this)"
                 >
                     Server Logs
@@ -67,7 +67,7 @@
                 {% endif %}
 
                 {% if submission.agent_logs %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-description hover:text-label hover:border-divider" 
                     data-tab="agent-logs" onclick="showTab('agent-logs', this)"
                 >
                     Agent Logs
@@ -75,7 +75,7 @@
                 {% endif %}
 
                 {% if submission.process_output %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-description hover:text-label hover:border-divider" 
                     data-tab="execution-logs" onclick="showTab('execution-logs', this)"
                 >
                     Process Output
@@ -83,7 +83,7 @@
                 {% endif %}
 
                 {% if submission.rededr_logs %}
-                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" 
+                <button class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm border-transparent text-description hover:text-label hover:border-divider" 
                     data-tab="rededr-logs" onclick="showTab('rededr-logs', this)"
                 >
                     RedEdr Logs
@@ -94,22 +94,22 @@
         
         <div class="mt-4">
             <div id="detonator-alerts" class="tab-content">
-                <div class="text-gray-700 text-sm mt-2 space-y-3">
+                <div class="text-label text-sm mt-2 space-y-3">
                     <div class="overflow-x-auto">
 
                         {% if submission.alerts and submission.alerts|length > 0 %}
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Source</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Threat</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Severity</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Category</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Detection Source</th>
-                                    <th class="px-3 py-2 text-left font-medium text-gray-700">Detected At</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Source</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Threat</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Severity</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Category</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Detection Source</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Detected At</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200 bg-white">
+                            <tbody class="divide-y divide-dark bg-table">
                                 {% for alert in submission.alerts %}
                                 <tr>
                                     <td class="px-3 py-2 whitespace-nowrap">{{ alert.source or 'N/A' }}</td>
@@ -134,7 +134,7 @@
                         </table>
 
                         {% else %}
-                        <div class="text-gray-700 text-sm mt-2">No alerts.</div>
+                        <div class="text-label text-sm mt-2">No alerts.</div>
                         {% endif %}
                     </div>
                 </div>
@@ -142,14 +142,14 @@
 
             {% if submission.server_logs %}
             <div id="detonator-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.server_logs }}</pre>
             </div>
             {% endif %}
 
             {% if submission.agent_logs %}
             <div id="agent-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
+                <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
                 >{{ submission.agent_logs|pretty_json }}
                 </pre>
             </div>
@@ -157,15 +157,15 @@
             
             {% if submission.process_output %}
             <div id="execution-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom>
-                    {{ submission.process_output }}
+                <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
+                >{{ submission.process_output }}
                 </pre>
             </div>
             {% endif %}
             
             {% if submission.rededr_logs %}
             <div id="rededr-logs" class="tab-content hidden">
-                <pre class="bg-gray-100 p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
+                <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full whitespace-pre-wrap" data-scroll-bottom
                     >{{ submission.rededr_logs|pretty_json }}</pre>
             </div>
             {% endif %}
@@ -182,8 +182,8 @@
             // Remove active styles from all buttons
             const allButtons = document.querySelectorAll('.tab-button');
             allButtons.forEach(btn => {
-                btn.classList.remove('border-blue-500', 'text-blue-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
+                btn.classList.remove('tab-active');
+                btn.classList.add('border-transparent', 'text-description');
             });
             
             // Show target tab
@@ -193,8 +193,8 @@
             }
             
             // Style active button
-            clickedButton.classList.remove('border-transparent', 'text-gray-500');
-            clickedButton.classList.add('border-blue-500', 'text-blue-600');
+            clickedButton.classList.remove('border-transparent', 'text-description');
+            clickedButton.classList.add('tab-active');
         }
     </script>
 </div>

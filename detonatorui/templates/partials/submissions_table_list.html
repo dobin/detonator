@@ -1,59 +1,59 @@
 {% if submissions and submissions|length > 0 %}
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+        <thead class="bg-subtle">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Comment</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Comment</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Submission Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Profile</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Result</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-table divide-y divide-dark">
             {% for submission in submissions %}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-table-hover">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900"><a href="/submissions/{{ submission.id }}" class="text-blue-600 hover:underline">#{{ submission.id }}</a></div>
+                    <div class="text-sm font-medium text-heading"><a href="/submissions/{{ submission.id }}" class="link-info hover:underline">#{{ submission.id }}</a></div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">
+                    <div class="text-sm text-heading">
                         <div class="font-medium">{{ submission.file.filename }}</div>
                         {% if submission.file.exec_arguments %}
-                            <div class="text-xs text-gray-500" title="exec_arguments: {{ submission.file.exec_arguments }}">
-                                Args: <code class="bg-gray-100 px-1 rounded">{{ submission.file.exec_arguments|truncate(20) }}</code>
+                            <div class="text-xs text-description" title="exec_arguments: {{ submission.file.exec_arguments }}">
+                                Args: <code class="bg-card-header px-1 rounded">{{ submission.file.exec_arguments|truncate(20) }}</code>
                             </div>
                         {% endif %}
                     </div>
                 </td>
                 <td class="px-6 py-4">
                     {% if submission.file and submission.file.comment %}
-                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ submission.file.comment }}">
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ submission.file.comment }}">
                             {{ submission.file.comment }}
                         </div>
                     {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-muted">-</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4">
                     {% if submission.comment %}
-                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ submission.comment }}">
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ submission.comment }}">
                             {{ submission.comment }}
                         </div>
                     {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-muted">-</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.profile %}
-                        <div class="text-sm text-gray-900">{{ submission.profile.name }}</div>
+                        <div class="text-sm text-heading">{{ submission.profile.name }}</div>
                         {% if submission.profile.edr_collector %}
-                            <div class="text-xs text-gray-500">{{ submission.profile.edr_collector }}</div>
+                            <div class="text-xs text-description">{{ submission.profile.edr_collector }}</div>
                         {% endif %}
                     {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-muted">-</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -64,13 +64,13 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.status == "finished" %}
                         {% if submission.profile.edr_collector == "RedEdr" %}
-                            <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">RedEdr</button>
+                            <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
                         {% elif submission.edr_verdict %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">
                                 {{ submission.edr_verdict }}
                             </span>
                         {% else %}
-                            <span class="text-gray-400">-</span>
+                            <span class="text-muted">-</span>
                         {% endif %}
                     {% endif %}
                 </td>
@@ -81,18 +81,18 @@
 </div>
 
 {% else %}
-<div class="p-6 text-center text-gray-500">
-    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="p-6 text-center text-description">
+    <svg class="w-12 h-12 mx-auto mb-4 text-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
     </svg>
     <h3 class="text-lg font-medium mb-2">No submissions found</h3>
-    <p class="text-gray-500 mb-4">
+    <p class="text-description mb-4">
         {% if request.args.get('filter') and request.args.get('filter') != 'all' %}
             No submissions found with status "{{ request.args.get('filter') }}".
         {% else %}
             No submissions have been created yet.
         {% endif %}
     </p>
-    <a href="/upload" class="text-blue-500 hover:underline">Upload a file</a> to start analysis.
+    <a href="/upload" class="link-info hover:underline">Upload a file</a> to start analysis.
 </div>
 {% endif %}

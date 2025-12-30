@@ -3,11 +3,11 @@
 {% block title %}Start Analysis{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="card card-body">
     <h2 class="text-2xl font-bold mb-4">Upload & Start Analysis</h2>
-    <p class="text-gray-600 mb-6">Upload a file and automatically start malware analysis with VM provisioning.</p>
+    <p class="text-secondary mb-6">Upload a file and automatically start malware analysis with VM provisioning.</p>
     
-    <div class="bg-gray-50 p-4 rounded-lg">
+    <div class="bg-light p-4 rounded-lg">
         <form 
             hx-post="/api/create-submission" 
             hx-encoding="multipart/form-data"
@@ -18,8 +18,8 @@
             <!-- File Selection -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">File *</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">File *</h3>
+                    <p class="text-sm text-description">
                         Your malware file to execute on the VM <br>
                     </p>
                 </div>
@@ -29,7 +29,7 @@
                         id="file" 
                         name="file" 
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                 </div>
             </div>
@@ -37,8 +37,8 @@
             <!-- Profile -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Profile *</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Profile *</h3>
+                    <p class="text-sm text-description">
                         The VM / EDR you want to test against
                     </p>
                 </div>
@@ -47,7 +47,7 @@
                         id="profile_name" 
                         name="profile_name"
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                         <option value="">Select a profile...</option>
                         {% for profile_name, profile in profiles.items() %}
@@ -67,8 +67,8 @@
             <!-- Execution Mode -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Execution Mode *</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Execution Mode *</h3>
+                    <p class="text-sm text-description">
                         AutoIt is more realistic for initial access payloads. <br>
                         Direct execution invokes the target directly. Supports .exe arguments. Supports .dll. For testing tools.
                     </p>
@@ -77,10 +77,10 @@
                     <select 
                         id="execution_mode" 
                         name="execution_mode"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
-                        <option value="exec">Direct execution</option>
-                        <option value="autoit" selected>Execute via AutoIt</option>
+                        <option value="exec">Direct</option>
+                        <option value="autoit" selected>AutoIt</option>
                     </select>
                 </div>
             </div>
@@ -88,8 +88,8 @@
             <!-- File arguments -->
             <div id="file_arguments_field" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">File arguments</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">File arguments</h3>
+                    <p class="text-sm text-description">
                         [Optional] .EXE: Command line parameters <br>
                         [Mandatory] .DLL: Exported function name to invoke
                     </p>
@@ -100,7 +100,7 @@
                         id="exec_arguments" 
                         name="exec_arguments" 
                         placeholder="--debug / DllMain"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                 </div>
             </div>
@@ -108,8 +108,8 @@
             <!-- Runtime -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Runtime (seconds)</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Runtime (seconds)</h3>
+                    <p class="text-sm text-description">
                         How long the payload runs. Increase this to observe post-ex behaviors like beacon callbacks.
                     </p>
                 </div>
@@ -122,9 +122,9 @@
                         max="7200"
                         step="10"
                         value="10"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
-                    <p class="mt-2 text-xs text-gray-500">
+                    <p class="mt-2 text-xs text-description">
                         Accepted range: 10 - 7200 seconds. Default 10 seconds.
                     </p>
                 </div>
@@ -133,8 +133,8 @@
             <!-- Password field - initially hidden -->
             <div id="password_field" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Profile Password</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Profile Password</h3>
+                    <p class="text-sm text-description">
                         This analysis profile requires password authentication. Enter the password to proceed with the analysis.
                     </p>
                 </div>
@@ -144,7 +144,7 @@
                         id="password" 
                         name="password" 
                         placeholder="Enter profile password"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                 </div>
             </div>
@@ -152,8 +152,8 @@
             <!-- Malware path field -->
             <div data-auth-required class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Malware Execution Path</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Malware Execution Path</h3>
+                    <p class="text-sm text-description">
                         The target directory path where the malware should be initially placed on the virtual machine
                     </p>
                 </div>
@@ -163,9 +163,9 @@
                         id="drop_path" 
                         name="drop_path"
                         placeholder="C:\Users\Public\Downloads\"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
-                    <p class="mt-2 text-xs text-gray-500">
+                    <p class="mt-2 text-xs text-description">
                         <strong>Default:</strong> <code>C:\Users\Public\Downloads\</code><br>
                         <strong>Whitelisted execution:</strong> <code>C:\RedEdr\data\</code>
                     </p>
@@ -173,13 +173,13 @@
             </div>
 
             <!-- Horizontal Divider -->
-            <div class="border-t border-gray-300"></div>
+            <div class="border-t border-divider"></div>
 
             <!-- File Source URL -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">File Source URL</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">File Source URL</h3>
+                    <p class="text-sm text-description">
                         [Optional] URL pointing to more information about the payload
                     </p>
                 </div>
@@ -189,7 +189,7 @@
                         id="source_url" 
                         name="source_url" 
                         placeholder="https://github.com/dobin/malware/metasploit/test1/"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                 </div>
             </div>
@@ -198,8 +198,8 @@
             <!-- File Comment -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">File Comment</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">File Comment</h3>
+                    <p class="text-sm text-description">
                         [Optional] description of the payload. What loader, C2 payload etc.
                     </p>
                 </div>
@@ -209,7 +209,7 @@
                         name="file_comment" 
                         rows="3"
                         placeholder="fiber based shc loader with Metasploit winhttp payload"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     ></textarea>
                 </div>
             </div>
@@ -217,8 +217,8 @@
             <!-- Submission Comment -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Comment</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Comment</h3>
+                    <p class="text-sm text-description">
                         [Optional] description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives
                     </p>
                 </div>
@@ -228,7 +228,7 @@
                         name="submission_comment" 
                         rows="3"
                         placeholder="Check if sgn works against MDE"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     ></textarea>
                 </div>
             </div>
@@ -236,8 +236,8 @@
             <!-- Project -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-gray-700 mb-1">Submission Project</h3>
-                    <p class="text-sm text-gray-500">
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Project</h3>
+                    <p class="text-sm text-description">
                         [Optional] project name to group related submissions together
                     </p>
                 </div>
@@ -247,7 +247,7 @@
                         id="project" 
                         name="project" 
                         placeholder="metasploit research A"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                 </div>
             </div>
@@ -255,7 +255,7 @@
             <div class="flex space-x-4">
                 <button 
                     type="submit" 
-                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    class="btn-primary"
                 >
                     Upload & Start Execution
                 </button>
@@ -290,7 +290,7 @@
                                 </div>
                                 <div class="mt-4">
                                     <div class="flex space-x-2">
-                                        <a href="/submissions" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+                                        <a href="/submissions" class="btn-info text-sm">
                                             Monitor Analysis
                                         </a>
                                     </div>
@@ -348,16 +348,16 @@
         if (profileSelect.value && description) {
             const infoDiv = document.createElement('div');
             infoDiv.id = 'profile_info';
-            infoDiv.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md';
+            infoDiv.className = 'mt-2 p-3 info-box rounded-md';
             infoDiv.innerHTML = `
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="h-5 w-5 info-box-icon" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="mt-1 text-sm text-blue-700">${description}</p>
+                        <p class="mt-1 text-sm info-box-text">${description}</p>
                     </div>
                 </div>
             `;

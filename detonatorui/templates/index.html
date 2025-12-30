@@ -3,12 +3,12 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="card card-body">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
             <h2 class="text-2xl font-bold mb-4">Detonator - MalDev Testing Service</h2>
             
-            <p class="text-gray-600 mb-6">
+            <p class="text-secondary mb-6">
                 Submit your RedTeam tools to test them against various EDR's by spinning up VMs.
             </p><p>
                 Detonator is a controlled malware detonation platform built for red teamers and offensive security researchers.
@@ -19,6 +19,14 @@
             </p><br><p>
                 Detonator helps you validate tradecraft, measure detection surface, 
                 and refine payloads based on real EDR feedback - safely, repeatably, reproducibly, and at scale.
+            </p><br>
+            <p>
+                Source:
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><a href="https://github.com/dobin/detonator" class="link">Detonator</a></li>
+                    <li><a href="https://github.com/dobin/detonatorAgent" class="link">DetonatorAgent</a></li>
+                    <li><a href="https://github.com/dobin/rededr" class="link">RedEdr</a></li>
+                </ul>
             </p>
         </div>
         <div class="flex items-center justify-center">

@@ -1,47 +1,47 @@
 {% if templates %}
 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
     {% for template in templates %}
-    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+    <div class="border border-card rounded-lg p-6 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">{{ template.id }}</h3>
+            <h3 class="text-lg font-semibold text-heading">{{ template.id }}</h3>
         </div>
 
         <div class="space-y-3">
             <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-20">Connector:</span>
-                    <span class="text-gray-900">{{ template.connector }}</span>
+                    <span class="font-medium text-description w-20">Connector:</span>
+                    <span class="text-heading">{{ template.connector }}</span>
                 </div>
 
             {% if template.software != '' %}
                 <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-20">Software:</span>
-                    <span class="text-gray-900">{{ template.software or 'N/A' }}</span>
+                    <span class="font-medium text-description w-20">Software:</span>
+                    <span class="text-heading">{{ template.software or 'N/A' }}</span>
                 </div>
             {% elif template.ip != "" %}
                 <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-20">IP Address:</span>
-                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.ip or 'N/A' }}</code>
+                    <span class="font-medium text-description w-20">IP Address:</span>
+                    <code class="bg-code px-2 py-1 rounded text-xs">{{ template.ip or 'N/A' }}</code>
                 </div>
             {% endif %}
 
             <!-- Template ID -->
             <div class="text-sm">
-                <span class="font-medium text-gray-500">Template ID:</span>
-                <code class="bg-gray-100 px-2 py-1 rounded text-xs ml-2">{{ template.id }}</code>
+                <span class="font-medium text-description">Template ID:</span>
+                <code class="bg-code px-2 py-1 rounded text-xs ml-2">{{ template.id }}</code>
             </div>
 
             <!-- Comment if available -->
             {% if template.comment %}
                 <div class="text-sm">
-                    <span class="font-medium text-gray-500">Comment:</span>
-                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ template.comment }}</code>
+                    <span class="font-medium text-description">Comment:</span>
+                    <code class="bg-code px-2 py-1 rounded text-xs">{{ template.comment }}</code>
                 </div>
             {% endif %}
 
         </div>
 
         <!-- Actions section -->
-        <div class="mt-4 pt-4 border-t border-gray-100">
+        <div class="mt-4 pt-4 border-t border-card">
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     {% if template.available == "true" or template.available == true %}
@@ -67,8 +67,8 @@
 </div>
 {% else %}
 <div class="text-center py-12">
-    <div class="text-gray-400 text-6xl mb-4">🛡️</div>
-    <h3 class="text-lg font-medium text-gray-900 mb-2">No EDR Templates Found</h3>
-    <p class="text-gray-500">No EDR templates are currently configured.</p>
+    <div class="text-muted text-6xl mb-4">🛡️</div>
+    <h3 class="text-lg font-medium text-heading mb-2">No EDR Templates Found</h3>
+    <p class="text-description">No EDR templates are currently configured.</p>
 </div>
 {% endif %}
