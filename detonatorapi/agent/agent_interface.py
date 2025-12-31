@@ -287,6 +287,14 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
         return
     
     for alert in edrAlertsResponse.alerts:
+        exists = False
+        for existing_alert in db_submission.alerts:
+            if existing_alert.alert_id == alert.alertId:
+                exists = True
+                break
+        if exists:
+            continue
+
         # Convert Pydantic schema to SQLAlchemy model
         db_alert = SubmissionAlert(
             alert_id=alert.alertId,
