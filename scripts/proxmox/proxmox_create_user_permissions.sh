@@ -20,6 +20,9 @@ USER="rededr@pve"
 TOKEN_NAME="detonator"
 VMID="101"
 
+# Or the aclmod stuff breaks because it has issues with ! in token names
+set +H
+
 # === CREATE USER ===
 # Add user if it doesn't exist
 if ! pveum user list | grep -q "^$USER"; then
@@ -52,7 +55,7 @@ pveum aclmod "/vms/$VMID" --user "$USER" --role VM.ControlLimited
 
 # === ASSIGN ROLE TO TOKEN (optional) ===
 echo "Assigning role to token..."
-pveum aclmod "/vms/$VMID" --token "$USER!$TOKEN_NAME" --role VM.ControlLimited
+pveum aclmod "/vms/${VMID}" --tokens "${USER}!${TOKEN_NAME}" --role VM.ControlLimited
 
 # === VERIFY PERMISSIONS ===
 echo "Checking permissions for $USER..."
