@@ -164,6 +164,27 @@ class SubmissionAlertResponse(BaseModel):
         from_attributes = True
 
 
+# Response from DetonatorAgent
+class EdrAlertResponse(BaseModel):
+    alertId: str
+    source: str
+    title: str
+    severity: str
+    category: str
+    detectionSource: str
+    detectedAt: datetime
+    raw: str
+
+    class Config:
+        from_attributes = True
+
+# Response from DetonatorAgent
+class EdrAlertsResponse(BaseModel):
+    success: bool
+    alerts: List[EdrAlertResponse]
+    detected: bool
+
+
 SubmissionResponse.update_forward_refs()
 
 # get_file() request

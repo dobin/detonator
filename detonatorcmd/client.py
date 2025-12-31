@@ -119,6 +119,11 @@ class DetonatorClient:
             else:
                 print("No edr_verdict available?")
 
+            # print alerts
+            if final_submission.get('alerts'):
+                for alert in final_submission['alerts']:
+                    print(f"- [{alert['severity']}] {alert['title']} (Source: {alert['source']})")
+
         return submission_id
                     
 

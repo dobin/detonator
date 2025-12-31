@@ -8,12 +8,12 @@ import os
 from sqlalchemy.orm import Session, joinedload
 import threading
 
+from detonatorapi.schemas import EdrAlertsResponse
 from detonatorapi.settings import UPLOAD_DIR, AGENT_DATA_GATHER_INTERVAL
 from detonatorapi.database import Submission, SubmissionAlert, get_db_direct
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log
 from detonatorapi.agent.agent_api import AgentApi, ExecutionFeedback, FeedbackContainer
 from detonatorapi.agent.rededr_agent import RedEdrAgentApi
-from detonatorapi.edr_parser.edr_parser_manager import EdrParser, get_relevant_edr_parser
 from detonatorapi.edr_cloud.edr_cloud import EdrCloud
 from detonatorapi.edr_cloud.edr_cloud_manager import get_relevant_edr_cloud_plugin
 
@@ -273,22 +273,9 @@ def thread_local_edr_gatherer(submission_id: int, agentApi: AgentApi):
 
 def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
     # Gather logs from Agent
-    edr_telemetry_raw = agentApi.GetEdrTelemetryRaw()  # always for now
-    if edr_telemetry_raw is None:
+    edrAlertsResponse: Optional[EdrAlertsResponse] = agentApi.GetEdrAlertsResponse()
+    if edrAlertsResponse is None:
         logger.warning(f"Submission {submission_id}: could not get EDR logs from Agent")
-        return
-
-    # Get the correct parser    
-    edr_parser: Optional[Type[EdrParser]] = get_relevant_edr_parser(edr_telemetry_raw)
-    if not edr_parser:
-        logger.info(f"Submission {submission_id}: No suitable EDR parser found for the collected EDR logs")
-        return
-    
-    # parse
-    logger.info(f"Submission {submission_id}: Using parser {edr_parser.__name__} for EDR logs")
-    ok, alerts, is_detected = edr_parser.parse(edr_telemetry_raw)
-    if not ok:
-        logger.info(f"Submission {submission_id}: EDR logs could not be parsed")
         return
 
     # insert all non-existing alerts into DB
@@ -299,19 +286,22 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
         db.close()
         return
     
-    for alert in alerts:
-        exists = False
-        for existing_alert in db_submission.alerts:
-            if existing_alert.alert_id == alert.alert_id:
-                exists = True
-                break
-        if exists:
-            continue
+    for alert in edrAlertsResponse.alerts:
+        # Convert Pydantic schema to SQLAlchemy model
+        db_alert = SubmissionAlert(
+            alert_id=alert.alertId,
+            source=alert.source, 
+            title=alert.title,
+            severity=alert.severity,
+            category=alert.category,
+            detection_source=alert.detectionSource,
+            detected_at=alert.detectedAt,
+            raw=alert.raw,
+            submission_id=db_submission.id
+        )
+        db_submission.alerts.append(db_alert)
 
-        logger.info(f"Submission {db_submission.id}: New EDR alert: {alert.alert_id} - {alert.title}")
-        db_submission.alerts.append(alert)
-
-    if is_detected:
+    if edrAlertsResponse.detected:
         logger.info(f"Submission {db_submission.id}: EDR logs indicate: detected")
         edr_verdict = "detected"
     else:

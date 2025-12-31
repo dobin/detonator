@@ -5,6 +5,7 @@ import json
 import logging
 import random
 from .feedbackcontainer import FeedbackContainer
+from detonatorapi.schemas import EdrAlertsResponse, EdrAlertResponse
 
 logger = logging.getLogger(__name__)
 
@@ -195,18 +196,52 @@ class AgentApi:
             return False
         
 
-    def GetEdrTelemetryRaw(self) -> Optional[str]:
+    def GetEdrAlertsResponse(self) -> Optional[EdrAlertsResponse]:
         url = self.agent_url + "/api/logs/edr"
         try:
             response = requests.get(url)
-            if response.status_code == 200:
-                data = response.text
-                return data
-            else:
+            if response.status_code != 200:
                 logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
+
+            try:
+                data = response.json()
+            except ValueError as exc:
+                logger.warning(f"Agent: Invalid EDR response JSON: {exc}")
+                return None
+
+            if not isinstance(data, dict):
+                logger.warning("Agent: EDR response payload is not a dict")
+                return None
+
+            alerts_raw = data.get("alerts", [])
+            if alerts_raw is None:
+                alerts_raw = []
+
+            if not isinstance(alerts_raw, list):
+                logger.warning("Agent: EDR alerts payload is not a list")
+                return None
+
+            alerts: List[EdrAlertResponse] = []
+            for idx, alert in enumerate(alerts_raw):
+                if not isinstance(alert, dict):
+                    logger.warning(f"Agent: Alert #{idx} is not a dict: {alert}")
+                    continue
+                try:
+                    alerts.append(EdrAlertResponse(**alert))
+                except TypeError as exc:
+                    logger.warning(f"Agent: Alert #{idx} has unexpected shape: {exc}")
+
+            return EdrAlertsResponse(
+                success=bool(data.get("success", False)),
+                alerts=alerts,
+                detected=bool(data.get("detected", False)),
+            )
         except requests.exceptions.RequestException as e:
             logger.warning(f"Agent HTTP response error: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"Agent error parsing EDR response: {e}")
             return None
 
 
@@ -217,23 +252,6 @@ class AgentApi:
             if response.status_code == 200:
                 data = response.text
                 return data
-            else:
-                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
-                return None
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Agent HTTP response error: {e}")
-            return None
-
-
-    def GetDeviceCorrelation(self) -> Optional[Dict[str, str]]:
-        url = self.agent_url + "/api/edr/sysinfo"
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                if isinstance(data, dict):
-                    return data
-                return None
             else:
                 logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
