@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple, List
 from sqlalchemy.orm import Session, joinedload
+import json
 
 from detonatorapi.database import get_db_direct, Submission, SubmissionAlert, Profile
 from detonatorapi.db_interface import db_submission_add_log, db_submission_change_status_quick
@@ -14,7 +15,7 @@ from .edr_cloud import EdrCloud
 
 logger = logging.getLogger(__name__)
 
-POLLING_TIME_MINUTES = 2  # post end monitoring duration
+POLLING_TIME_MINUTES = 5  # post end monitoring duration
 POLL_INTERVAL_SECONDS = 30  # polling interval
 
 
@@ -181,7 +182,7 @@ class CloudMdePlugin(EdrCloud):
             submission_alert = SubmissionAlert(
                 submission_id=submission.id,
                 source="MDE Cloud Plugin",
-                raw="",
+                raw=json.dumps(alert),
                 
                 alert_id=alert_id,
                 title=alert.get("Title"),

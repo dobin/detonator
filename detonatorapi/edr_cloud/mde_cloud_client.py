@@ -2,7 +2,6 @@ import os
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set, Tuple
-
 import requests
 
 logger = logging.getLogger(__name__)
