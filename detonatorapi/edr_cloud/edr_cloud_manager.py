@@ -1,10 +1,13 @@
 from typing import List, Optional, Type
-from detonatorapi.edr_cloud.mde_cloud_plugin import CloudMdePlugin
+
 from .edr_cloud import EdrCloud
+from detonatorapi.edr_cloud.elastic_cloud_plugin import CloudElasticPlugin
+from detonatorapi.edr_cloud.mde_cloud_plugin import CloudMdePlugin
 
 
 edr_cloud_plugins: List[Type[EdrCloud]] = [
     CloudMdePlugin,
+    CloudElasticPlugin,
 ]
 
 
