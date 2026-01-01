@@ -15,7 +15,7 @@ from .edr_cloud import EdrCloud
 
 logger = logging.getLogger(__name__)
 
-POLLING_TIME_MINUTES = 2  # post end monitoring duration
+POLLING_TIME_MINUTES = 5  # post end monitoring duration
 POLL_INTERVAL_SECONDS = 10  # polling interval
 
 
