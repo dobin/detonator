@@ -11,3 +11,4 @@ upload/
 profiles_init.yaml
 azure.yaml
 proxmox.yaml
+todo.md
