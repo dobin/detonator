@@ -26,20 +26,23 @@ class ElasticCloudClient:
         #     "query": {
         #       "bool": {
         #         "must": [
-        #           { "range": { "@timestamp": { "gte": "2025-12-31T23:00:00.000Z", "lte": "2026-01-01T22:59:59.999Z" } } },
+        #           { "range": { "kibana.alert.original_time": { "gte": "2025-12-31T23:00:00.000Z", "lte": "2026-01-01T22:59:59.999Z" } } },
         #           { "term": { "host.name": "desktop-h79u9ft" } }
         #         ]
         #       }
         #     }
         #   }'
 
+        # Filter on: 
+        # - hostname
+        # - time range for alert original time!
         query_body = {
             "size": 32,
             "query": {
                 "bool": {
                     "must": [ { 
                         "range": { 
-                            "@timestamp": {
+                            "kibana.alert.original_time": {
                                 "gte": start_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
                                 "lte": end_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
                             } 
