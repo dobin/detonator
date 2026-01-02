@@ -3,24 +3,24 @@
 {% block title %}Upload File{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+<div class="max-w-2xl mx-auto bg-container rounded-lg shadow-md p-6">
     <h2 class="text-2xl font-bold mb-6">Upload File (Storage Only)</h2>
-    <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-        <p class="text-blue-800">
+    <div class="info-box rounded-md p-4 mb-6">
+        <p class="info-box-text">
             <strong>Note:</strong> This page only uploads files for storage. No automatic analysis will be started. 
-            To upload and start analysis immediately, use the <a href="/newscan" class="underline">scan page</a>.
+            To upload and start analysis immediately, use the <a href="/newsubmission" class="underline">submission page</a>.
         </p>
     </div>
     
     <form 
-        hx-post="/api/upload" 
+        hx-post="{{ API_BASE_URL }}/api/files" 
         hx-encoding="multipart/form-data"
         hx-target="#upload-result"
         hx-indicator="#loading"
         class="space-y-6"
     >
         <div>
-            <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="file" class="block text-sm font-medium text-label mb-2">
                 Select File *
             </label>
             <input 
@@ -28,7 +28,7 @@
                 id="file" 
                 name="file" 
                 required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
             <div class="mt-2">
                 <label class="flex items-center">
@@ -37,19 +37,19 @@
                         id="randomize_filename" 
                         name="randomize_filename" 
                         checked
-                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        class="h-4 w-4 checkbox-accent border-input rounded"
                     >
-                    <span class="ml-2 text-sm text-gray-700">Randomize Filename</span>
+                    <span class="ml-2 text-sm text-label">Randomize Filename</span>
                 </label>
-                <p class="mt-1 text-xs text-gray-500">
+                <p class="mt-1 text-xs text-description">
                     Prepends random characters to the filename. Note that processes based with that filename will be observed, so avoid explorer.exe and similar.
                 </p>
             </div>
-            <p class="text-gray-500 text-sm mt-1">Upload a .exe or .dll file (no analysis will be started)</p>
+            <p class="text-description text-sm mt-1">Upload a .exe or .dll file (no analysis will be started)</p>
         </div>
 
         <div>
-            <label for="source_url" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="source_url" class="block text-sm font-medium text-label mb-2">
                 Source URL (optional)
             </label>
             <input 
@@ -57,27 +57,27 @@
                 id="source_url" 
                 name="source_url" 
                 placeholder="https://example.com/file"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-            <p class="text-gray-500 text-sm mt-1">Where did you download this file from?</p>
+            <p class="text-description text-sm mt-1">Where did you download this file from?</p>
         </div>
 
         <div>
-            <label for="fileargs" class="block text-sm font-medium text-gray-700 mb-2">
-                fileargs (optional)
+            <label for="exec_arguments" class="block text-sm font-medium text-label mb-2">
+                exec_arguments (optional)
             </label>
             <input 
                 type="text" 
-                id="fileargs" 
-                name="fileargs" 
+                id="exec_arguments" 
+                name="exec_arguments" 
                 placeholder="-x param1 --config file.conf"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             >
-            <p class="text-gray-500 text-sm mt-1">Command line fileargs to pass to the executable</p>
+            <p class="text-description text-sm mt-1">Command line exec_arguments to pass to the executable</p>
         </div>
 
         <div>
-            <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="comment" class="block text-sm font-medium text-label mb-2">
                 Comment (optional)
             </label>
             <textarea 
@@ -85,22 +85,21 @@
                 name="comment" 
                 rows="3"
                 placeholder="Add any notes about this file..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="input"
             ></textarea>
         </div>
 
         <div class="flex space-x-4">
-            {% if not READ_ONLY_MODE %}
-                <button 
-                    type="submit" 
-                    class="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    Upload File (Storage Only)
-                </button>
-            {% endif %}
+            <button 
+                data-auth-required
+                type="submit" 
+                class="btn-primary"
+            >
+                Upload File (Storage Only)
+            </button>
             <a 
                 href="/files" 
-                class="bg-gray-500 text-white px-6 py-3 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                class="btn-gray"
             >
                 Cancel
             </a>
@@ -131,15 +130,15 @@
                                 <div class="mt-2 text-sm text-green-700">
                                     <p><strong>Filename:</strong> ${response.filename}</p>
                                     <p><strong>Hash:</strong> ${response.file_hash}</p>
-                                    <p>File has been stored. You can manually create a scan from the files page.</p>
+                                    <p>File has been stored. You can manually create a submission from the files page.</p>
                                 </div>
                                 <div class="mt-4">
                                     <div class="flex space-x-2">
-                                        <a href="/files" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                        <a href="/files" class="btn-success text-sm">
                                             View All Files
                                         </a>
-                                        <a href="/scans" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
-                                            View Scans
+                                        <a href="/submissions" class="btn-info text-sm">
+                                            View Submissions
                                         </a>
                                     </div>
                                 </div>

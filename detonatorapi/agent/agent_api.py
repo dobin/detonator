@@ -3,12 +3,14 @@ import requests
 from typing import List, Optional, Dict
 import json
 import logging
-from .result import Result
+import random
+from .feedbackcontainer import FeedbackContainer
+from detonatorapi.schemas import EdrAlertsResponse, EdrAlertResponse
 
 logger = logging.getLogger(__name__)
 
 
-class ScanResult(Enum):
+class ExecutionFeedback(Enum):
     OK = 0,
     ERROR = 1,
     VIRUS = 2
@@ -29,16 +31,16 @@ class AgentApi:
             if response.status_code == 200:
                 data = response.json()
                 if "in_use" not in data:
-                    logging.warning("Agent: CheckLock response missing 'in_use' key")
+                    logger.warning("Agent: CheckLock response missing 'in_use' key")
                     return False
 
                 is_in_use = data["in_use"]
                 return is_in_use
             else:
-                logging.warning("Agent: CheckLock error: {} {}".format(response.status_code, response.text))
+                logger.warning("Agent: CheckLock error: {} {}".format(response.status_code, response.text))
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: CheckLock error: {e}")
+            logger.warning(f"Agent: CheckLock error: {e}")
             return False
 
 
@@ -46,6 +48,7 @@ class AgentApi:
         # Check if Agent is reachable
         try:
             test_response = requests.get(self.agent_url, timeout=0.5)
+            #print(f"Agent {self.agent_url} test response code: {test_response.status_code}")
             # Can also be 404, just connect is enough
             #return test_response.status_code == 200
             return True
@@ -54,106 +57,73 @@ class AgentApi:
             return False
         
 
-    def AcquireLock(self) -> Result[None]:
+    def AcquireLock(self) -> FeedbackContainer[None]:
         # Acquire lock
         url = self.agent_url + "/api/lock/acquire"
         try:
             response = requests.post(url)
             if response.status_code != 200:
                 error_msg = f"LockAcquire failed: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                logger.warning(f"Agent: {error_msg}")
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"LockAcquire error: {e}"
-            logging.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-        return Result.ok()
+            logger.warning(f"Agent: {error_msg}")
+            return FeedbackContainer.error(error_msg)
+        return FeedbackContainer.ok()
     
 
-    def ReleaseLock(self) -> Result[None]:
+    def ReleaseLock(self) -> FeedbackContainer[None]:
         # Release lock
         url = self.agent_url + "/api/lock/release"
         try:
             response = requests.post(url)
             if response.status_code != 200:
                 error_msg = f"LockRelease failed: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                logger.warning(f"Agent: {error_msg}")
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"LockRelease error: {e}"
-            logging.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-        return Result.ok()
-    
+            logger.warning(f"Agent: {error_msg}")
+            return FeedbackContainer.error(error_msg)
+        return FeedbackContainer.ok()
 
-    def StartTrace(self, target_names: List[str]) -> Result[None]:
-        # Reset any previous trace data
-        url = self.agent_url + "/api/trace/reset"
-        try:
-            response = requests.post(url)
-            if response.status_code == 404:
-                logging.info("Agent: /api/trace/reset not found. Assuming non-RedEdr agent.")
-                return Result.ok()
-            if response.status_code == 200:
-                #print("Response:", response.json())
-                pass
-            else:
-                error_msg = f"Reset error: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Reset error: {e}"
-            logging.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-
-        # Configure trace
-        url = self.agent_url + "/api/trace/start"
-        headers = {"Content-Type": "application/json"}
-        payload = {"trace": target_names}
-        try:
-            response = requests.post(url, headers=headers, json=payload)
-            if response.status_code == 200:
-                #print("Response:", response.json())
-                return Result.ok()
-            else:
-                error_msg = f"StartTrace error: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
-        except requests.exceptions.RequestException as e:
-            error_msg = f"StartTrace error: {e}"
-            logging.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
-        
     
-    def StopTrace(self) -> Result[None]:
+    def KillProcess(self) -> FeedbackContainer[None]:
         # kill running process
         url = self.agent_url + "/api/execute/kill"
         try:
             response = requests.post(url)
             if response.status_code != 200:
                 error_msg = f"kill error: {response.status_code} {response.text}"
-                logging.warning(f"Agent: {error_msg}")
-                return Result.error(error_msg)
+                logger.warning(f"Agent: {error_msg}")
+                return FeedbackContainer.error(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"kill error: {e}"
-            logging.warning(f"Agent: {error_msg}")
-            return Result.error(error_msg)
+            logger.warning(f"Agent: {error_msg}")
+            return FeedbackContainer.error(error_msg)
         
-        return Result.ok()
+        return FeedbackContainer.ok()
 
 
-    def ExecFile(self, filename: str, file_data: bytes, malware_path: str, fileargs: str) -> ScanResult:
+    def ExecFile(self, filename: str, file_data: bytes, drop_path: str, exec_arguments: str, execution_mode: str) -> FeedbackContainer[ExecutionFeedback]:
         url = self.agent_url + "/api/execute/exec"
+        
+        xor_key = random.randint(64, 255)
+        encrypted_data = bytes([b ^ xor_key for b in file_data])
+        
         files = {
-            "file": (filename, file_data),
+            "file": (filename, encrypted_data),
         }
         # add trailing slash just to make sure
-        if not malware_path.endswith("\\"):
-            malware_path += "\\"
+        if not drop_path.endswith("\\"):
+            drop_path += "\\"
         data = {
-            "path": malware_path,
-            "fileargs": fileargs,
-            "use_additional_etw": "false",
+            "drop_path": drop_path,
+            "executable_args": exec_arguments,
+            "xor_key": str(xor_key),
+            "execution_mode": execution_mode,
+#            "executable_name": "",
         }
         # multipart form-data
         try:
@@ -161,16 +131,22 @@ class AgentApi:
             if response.status_code == 200:
                 j = response.json()
                 if j.get("status", "") == "virus" :
-                    logging.info(f"Agent: File {filename} is detected as malware")
-                    return ScanResult.VIRUS
-                #print("Response:", response.json())
-                return ScanResult.OK
+                    logger.info(f"Agent: File {filename} is detected as malware")
+                    return FeedbackContainer.ok(ExecutionFeedback.VIRUS)
+                return FeedbackContainer.ok(ExecutionFeedback.OK)
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
-                return ScanResult.ERROR
+                # response.text is a json, extract message
+                try:
+                    j = response.json()
+                    error_message = j.get("message", response.text)
+                except Exception:
+                    error_message = response.text
+                logger.warning(f"Agent HTTP response error: {error_message}")
+                return FeedbackContainer.error(error_message)
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
-            return ScanResult.ERROR
+            error_msg = f"Request exception: {e}"
+            logger.warning(f"Agent HTTP response error: {error_msg}")
+            return FeedbackContainer.error(error_msg)
         
     
     def GetLockStatus(self) -> bool:
@@ -184,27 +160,12 @@ class AgentApi:
                 else:
                     return False
             else:
-                logging.warning(f"Agent: CheckLock error: {response.status_code} {response.text}")
+                logger.warning(f"Agent: CheckLock error: {response.status_code} {response.text}")
                 return False
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent: CheckLock error: {e}")
+            logger.warning(f"Agent: CheckLock error: {e}")
             return False
         
-
-    def GetRedEdrEvents(self) -> Optional[str]:
-        url = self.agent_url + "/api/logs/rededr"
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.text
-                return data
-            else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
-                return None
-        except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
-            return None
-
 
     def GetAgentLogs(self) -> Optional[str]:
         url = self.agent_url + "/api/logs/agent"
@@ -214,29 +175,77 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
+            logger.warning(f"Agent HTTP response error: {e}")
             return None
         
 
-    def GetEdrLogs(self) -> Optional[str]:
+    def ClearAgentLogs(self) -> bool:
+        url = self.agent_url + "/api/logs/agent"
+        try:
+            response = requests.delete(url)
+            if response.status_code == 200:
+                return True
+            else:
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Agent HTTP response error: {e}")
+            return False
+        
+
+    def GetEdrAlertsResponse(self) -> Optional[EdrAlertsResponse]:
         url = self.agent_url + "/api/logs/edr"
         try:
             response = requests.get(url)
-            if response.status_code == 200:
-                data = response.text
-                return data
-            else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+            if response.status_code != 200:
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
+
+            try:
+                data = response.json()
+            except ValueError as exc:
+                logger.warning(f"Agent: Invalid EDR response JSON: {exc}")
+                return None
+
+            if not isinstance(data, dict):
+                logger.warning("Agent: EDR response payload is not a dict")
+                return None
+
+            alerts_raw = data.get("alerts", [])
+            if alerts_raw is None:
+                alerts_raw = []
+
+            if not isinstance(alerts_raw, list):
+                logger.warning("Agent: EDR alerts payload is not a list")
+                return None
+
+            alerts: List[EdrAlertResponse] = []
+            for idx, alert in enumerate(alerts_raw):
+                if not isinstance(alert, dict):
+                    logger.warning(f"Agent: Alert #{idx} is not a dict: {alert}")
+                    continue
+                try:
+                    alerts.append(EdrAlertResponse(**alert))
+                except TypeError as exc:
+                    logger.warning(f"Agent: Alert #{idx} has unexpected shape: {exc}")
+
+            return EdrAlertsResponse(
+                success=bool(data.get("success", False)),
+                alerts=alerts,
+                detected=bool(data.get("detected", False)),
+            )
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
+            logger.warning(f"Agent HTTP response error: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"Agent error parsing EDR response: {e}")
             return None
 
 
-    def GetExecutionLogs(self) -> Optional[str]:
+    def GetProcessOutput(self) -> Optional[str]:
         url = self.agent_url + "/api/logs/execution"
         try:
             response = requests.get(url)
@@ -244,8 +253,8 @@ class AgentApi:
                 data = response.text
                 return data
             else:
-                logging.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
+                logger.warning(f"Agent HTTP response error: {response.status_code} {response.text}")
                 return None
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Agent HTTP response error: {e}")
+            logger.warning(f"Agent HTTP response error: {e}")
             return None

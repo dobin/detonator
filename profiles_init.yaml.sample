@@ -1,19 +1,37 @@
-live_rededr:
+test_live:
   connector: Live
-  comment: win10 defender rededr
-  edr_collector: Defender
-  default_malware_path: C:\Users\\Public\\
-  password: secret
-  port: 80
+  comment: local DetonatorAgent with Defender test
+  edr_collector: defender
+  port: 8080
   data:
-    ip: 192.168.1.1
+    ip: 127.0.0.1
 
-new_defender:
+test_proxmox:
+  connector: Proxmox
+  comment: Private RedEdr ETW & ETW-TI event collector
+  password: ''
+  edr_collector: defender
+  port: 8080
+  rededr_port: 8081
+  default_drop_path: C:\RedEdr\data
+  password: secret
+  default_drop_path: C:\Users\\Public\\
+  data:
+    proxmox_id: 101
+    proxmox_snapshot: latest
+    ip: 10.10.20.102
+
+test_azure:
   connector: NewAzure
   comment: New Azure Win11 Defender
-  edr_collector: Defender
-  default_malware_path: C:\RedEdr\data
+  edr_collector: defender
+  default_drop_path: C:\RedEdr\data
   data:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
     admin_username: admin 
     admin_password: password
+    edr_mde:
+      tenant_id: "00000000-0000-0000-0000-000000000000"
+      client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+      hostname: "DESKTOP-12356"
+      device_id: "4234k4j2k3j4k23j4k2j43"

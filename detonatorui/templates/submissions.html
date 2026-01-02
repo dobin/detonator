@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Scans{% endblock %}
+{% block title %}Submissions{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="card card-body">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Scan Management</h2>
+        <h2 class="text-2xl font-bold">Submission Management</h2>
         <div class="space-x-2">
             <button 
-                onclick="refreshScans()"
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                onclick="refreshSubmissions()"
+                class="btn-outline"
             >
                 Refresh
             </button>
@@ -21,30 +21,52 @@
         <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-end">
             <!-- Search Bar -->
             <div class="flex-1">
-                <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <label for="search-input" class="block text-sm font-medium text-label mb-1">Search</label>
                 <input 
                     type="text" 
                     id="search-input"
-                    placeholder="Search by project, comment, or filename..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder=""
+                    class="input"
                 />
+            </div>
+            
+            <!-- Status Filter -->
+            <div class="w-full md:w-40">
+                <label for="status-filter" class="block text-sm font-medium text-label mb-1">Status</label>
+                <select id="status-filter" class="input">
+                    <option value="all">All Statuses</option>
+                    <option value="fresh">Fresh</option>
+                    <option value="running">Running</option>
+                    <option value="finished">Finished</option>
+                    <option value="error">Error</option>
+                </select>
             </div>
             
             <!-- Project Filter -->
             <div class="w-full md:w-48">
-                <label for="project-filter" class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                <label for="project-filter" class="block text-sm font-medium text-label mb-1">Project</label>
                 <input 
                     type="text" 
                     id="project-filter"
-                    placeholder="Filter by project..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder=""
+                    class="input"
                 />
+            </div>
+            
+            <!-- User Filter -->
+            <div class="w-full md:w-32">
+                <label for="user-filter" class="block text-sm font-medium text-label mb-1">User</label>
+                <select id="user-filter" class="input">
+                    <option value="all">All</option>
+                    <option value="guest" {% if AUTH_ENABLED %}selected{% endif %}>Guest</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
             
             <!-- Limit Filter -->
             <div class="w-full md:w-32">
-                <label for="limit-filter" class="block text-sm font-medium text-gray-700 mb-1">Limit</label>
-                <select id="limit-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label for="limit-filter" class="block text-sm font-medium text-label mb-1">Limit</label>
+                <select id="limit-filter" class="input">
                     <option value="5">5</option>
                     <option value="10" selected>10</option>
                     <option value="25">25</option>
@@ -57,70 +79,35 @@
             <div>
                 <button 
                     onclick="clearFilters()"
-                    class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                    class="btn-outline"
                 >
                     Clear
                 </button>
             </div>
         </div>
-        
-        <!-- Status Filter Buttons -->
-        <div class="flex space-x-2 mt-4">
-            <button 
-                onclick="filterScans('all')"
-                id="filter-all"
-                class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-                All
-            </button>
-            <button 
-                onclick="filterScans('running')"
-                id="filter-running"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Running
-            </button>
-            <button 
-                onclick="filterScans('finished')"
-                id="filter-finished"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Finished
-            </button>
-            <button 
-                onclick="filterScans('error')"
-                id="filter-error"
-                class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            >
-                Error
-            </button>
-        </div>
     </div>
 
-    <!-- Scans List -->
+    <!-- Submissions List -->
     <div 
-        id="scans-container" 
-        hx-get="/templates/scans?limit=10" 
-        hx-trigger="load"
-        hx-indicator="#loading"
+        id="submissions-container"
     >
-        <div class="text-center text-gray-500">Loading scans...</div>
+        <div class="text-center text-description">Loading submissions...</div>
     </div>
 </div>
 
-<!-- Modal for scan details -->
-<div id="scan-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-5/6 lg:w-5/6 xl:w-4/5 shadow-lg rounded-md bg-white">
+<!-- Modal for submission details -->
+<div id="submission-modal" class="hidden fixed inset-0 bg-modal-overlay bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border border-dark w-11/12 md:w-5/6 lg:w-5/6 xl:w-4/5 shadow-lg rounded-md bg-container">
         <div class="mt-3">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Scan Details</h3>
-                <button onclick="closeScanModal()" class="text-gray-400 hover:text-gray-600">
+                <h3 class="text-lg font-medium text-heading">Submission Details</h3>
+                <button onclick="closeSubmissionModal()" class="text-muted hover:text-secondary">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <div id="scan-modal-content">
+            <div id="submission-modal-content">
                 <!-- Content will be loaded here -->
             </div>
         </div>
@@ -128,7 +115,6 @@
 </div>
 
 <script>
-    let currentFilter = 'all';
     let autoRefreshInterval;
     let debounceTimer;
 
@@ -136,8 +122,9 @@
         const params = new URLSearchParams();
         
         // Status filter
-        if (currentFilter !== 'all') {
-            params.append('status', currentFilter);
+        const status = document.getElementById('status-filter').value;
+        if (status && status !== 'all') {
+            params.append('status', status);
         }
         
         // Search filter
@@ -152,6 +139,12 @@
             params.append('project', project);
         }
         
+        // User filter
+        const user = document.getElementById('user-filter').value;
+        if (user && user !== 'all') {
+            params.append('user', user);
+        }
+        
         // Limit
         const limit = document.getElementById('limit-filter').value;
         if (limit) {
@@ -159,13 +152,13 @@
         }
         
         const queryString = params.toString();
-        return '/templates/scans' + (queryString ? '?' + queryString : '');
+        return '/templates/submissions' + (queryString ? '?' + queryString : '');
     }
 
     function applyFilters() {
         const url = buildFilterUrl();
         htmx.ajax('GET', url, {
-            target: '#scans-container',
+            target: '#submissions-container',
             swap: 'innerHTML'
         });
     }
@@ -185,29 +178,16 @@
         autoRefreshInterval = setInterval(function() {
             const url = buildFilterUrl();
             htmx.ajax('GET', url, {
-                target: '#scans-container',
+                target: '#submissions-container',
                 swap: 'innerHTML'
             });
         }, 5000); // Refresh every 5 seconds
     }
 
-    function filterScans(status) {
-        currentFilter = status;
-        
-        // Update filter button appearance
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        
-        const activeBtn = document.getElementById('filter-' + status);
-        activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
-        activeBtn.classList.add('bg-blue-500', 'text-white');
-        
-        // Apply filters immediately
+    function filterSubmissions(status) {
+        // Legacy function kept for compatibility
+        document.getElementById('status-filter').value = status;
         applyFilters();
-        
-        // Restart auto-refresh with new filter
         startAutoRefresh();
     }
 
@@ -215,55 +195,63 @@
         // Reset all filter inputs
         document.getElementById('search-input').value = '';
         document.getElementById('project-filter').value = '';
+        document.getElementById('status-filter').value = 'all';
         document.getElementById('limit-filter').value = '10';
         
-        // Reset status filter to 'all'
-        filterScans('all');
-    }
-
-    function refreshScans() {
+        // Reset user filter to default based on auth
+        {% if AUTH_ENABLED %}
+        document.getElementById('user-filter').value = 'guest';
+        {% else %}
+        document.getElementById('user-filter').value = 'all';
+        {% endif %}
+        
+        // Apply filters
         applyFilters();
     }
 
-    function deleteScan(scanId) {
-        if (confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
-            fetch('/api/scans/' + scanId, {
+    function refreshSubmissions() {
+        applyFilters();
+    }
+
+    function deleteSubmission(submissionId) {
+        if (confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+            fetch('{{ API_BASE_URL }}/api/submissions/' + submissionId, {
                 method: 'DELETE'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    alert('Error deleting scan: ' + data.error);
+                    alert('Error deleting submission: ' + data.error);
                 } else {
-                    // Refresh the scans list after successful deletion
-                    refreshScans();
+                    // Refresh the submissions list after successful deletion
+                    refreshSubmissions();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to delete scan');
+                alert('Failed to delete submission');
             });
         }
     }
 
-    function viewScanDetails(scanId) {
-        // Use HTMX to load scan details into the modal
-        htmx.ajax('GET', '/templates/scan-details/' + scanId, {
-            target: '#scan-modal-content',
+    function viewSubmissionDetails(submissionId) {
+        // Use HTMX to load submission details into the modal
+        htmx.ajax('GET', '/templates/submission-details/' + submissionId, {
+            target: '#submission-modal-content',
             swap: 'innerHTML'
         }).then(() => {
-            document.getElementById('scan-modal').classList.remove('hidden');
+            document.getElementById('submission-modal').classList.remove('hidden');
         });
     }
 
-    function closeScanModal() {
-        document.getElementById('scan-modal').classList.add('hidden');
+    function closeSubmissionModal() {
+        document.getElementById('submission-modal').classList.add('hidden');
     }
 
     // Close modal when clicking outside
-    document.getElementById('scan-modal').addEventListener('click', function(e) {
+    document.getElementById('submission-modal').addEventListener('click', function(e) {
         if (e.target === this) {
-            closeScanModal();
+            closeSubmissionModal();
         }
     });
 
@@ -272,7 +260,12 @@
         // Add input event listeners for debounced filtering
         document.getElementById('search-input').addEventListener('input', debounceApplyFilters);
         document.getElementById('project-filter').addEventListener('input', debounceApplyFilters);
+        document.getElementById('status-filter').addEventListener('change', applyFilters);
+        document.getElementById('user-filter').addEventListener('change', applyFilters);
         document.getElementById('limit-filter').addEventListener('change', applyFilters);
+        
+        // Load initial content based on current dropdown values
+        applyFilters();
         
         // Start auto-refresh when page loads
         startAutoRefresh();

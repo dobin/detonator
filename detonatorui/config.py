@@ -1,11 +1,18 @@
 
 import os
-from dotenv import load_dotenv
+import yaml
+from pathlib import Path
 
-# Load environment variables
-load_dotenv()
 
-API_BASE_URL = "http://localhost:8000"
+# Load config from config.yaml
+def load_config():
+    config_file = Path(__file__).parent / "config.yaml"
+    if config_file.exists():
+        with open(config_file, 'r') as f:
+            config = yaml.safe_load(f)
+            return config if isinstance(config, dict) else {}
+    return {}
 
-# Read-only mode configuration (should match FastAPI)
-READ_ONLY_MODE = os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
+_config = load_config()
+
+API_BASE_URL = _config.get("api_base_url", "http://localhost:8000")

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detonator - Logout</title>
+    <link href="static/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-container rounded-lg shadow-2xl p-8 w-full max-w-md text-center">
+        <div class="mb-6">
+            <svg class="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-heading mb-2">Logged Out</h1>
+        <p class="text-secondary mb-6">You have been successfully logged out.</p>
+        
+        <a 
+            href="/login" 
+            class="btn-info inline-block font-semibold py-3 px-6"
+        >
+            Login Again
+        </a>
+    </div>
+
+    <script>
+        // Clear password from localStorage
+        localStorage.removeItem('detonator_auth_password');
+    </script>
+</body>
+</html>

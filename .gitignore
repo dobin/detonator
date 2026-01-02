@@ -6,5 +6,9 @@ bak/
 config.env
 .env
 .vscode/
-*.yaml
+todo.md
+upload/
+profiles_init.yaml
+azure.yaml
+proxmox.yaml
 todo.md

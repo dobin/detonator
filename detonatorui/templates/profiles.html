@@ -5,50 +5,56 @@
 {% block content %}
 <div class="mx-auto">
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="card card-header mb-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-800">Profiles</h2>
+            <h2 class="text-2xl font-bold text-heading">Profiles</h2>
             <div class="space-x-3">
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        onclick="resetFormForCreate(); showCreateProfileForm();"
-                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-                        Create Profile
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    onclick="resetFormForCreate(); showCreateProfileForm();"
+                    class="btn-success">
+                    Create Profile
+                </button>
                 <button 
                     onclick="htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'})"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    class="btn-primary">
                     Refresh
                 </button>
             </div>
         </div>
-
-        <div class="mb-4">
-            <p class="text-gray-600">
-                Profiles provide access to EDRs installed on VMs. <br>
-                A profile points to a VM with DetonatorAgent or RedEdr, where malware can be detonated. <br>
-                After executing, we receive either the detection result, or the detection surface (Events) when using RedEdr.
-            </p>
+        
+        <!-- Profiles List -->
+        <div id="loading-indicator" class="htmx-indicator">
+            <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 spinner-border"></div>
+            <span class="ml-2 text-sm text-secondary">Refreshing...</span>
+        </div>
+        <div id="profiles-list" 
+             hx-get="/templates/profiles" 
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML swap:300ms"
+             hx-indicator="#loading-indicator">
+            <div class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 spinner-border"></div>
+                <p class="mt-2 text-secondary">Loading profiles...</p>
+            </div>
         </div>
     </div>
 
     <!-- Create Profile Form (initially hidden) -->
-    <div id="create-profile-form" class="bg-white rounded-lg shadow p-6 mb-6" style="display: none;">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Create New Profile</h3>
+    <div id="create-profile-form" class="bg-container rounded-lg shadow p-6 mb-6" style="display: none;">
+        <h3 class="text-lg font-semibold text-heading mb-4">Create New Profile</h3>
         <form 
-            hx-post="/api/profiles/submit" 
-            hx-target="#form-result"
-            hx-encoding="application/x-www-form-urlencoded"
+            id="profile-form"
             class="space-y-6"
         >
             <input type="hidden" id="profile-id" name="profile_id" value="">
+            <input type="hidden" id="mde_json" name="mde" value="">
             
             <!-- Name Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                    <p class="text-sm text-gray-500">Creating a scan will use this to know which VM to use.</p>
+                    <label for="name" class="block text-sm font-medium text-label mb-1">Name *</label>
+                    <p class="text-sm text-description">Creating a submission will use this to know which VM to use.</p>
                 </div>
                 <div class="md:col-span-1">
                     <input 
@@ -56,7 +62,7 @@
                         id="name" 
                         name="name" 
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                         placeholder="defender_live"
                     >
                 </div>
@@ -65,8 +71,8 @@
             <!-- Connector Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="connector" class="block text-sm font-medium text-gray-700 mb-1">Connector *</label>
-                    <p class="text-sm text-gray-500">How we connect to the DetonatorAgent/RedEdr on the target VM (and optionally manage the VMs)</p>
+                    <label for="connector" class="block text-sm font-medium text-label mb-1">Connector *</label>
+                    <p class="text-sm text-description">How we connect to the DetonatorAgent/RedEdr on the target VM (and optionally manage the VMs)</p>
                 </div>
                 <div class="md:col-span-1">
                     <select 
@@ -74,12 +80,12 @@
                         name="connector" 
                         required
                         onchange="updateConnectorComment()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                     >
                         <option value="">Select connector...</option>
                         <!-- Options will be populated dynamically from connectors API -->
                     </select>
-                    <div id="connector-comment" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700" style="display: none;">
+                    <div id="connector-comment" class="mt-2 p-2 info-box rounded text-sm" style="display: none;">
                         <!-- Connector comment will be displayed here -->
                     </div>
                 </div>
@@ -88,8 +94,8 @@
             <!-- EDR Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="edr_collector" class="block text-sm font-medium text-gray-700 mb-1">EDR</label>
-                    <p class="text-sm text-gray-500">
+                    <label for="edr_collector" class="block text-sm font-medium text-label mb-1">EDR</label>
+                    <p class="text-sm text-description">
                         Optional. The EDR system running on the target VM. Freetext. <br>
                         Use magic "RedEdr" when only collecting events from RedEdr, when caring about detection result.
                     </p>
@@ -99,7 +105,7 @@
                         type="text" 
                         id="edr_collector" 
                         name="edr_collector" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                         placeholder="RedEdr or freetext: MDE / DefenderEndpoint / ..."
                     >
                 </div>
@@ -108,9 +114,9 @@
             <!-- Default Malware Path Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="default_malware_path" class="block text-sm font-medium text-gray-700 mb-1">Default Malware Path</label>
-                    <p class="text-sm text-gray-500">
-                        Optional. Default directory where malware will be uploaded. Can be overwritten by scan. <br>
+                    <label for="default_drop_path" class="block text-sm font-medium text-label mb-1">Default Malware Path</label>
+                    <p class="text-sm text-description">
+                        Optional. Default directory where malware will be uploaded. Can be overwritten by submission. <br>
                         Default is <code>C:\Users\Public\Downloads\</code>. <br>
                         Note: Use whitelisted <code>C:\RedEdr\data\</code> for no EDR detection.
                     </p>
@@ -118,9 +124,9 @@
                 <div class="md:col-span-1">
                     <input 
                         type="text" 
-                        id="default_malware_path" 
-                        name="default_malware_path" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="default_drop_path" 
+                        name="default_drop_path" 
+                        class="input"
                         placeholder="C:\Users\Public\Downloads"
                     >
                 </div>
@@ -129,8 +135,8 @@
             <!-- Port Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="port" class="block text-sm font-medium text-gray-700 mb-1">Port *</label>
-                    <p class="text-sm text-gray-500">Port number of the DetonatorAgent/RedEdr on the target VM.</p>
+                    <label for="port" class="block text-sm font-medium text-label mb-1">Port *</label>
+                    <p class="text-sm text-description">Port number of the DetonatorAgent/RedEdr on the target VM.</p>
                 </div>
                 <div class="md:col-span-1">
                     <input 
@@ -138,8 +144,25 @@
                         id="port" 
                         name="port" 
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                         placeholder="8000"
+                    >
+                </div>
+            </div>
+
+            <!-- RedEdr Port Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div class="md:col-span-1">
+                    <label for="rededr_port" class="block text-sm font-medium text-label mb-1">RedEdr Port</label>
+                    <p class="text-sm text-description">Port number for RedEdr API (optional, if different from main port).</p>
+                </div>
+                <div class="md:col-span-1">
+                    <input 
+                        type="number" 
+                        id="rededr_port" 
+                        name="rededr_port" 
+                        class="input"
+                        placeholder=""
                     >
                 </div>
             </div>
@@ -147,15 +170,15 @@
             <!-- Comment Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">Comment</label>
-                    <p class="text-sm text-gray-500">Optional description or notes about this profile</p>
+                    <label for="comment" class="block text-sm font-medium text-label mb-1">Comment</label>
+                    <p class="text-sm text-description">Optional description or notes about this profile</p>
                 </div>
                 <div class="md:col-span-1">
                     <input 
                         type="text" 
                         id="comment" 
                         name="comment" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                         placeholder="Optional description"
                     >
                 </div>
@@ -164,8 +187,8 @@
             <!-- Data Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div class="md:col-span-1">
-                    <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data (JSON) *</label>
-                    <p class="text-sm text-gray-500">Configuration data in JSON format. Sample data will be auto-filled when you select a connector.</p>
+                    <label for="data" class="block text-sm font-medium text-label mb-1">Data (JSON) *</label>
+                    <p class="text-sm text-description">Configuration data in JSON format. Sample data will be auto-filled when you select a connector.</p>
                 </div>
                 <div class="md:col-span-1">
                     <textarea 
@@ -173,24 +196,22 @@
                         name="data" 
                         required
                         rows="4"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="input"
                         placeholder='{"ip": "192.168.1.100", "admin_username": "admin", "admin_password": "password"}'
                     ></textarea>
                 </div>
             </div>
-            
             <div class="flex space-x-3">
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        type="submit"
-                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-                        Create Profile
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    type="submit"
+                    class="btn-success">
+                    Create Profile
+                </button>
                 <button 
                     type="button"
                     onclick="hideCreateProfileForm()"
-                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                    class="btn-gray">
                     Cancel
                 </button>
             </div>
@@ -199,26 +220,6 @@
         <div id="form-result" class="mt-4"></div>
     </div>
 
-    <!-- Profiles List -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Active Profiles</h3>
-            <div id="loading-indicator" class="htmx-indicator">
-                <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                <span class="ml-2 text-sm text-gray-600">Refreshing...</span>
-            </div>
-        </div>
-        <div id="profiles-list" 
-             hx-get="/templates/profiles" 
-             hx-trigger="load, every 3s"
-             hx-swap="innerHTML swap:300ms"
-             hx-indicator="#loading-indicator">
-            <div class="text-center py-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p class="mt-2 text-gray-600">Loading profiles...</p>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -243,7 +244,7 @@ document.head.appendChild(style);
 
 // Load available connectors dynamically
 function loadConnectors() {
-    return fetch('/api/connectors')
+    return fetch('{{ API_BASE_URL }}/api/connectors')
         .then(response => response.json())
         .then(connectors => {
             // Store connector data globally for later use
@@ -354,8 +355,9 @@ function editProfile(profileName, profileData) {
         document.getElementById('name').value = profileName;
         document.getElementById('connector').value = profileData.connector;
         document.getElementById('edr_collector').value = profileData.edr_collector;
-        document.getElementById('default_malware_path').value = profileData.default_malware_path || '';
+        document.getElementById('default_drop_path').value = profileData.default_drop_path || '';
         document.getElementById('port').value = profileData.port;
+        document.getElementById('rededr_port').value = profileData.rededr_port || '';
         document.getElementById('comment').value = profileData.comment || '';
         document.getElementById('data').value = JSON.stringify(profileData.data, null, 2);
         
@@ -370,8 +372,9 @@ function editProfile(profileName, profileData) {
         document.getElementById('name').value = profileName;
         document.getElementById('connector').value = profileData.connector;
         document.getElementById('edr_collector').value = profileData.edr_collector;
-        document.getElementById('default_malware_path').value = profileData.default_malware_path || '';
+        document.getElementById('default_drop_path').value = profileData.default_drop_path || '';
         document.getElementById('port').value = profileData.port;
+        document.getElementById('rededr_port').value = profileData.rededr_port || '';
         document.getElementById('comment').value = profileData.comment || '';
         document.getElementById('data').value = JSON.stringify(profileData.data, null, 2);
         document.getElementById('profile-id').value = profileData.id;
@@ -383,10 +386,10 @@ function editProfileById(profileId, profileName) {
     
     // Show loading state
     document.getElementById('form-result').innerHTML = 
-        '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">Loading profile data...</div>';
+        '<div class="processing-box px-4 py-3 rounded">Loading profile data...</div>';
     
     // Fetch profile data from API
-    fetch(`/api/profiles/${profileId}`)
+    fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -408,7 +411,7 @@ function editProfileById(profileId, profileName) {
 
 function deleteProfile(profileId, profileName) {
     if (confirm(`Are you sure you want to delete profile "${profileName}"?`)) {
-        fetch(`/api/profiles/${profileId}`, {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -439,7 +442,7 @@ function deleteProfile(profileId, profileName) {
 
 function releaseLock(profileId, profileName) {
     if (confirm(`Are you sure you want to release the lock for profile "${profileName}"?`)) {
-        fetch(`/api/profiles/${profileId}/release_lock`, {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/release_lock`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -463,6 +466,85 @@ function releaseLock(profileId, profileName) {
             }
         })
         .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+}
+
+function rebootProfile(profileId, profileName) {
+    if (confirm(`Are you sure you want to reboot the VM for profile "${profileName}"?`)) {
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/reboot`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error || data.detail) {
+                alert('Error: ' + (data.error || data.detail));
+            } else {
+                // Show success message briefly
+                const tempMsg = document.createElement('div');
+                tempMsg.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+                tempMsg.textContent = data.message || 'VM reboot initiated!';
+                document.body.appendChild(tempMsg);
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    document.body.removeChild(tempMsg);
+                }, 3000);
+                
+                // Refresh the profiles list after a delay to show updated status
+                setTimeout(() => {
+                    htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+}
+
+function revertProfile(profileId, profileName) {
+    if (confirm(`Are you sure you want to revert the VM to snapshot for profile "${profileName}"?\n\nThis will:\n1. Stop the VM\n2. Revert to the configured snapshot\n3. Start the VM again`)) {
+        // Show processing message
+        const processingMsg = document.createElement('div');
+        processingMsg.id = 'revert-processing-msg';
+        processingMsg.className = 'fixed top-4 right-4 processing-box px-4 py-3 rounded z-50';
+        processingMsg.innerHTML = '<div class="flex items-center"><div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 spinner-border mr-2"></div>Reverting VM... This may take a minute.</div>';
+        document.body.appendChild(processingMsg);
+        
+        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/revert`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remove processing message
+            const msg = document.getElementById('revert-processing-msg');
+            if (msg) document.body.removeChild(msg);
+            
+            if (data.error || data.detail) {
+                alert('Error: ' + (data.error || data.detail));
+            } else {
+                // Show success message
+                const tempMsg = document.createElement('div');
+                tempMsg.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+                tempMsg.textContent = data.message || 'VM reverted and restarted successfully!';
+                document.body.appendChild(tempMsg);
+                
+                // Remove message after 3 seconds
+                setTimeout(() => {
+                    document.body.removeChild(tempMsg);
+                }, 3000);
+                
+                // Refresh the profiles list
+                htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
+            }
+        })
+        .catch(error => {
+            // Remove processing message
+            const msg = document.getElementById('revert-processing-msg');
+            if (msg) document.body.removeChild(msg);
+            
             alert('Error: ' + error);
         });
     }
@@ -502,45 +584,64 @@ function validateJSON() {
     }
 }
 
-// Listen for form completion to refresh profiles list
-document.body.addEventListener('htmx:afterRequest', function(event) {
-    if (event.detail.xhr.status === 200 && 
-        event.detail.requestConfig.verb === 'post' &&
-        event.detail.requestConfig.path.includes('/api/profiles/submit')) {
-        // Show success message
-        const result = JSON.parse(event.detail.xhr.responseText);
-        document.getElementById('form-result').innerHTML = 
+// Handle form submission with fetch to the API
+document.getElementById('profile-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!validateJSON()) {
+        return;
+    }
+
+    const resultBox = document.getElementById('form-result');
+    resultBox.innerHTML = '<div class="processing-box px-4 py-3 rounded">Saving profile...</div>';
+
+    const profileId = document.getElementById('profile-id').value;
+    const url = profileId
+        ? `{{ API_BASE_URL }}/api/profiles/${profileId}`
+        : '{{ API_BASE_URL }}/api/profiles';
+    const method = profileId ? 'PUT' : 'POST';
+
+    const formData = new FormData(e.target);
+    formData.delete('profile_id');
+    const body = new URLSearchParams();
+    for (const [key, value] of formData.entries()) {
+        if (key === 'rededr_port' && (!value || value.trim() === '')) {
+            continue;
+        }
+        body.append(key, value ?? '');
+    }
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString(),
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.detail || payload.error || `Server returned status ${response.status}`);
+        }
+
+        resultBox.innerHTML =
             '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">Profile saved successfully!</div>';
-        
-        // Immediately refresh profiles list and hide form
-        htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'});
-        
-        // Hide form quickly after showing success
+
+        htmx.ajax('GET', '/templates/profiles', { target: '#profiles-list', swap: 'innerHTML' });
+
         setTimeout(() => {
             hideCreateProfileForm();
             resetFormForCreate();
-        }, 500);
-    } else if (event.detail.xhr.status >= 400 && 
-               event.detail.requestConfig.path.includes('/api/profiles')) {
-        // Show error message
-        const error = JSON.parse(event.detail.xhr.responseText);
-        document.getElementById('form-result').innerHTML = 
-            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: ' + error.error + '</div>';
+            resultBox.innerHTML = '';
+        }, 600);
+    } catch (error) {
+        resultBox.innerHTML =
+            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: ' +
+            error.message +
+            '</div>';
     }
 });
 
-// Add form validation before submit
-document.body.addEventListener('htmx:before', function(event) {
-    if (event.detail.requestConfig.path.includes('/api/profiles/submit') && 
-        event.detail.requestConfig.verb === 'post') {
-        if (!validateJSON()) {
-            event.preventDefault();
-            return false;
-        }
-        // Show loading indicator
-        document.getElementById('form-result').innerHTML = 
-            '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">Saving profile...</div>';
-    }
-});
 </script>
 {% endblock %}

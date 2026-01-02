@@ -6,6 +6,7 @@ import os
 import yaml
 import logging
 from typing import Dict, Any, Optional
+from detonatorapi.settings import DISABLE_REVERT_VM
 
 from proxmoxer import ProxmoxAPI, ResourceException
 
@@ -29,7 +30,7 @@ class ProxmoxManager:
     def __init__(self):
         self.proxmox_ip = None
         self.proxmox_node_name = None
-        self.proxmoxApi: ProxmoxAPI
+        self.proxmoxApi: ProxmoxAPI | None = None
 
 
     def Init(self) -> bool:
@@ -82,83 +83,110 @@ class ProxmoxManager:
         return True
 
 
-    def WaitForVmStatus(self, vm_id, status, timeout=10):
+    def WaitForVmStatus(self, proxmox_id, status, timeout=10):
         n = 0
-        while self.StatusVm(vm_id) != status:
+        while self.StatusVm(proxmox_id) != status:
             if n == timeout:
                 print("Proxmox WaitForVmStatus: Wait Failed")
                 return False
             
-            logger.info(f"Waiting for VM {vm_id} to reach status '{status}'... (current: {self.StatusVm(vm_id)})")
+            logger.info(f"Waiting for VM {proxmox_id} to reach status '{status}'... (current: {self.StatusVm(proxmox_id)})")
             time.sleep(3)
             n += 1
         return True
     
 
-    def StatusVm(self, vm_id) -> str:
+    def StatusVm(self, proxmox_id) -> str:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
         try:
-            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).status.current.get()
             if not vmStatus:
-                logger.error(f"Proxmox StatusVm: VM {vm_id} does not exist or is not running")
+                logger.error(f"Proxmox StatusVm: VM {proxmox_id} does not exist or is not running")
                 return "doesnotexist"
             return vmStatus["status"]
         except ResourceException as e:
-            logger.error(f"Proxmox StatusVm: Error getting status for VM {vm_id}: {e}")
+            logger.error(f"Proxmox StatusVm: Error getting status for VM {proxmox_id}: {e}")
+            logger.error(f"Did you configure the correct node name in the config file? Current node name: {self.proxmox_node_name}")
             return "doesnotexist"
     
 
-    def StatusVmLock(self, vm_id) -> str:
+    def StatusVmLock(self, proxmox_id) -> str:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
         try:
-            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.current.get()
+            vmStatus = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).status.current.get()
             if not vmStatus:
-                logger.error(f"Proxmox StatusVmLock: VM {vm_id} does not exist or is not running")
+                logger.error(f"Proxmox StatusVmLock: VM {proxmox_id} does not exist or is not running")
                 return "doesnotexist"
             return vmStatus.get("lock", "unlocked")
         except ResourceException as e:
-            logger.error(f"Proxmox StatusVmLock: Error getting lock status for VM {vm_id}: {e}")
+            logger.error(f"Proxmox StatusVmLock: Error getting lock status for VM {proxmox_id}: {e}")
             return "doesnotexist"
     
 
-    def WaitForVmUnlock(self, vm_id, timeout=10):
+    def WaitForVmUnlock(self, proxmox_id, timeout=10):
         n = 0
         while True:
-            status = self.StatusVmLock(vm_id)
+            status = self.StatusVmLock(proxmox_id)
             if status == "unlocked":
                 return True
             if n == timeout:
-                logger.error(f"Proxmox WaitForVmUnlock: Wait Failed for VM {vm_id}")
+                logger.error(f"Proxmox WaitForVmUnlock: Wait Failed for VM {proxmox_id}")
                 return False
             
-            logger.info(f"Waiting for VM {vm_id} to unlock... (current: {status})")
+            logger.info(f"Waiting for VM {proxmox_id} to unlock... (current: {status})")
             time.sleep(3)
             n += 1
     
 
-    def StartVm(self, vm_id) -> bool:
-        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.start.post()
+    def StartVm(self, proxmox_id) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).status.start.post()
         if not self._waitForTask(task):
             return False
-        return self.WaitForVmStatus(vm_id, "running", timeout=10)
+        return self.WaitForVmStatus(proxmox_id, "running", timeout=10)
 
 
-    def StopVm(self, vm_id) -> bool:
-        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).status.stop.post()
+    def StopVm(self, proxmox_id) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
+        if DISABLE_REVERT_VM:
+            logger.info("ProxmoxManager: StopVm called but DISABLE_REVERT_VM is set. Skipping stop.")
+            return True
+
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).status.stop.post()
         if not self._waitForTask(task):
             return False
-        return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
+        return self.WaitForVmStatus(proxmox_id, "stopped", timeout=10)
 
 
-    def RevertVm(self, vm_id, vm_snapshot) -> bool:
-        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot(vm_snapshot).rollback.post()
+    def RevertVm(self, proxmox_id, proxmox_snapshot) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
+        if DISABLE_REVERT_VM:
+            logger.info("ProxmoxManager: RevertVm called but DISABLE_REVERT_VM is set. Skipping revert.")
+            return True
+
+        task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).snapshot(proxmox_snapshot).rollback.post()
         if not self._waitForTask(task):
             return False
-        #return self.WaitForVmStatus(vm_id, "stopped", timeout=10)
-        return self.WaitForVmUnlock(vm_id, timeout=20)
+        #return self.WaitForVmStatus(proxmox_id, "stopped", timeout=10)
+        return self.WaitForVmUnlock(proxmox_id, timeout=40)
 
 
-    def SnapshotExists(self, vm_id, snapshot_name) -> bool:
+    def SnapshotExists(self, proxmox_id, snapshot_name) -> bool:
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         try:
-            snapshots = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(vm_id).snapshot.get()
+            snapshots = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).snapshot.get()
             if not snapshots:
                 return False
             snapshot_exists = any(snapshot['name'] == snapshot_name for snapshot in snapshots)
@@ -168,11 +196,14 @@ class ProxmoxManager:
             return False
 
 
-    def PrintStatus(self, vm_id):
-        print("Status: " + self.StatusVm(vm_id))
+    def PrintStatus(self, proxmox_id):
+        print("Status: " + self.StatusVm(proxmox_id))
 
 
     def _waitForTask(self, rollback_task, max_tries=30):
+        if not self.proxmoxApi:
+            raise Exception("Proxmox API not initialized")
+        
         if not rollback_task:
             return True
         if 'taskid' not in rollback_task:

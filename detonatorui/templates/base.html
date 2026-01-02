@@ -4,19 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detonator - {% block title %}{% endblock %}</title>
-    <link href="static/tailwind.min.css" rel="stylesheet">
-    <script src="static/htmx.js"></script>
+    <link href="/static/tailwind.min.css" rel="stylesheet">
+    <link href="/static/css/custom.css" rel="stylesheet">
+    <script src="/static/htmx.js"></script>
     <style>
-        .nav-item {
-            transition: all 0.2s ease-in-out;
-        }
-        .nav-item:hover {
-            background-color: rgba(59, 130, 246, 0.7);
-        }
-        .nav-item.active {
-            background-color: rgba(59, 130, 246, 0.9);
-            border-left: 4px solid white;
-        }
 
         /* HTMX Loading Indicator */
         .htmx-indicator {
@@ -31,9 +22,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-body min-h-screen flex">
     <!-- Loading Indicator -->
-    <div id="loading" class="htmx-indicator fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+    <div id="loading" class="htmx-indicator loading-indicator fixed top-4 right-4 text-white px-4 py-2 rounded-lg shadow-lg z-50">
         <div class="flex items-center">
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -44,12 +35,12 @@
     </div>
 
     <!-- Left Sidebar Navigation -->
-    <nav class="bg-blue-600 text-white w-52 min-h-screen flex flex-col">
-        <div class="p-6 border-b border-blue-500">
+    <nav class="nav-sidebar text-white w-52 min-h-screen flex flex-col">
+        <div class="p-6 border-b nav-border">
             <h1 class="text-2xl font-bold">Detonator</h1>
         </div>
         <div class="flex-1 py-4">
-            <a href="/" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'index' %}active{% endif %}">
+            <a href="/" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.index' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
@@ -57,33 +48,33 @@
                     Home
                 </span>
             </a>
-            <a href="/newscan" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'newscan' %}active{% endif %}">
+            <a href="/newsubmission" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.submission_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
                     </svg>
-                    New Scan
+                    New Submission
                 </span>
             </a>
-            <a href="/scans" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'scans' %}active{% endif %}">
+            <a href="/submissions" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.submissions_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
                     </svg>
-                    Scans
+                    Submissions
                 </span>
             </a>
-            <a href="/scans-table" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'scans_table_page' %}active{% endif %}">
+            <a href="/submissions-table" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.submissions_table_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                     </svg>
-                    Scans Table
+                    Submissions Table
                 </span>
             </a>
 
-            <div class="mx-6 my-2 border-t border-blue-400 opacity-30"></div>
-            <a href="/files" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'files' %}active{% endif %}">
+            <div class="mx-6 my-2 border-t nav-divider opacity-30"></div>
+            <a href="/files" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.files_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd"></path>
@@ -92,8 +83,7 @@
                 </span>
             </a>
 
-            {% if not READ_ONLY %}
-            <a href="/vms" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'vms' %}active{% endif %}">
+            <a href="/vms" data-auth-required class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.vms_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"></path>
@@ -101,14 +91,25 @@
                     Azure VMs
                 </span>
             </a>
-            {% endif %}
 
-            <a href="/profiles" class="nav-item block px-6 py-3 text-white hover:bg-blue-500 {% if request.endpoint == 'profiles' %}active{% endif %}">
+            <a href="/profiles" class="nav-item block px-6 py-3 text-white {% if request.endpoint == 'get.profiles_page' %}active{% endif %}">
                 <span class="flex items-center">
                     <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                     </svg>
                     Profiles
+                </span>
+            </a>
+        </div>
+        
+        <!-- Logout button at bottom -->
+        <div class="p-4 border-t nav-border">
+            <a href="/logout" class="nav-item block px-6 py-3 text-white rounded">
+                <span class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    Logout
                 </span>
             </a>
         </div>
@@ -118,6 +119,92 @@
     <main class="flex-1 p-8">
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+        // Authentication helper functions
+        function isAuthenticated() {
+            // If no auth is configured, always return true
+            if (! {{ AUTH_ENABLED|lower }}) {
+                return true;
+            }
+
+            // Otherwise check for stored password
+            return !!localStorage.getItem('detonator_auth_password');
+        }
+
+        // Show/hide elements based on authentication status
+        function updateUIForAuth() {
+            const authenticated = isAuthenticated();
+            
+            // Show/hide elements with data-auth-required attribute
+            document.querySelectorAll('[data-auth-required]').forEach(el => {
+                if (authenticated) {
+                    el.style.display = '';
+                    el.classList.remove('hidden');
+                } else {
+                    el.style.display = 'none';
+                    el.classList.add('hidden');
+                }
+            });
+            
+            // Hide elements with data-auth-hide attribute when authenticated
+            document.querySelectorAll('[data-auth-hide]').forEach(el => {
+                if (authenticated) {
+                    el.style.display = 'none';
+                    el.classList.add('hidden');
+                } else {
+                    el.style.display = '';
+                    el.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', updateUIForAuth);
+        
+        // Run after HTMX updates
+        document.body.addEventListener('htmx:afterSwap', updateUIForAuth);
+        document.body.addEventListener('htmx:afterSettle', updateUIForAuth);
+
+        // Authentication interceptor for HTMX requests
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            const password = localStorage.getItem('detonator_auth_password');
+            if (password) {
+                evt.detail.headers['X-Auth-Password'] = password;
+            }
+        });
+
+        // Handle 401 responses by redirecting to login
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            if (evt.detail.xhr.status === 401) {
+                // Store current page to return after login
+                const returnUrl = encodeURIComponent(window.location.pathname);
+                window.location.href = '/login?return=' + returnUrl;
+            }
+        });
+
+        // Also handle regular fetch requests (non-HTMX)
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            // Add auth header to fetch requests
+            const password = localStorage.getItem('detonator_auth_password');
+            if (password && args[1]) {
+                args[1].headers = args[1].headers || {};
+                args[1].headers['X-Auth-Password'] = password;
+            } else if (password && !args[1]) {
+                args[1] = { headers: { 'X-Auth-Password': password } };
+            }
+            
+            return originalFetch.apply(this, args).then(response => {
+                // Redirect to login on 401
+                if (response.status === 401) {
+                    const returnUrl = encodeURIComponent(window.location.pathname);
+                    window.location.href = '/login?return=' + returnUrl;
+                }
+                return response;
+            });
+        };
+    </script>
 
 </body>
 </html>

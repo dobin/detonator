@@ -1,73 +1,77 @@
 {% if files|length == 0 %}
 <div class="text-center ray-500 py-8">
-    No files uploaded yet. <a href="/upload" class="text-blue-500 hover:underline">Upload your first file</a>.
+    No files uploaded yet. <a href="/upload" class="link-info hover:underline">Upload your first file</a>.
 </div>
 {% else %}
 <div class="grid grid-cols-1 gap-4">
     {% for file in files %}
-    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="border border-card rounded-lg p-4 hover:shadow-md transition-shadow">
         <div class="flex justify-between items-start">
             <div class="flex-1">
-                <h3 class="font-semibold text-lg text-blue-600">{{ file.filename }}</h3>
+                <h3 class="font-semibold text-lg link-info">{{ file.filename }}</h3>
                 {% if file.source_url %}
-                <p class="text-gray-600 text-sm">Source: {{ file.source_url }}</p>
+                <p class="text-secondary text-sm">Source: {{ file.source_url }}</p>
                 {% endif %}
-                {% if file.fileargs %}
-                <p class="text-gray-600 text-sm">fileargs: <code class="bg-gray-100 px-1 rounded">{{ file.fileargs }}</code></p>
+                {% if file.exec_arguments %}
+                <p class="text-secondary text-sm">exec_arguments: <code class="bg-code px-1 rounded">{{ file.exec_arguments }}</code></p>
                 {% endif %}
                 {% if file.comment %}
-                <p class="text-gray-700 mt-2">{{ file.comment }}</p>
+                <p class="text-label mt-2">{{ file.comment }}</p>
                 {% endif %}
-                <p class="text-gray-500 text-xs mt-2">Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p class="text-description text-xs mt-2">Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 
-                <!-- Associated Scans -->
-                {% if file.scans and file.scans|length > 0 %}
-                <div class="mt-4 p-3 bg-gray-50 rounded">
-                    <div class="space-y-2">
-                        {% for scan in file.scans|sort(attribute='id', reverse=True) %}
-                        <div class="flex items-center justify-between text-xs">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-gray-600">Scan #{{ scan.id }}: </span>
-                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(scan.status) }}">{{ scan.status }}</span>
-                                {% if scan.profile %}
-                                <span class="text-gray-500">@{{ scan.profile.name }}</span>
+                <!-- Associated Submissions -->
+                {% if file.submissions and file.submissions|length > 0 %}
+                <div class="mt-4 p-3 bg-light rounded\">
+                    <div class="space-y-2\">
+                        {% for submission in file.submissions|sort(attribute='id', reverse=True) %}
+                        <div class="flex items-center justify-between text-xs\">\n                            <div class=\"flex items-center space-x-2\">
+                                <span class=\"text-secondary\">Submission #{{ submission.id }}: </span>
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}">{{ submission.status }}</span>
+                                {% if submission.profile %}
+                                <span class="text-description">@{{ submission.profile.name }}</span>
                                 {% endif %}
 
-                                {% if scan.result %}
-                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_scan_status_color(scan.result) }}"> {{ scan.result }}</span>
+                                {% if submission.edr_verdict %}
+                                <span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span>
                                 {% endif %}
                             </div>
                             <div class="flex space-x-1">
-                                <button onclick="viewScanDetails({{ scan.id }})" class="text-blue-500 hover:text-blue-700 text-xs">View</button>
-                                <a href="/scans?scan_id={{ scan.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
+                                <button onclick="viewSubmissionDetails({{ submission.id }})" class="link-info hover:underline text-xs">View</button>
+                                <a href="/submissions?submission_id={{ submission.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
                 {% else %}
-                <div class="mt-4 p-3 bg-gray-50 rounded">
-                    <p class="text-gray-500 text-sm">No scans yet</p>
+                <div class="mt-4 p-3 bg-light rounded">
+                    <p class="text-description text-sm">No submissions yet</p>
                 </div>
                 {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
-                {% if not READ_ONLY_MODE %}
                 <button 
-                    onclick="createScan({{ file.id }})"
-                    class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                    data-auth-required
+                    onclick="createSubmission({{ file.id }})"
+                    class="btn-primary text-sm"
                 >
-                    Create Scan
+                    Create Submission
                 </button>
-                {% endif %}
-                {% if not READ_ONLY_MODE %}
-                    <button 
-                        onclick="deleteFile({{ file.id }})"
-                        class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                    >
-                        Delete
-                    </button>
-                {% endif %}
+                <button 
+                    data-auth-required
+                    onclick="downloadFile({{ file.id }}, '{{ file.filename }}')"
+                    class="btn-success text-sm"
+                >
+                    Download
+                </button>
+                <button 
+                    data-auth-required
+                    onclick="deleteFile({{ file.id }})"
+                    class="btn-danger text-sm"
+                >
+                    Delete
+                </button>
             </div>
         </div>
     </div>

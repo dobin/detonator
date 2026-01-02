@@ -1,78 +1,106 @@
 from typing import Optional, List
 from datetime import datetime
 import logging
+import os
+from .settings import UPLOAD_DIR
+import random
+import string
+from werkzeug.utils import secure_filename
 
-from .database import Scan, File, Profile, get_db_for_thread
+from .database import Submission, File, Profile, get_db_direct
 from .utils import mylog
 
 logger = logging.getLogger(__name__)
 
 
 #
-def db_scan_change_status(scan_id: int, status: str, log_message: str = ""):
-    thread_db = get_db_for_thread()
-    db_scan = thread_db.get(Scan, scan_id)
+def db_submission_change_status(submission_id: int, status: str, log_message: str = ""):
+    thread_db = get_db_direct()
+    db_submission = thread_db.get(Submission, submission_id)
 
-    return db_scan_change_status_quick(thread_db, db_scan, status, log_message)
+    ret = db_submission_change_status_quick(thread_db, db_submission, status, log_message)
+    thread_db.close()
+    return ret
 
 
-# Change the status of a scan in the database
+# Change the status of a submission in the database
 # Only use this when you know what you are doing:
 # - as a shortcut
-# - and not use the db_scan after this
+# - and not use the db_submission after this
 # - or before this
-def db_scan_change_status_quick(db, db_scan: Scan, status: str, log_message: str = ""):
-    log = f"Scan {db_scan.id} status change from {db_scan.status} to {status}"
-    logger.info(log)
-
-    db_scan.detonator_srv_logs += mylog(log)
-    db_scan.status = status
+def db_submission_change_status_quick(db, db_submission: Submission, status: str, log_message: str = ""):
+    logger.info(f"Submission {db_submission.id} status change from {db_submission.status} to {status}")
+    
+    db_submission.status = status
 
     if log_message != "":
         logger.info("  " + log_message)
-        db_scan.detonator_srv_logs += mylog(log)
 
-    #db_scan.updated_at = datetime.utcnow()
+    #db_submission.updated_at = datetime.utcnow()
     db.commit()
 
 
-def db_scan_add_log(db, db_scan, log_message: str):
+def db_submission_add_log(db, db_submission, log_message: str):
     if log_message is None or log_message == "":
         return
     log = f"[{datetime.utcnow().isoformat()}] {log_message}"
     logger.info(log_message)
-    db_scan.detonator_srv_logs += log + "\n"
+    db_submission.server_logs += log + "\n"
 
     db.commit()
 
 
-def db_create_file(db, filename: str, content: bytes, source_url: str = "", comment: str = "", fileargs: str = "") -> int:
+def db_create_file(
+        db, 
+        filename: str, 
+        content: bytes, 
+        source_url: str = "", 
+        comment: str = "", 
+        exec_arguments: str = "", 
+        user: str = "",
+) -> int:
     file_hash = File.calculate_hash(content)
+ 
+    # prepend 4 random chars to filename to avoid collisions
+    filename = secure_filename(filename)
+    rand_str = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
+    actual_filename = f"{rand_str}_{filename}"
 
-    # DB: Create file record
+    # Write file content to disk
+    file_path = os.path.join(UPLOAD_DIR, f"{actual_filename}")
+    with open(file_path, 'wb') as f:
+        f.write(content)
+    
+    # DB: Create file record with path instead of content
     db_file = File(
-        content=content,
-        filename=filename,
+        filename=actual_filename,
         file_hash=file_hash,
         source_url=source_url,
         comment=comment,
-        fileargs=fileargs
+        exec_arguments=exec_arguments,
+        user=user
     )
     db.add(db_file)
     db.commit()
 
-    logger.info(f"DB: Created file {db_file.id} with filename: {filename}")
+    logger.info(f"DB: Created file {db_file.id} with filename: {actual_filename}")
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, edr_collector: str, data: dict, default_malware_path: str = "", comment: str = "", password: str = ""):
+def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = "", mde: Optional[dict] = None):
     """Create a new profile in the database"""
+    # Handle backward compatibility: if mde is provided, put it in data["edr_mde"]
+    if mde is not None:
+        data = dict(data)  # Create a copy to avoid modifying the original
+        data["edr_mde"] = mde
+    
     db_profile = Profile(
         name=name,
         connector=connector,
         port=port,
+        rededr_port=rededr_port,
         edr_collector=edr_collector,
-        default_malware_path=default_malware_path,
+        default_drop_path=default_drop_path,
         comment=comment,
         data=data,
         password=password
@@ -107,30 +135,41 @@ def db_list_profiles(db) -> List[Profile]:
     return db.query(Profile).all()
 
 
-def db_create_scan(db, file_id: int, profile_name: str, comment: str = "", project: str = "", runtime: int =10, malware_path: str = "", password: str = "") -> int:
-    """Create a scan using a profile name instead of profile_id"""
+def db_create_submission(
+    db,
+    file_id: int,
+    profile_name: str,
+    comment: str = "",
+    project: str = "",
+    runtime: int = 10,
+    drop_path: str = "",
+    execution_mode: str = "exec",
+    user: str = "",
+) -> int:
+    """Create a submission using a profile name instead of profile_id"""
     profile = db_get_profile_by_name(db, profile_name)
     if not profile:
         raise ValueError(f"Profile '{profile_name}' not found")
     
-    # get default_malware_path from profile if none given
-    # always make sure malware_path is set
-    if malware_path == "" and profile.default_malware_path != "":
-        malware_path = profile.default_malware_path
+    # get default_drop_path from profile if none given
+    # always make sure drop_path is set
+    if drop_path == "" and profile.default_drop_path != "":
+        drop_path = profile.default_drop_path
 
-    # Create scan directly with the profile instance
-    db_scan = Scan(
+    # Create submission directly with the profile instance
+    db_submission = Submission(
         file_id=file_id,
         profile_id=profile.id,
         comment=comment,
         project=project,
         runtime=runtime,
-        malware_path=malware_path,
-        detonator_srv_logs=mylog(f"DB: Scan created"),
+        drop_path=drop_path,
+        execution_mode=execution_mode,
+        user=user,
+        server_logs=mylog(f"DB: Submission created"),
         status="fresh",
     )
-    db.add(db_scan)
+    db.add(db_submission)
     db.commit()
-    logger.info(f"DB: Created scan {db_scan.id}")
-    return db_scan.id
-
+    logger.info(f"DB: Created submission {db_submission.id}")
+    return db_submission.id

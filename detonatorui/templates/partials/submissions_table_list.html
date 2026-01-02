@@ -1,0 +1,98 @@
+{% if submissions and submissions|length > 0 %}
+<div class="border border-card rounded-lg p-4 hover:shadow-md transition-shadow">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Submission Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Profile</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Result</th>
+            </tr>
+        </thead>
+        <tbody class="bg-light divide-y divide-dark">
+            {% for submission in submissions %}
+            <tr class="hover:bg-table-hover">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-heading"><a href="/submissions/{{ submission.id }}" class="link-info hover:underline">#{{ submission.id }}</a></div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-heading">
+                        <div class="font-medium">{{ submission.file.filename }}</div>
+                        {% if submission.file.exec_arguments %}
+                            <div class="text-xs text-description" title="exec_arguments: {{ submission.file.exec_arguments }}">
+                                Args: <code class="bg-card-header px-1 rounded">{{ submission.file.exec_arguments|truncate(20) }}</code>
+                            </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    {% if submission.file and submission.file.comment %}
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ submission.file.comment }}">
+                            {{ submission.file.comment }}
+                        </div>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    {% if submission.comment %}
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ submission.comment }}">
+                            {{ submission.comment }}
+                        </div>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if submission.profile %}
+                        <div class="text-sm text-heading">{{ submission.profile.name }}</div>
+                        {% if submission.profile.edr_collector %}
+                            <div class="text-xs text-description">{{ submission.profile.edr_collector }}</div>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_status_color(submission.status) }}">
+                        {{ submission.status }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if submission.status == "finished" %}
+                        {% if submission.profile.edr_collector == "RedEdr" %}
+                            <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
+                        {% elif submission.edr_verdict %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">
+                                {{ submission.edr_verdict }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<div class="p-6 text-center text-description">
+    <svg class="w-12 h-12 mx-auto mb-4 text-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    <h3 class="text-lg font-medium mb-2">No submissions found</h3>
+    <p class="text-description mb-4">
+        {% if request.args.get('filter') and request.args.get('filter') != 'all' %}
+            No submissions found with status "{{ request.args.get('filter') }}".
+        {% else %}
+            No submissions have been created yet.
+        {% endif %}
+    </p>
+    <a href="/upload" class="link-info hover:underline">Upload a file</a> to start analysis.
+</div>
+{% endif %}

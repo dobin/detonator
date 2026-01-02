@@ -1,27 +1,27 @@
 {% if templates %}
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+        <thead class="bg-subtle">
             <tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EDR</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Name</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">EDR</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Comment</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-table divide-y divide-dark">
             {% for template_name, template in templates.items() %}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-table-hover">
                 <td class="px-4 py-2 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ template_name }}</div>
+                    <div class="text-sm font-medium text-heading">{{ template_name }}</div>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ template.edr_collector }}</div>
+                    <div class="text-sm text-heading">{{ template.edr_collector }}</div>
                 </td>
                 <td class="px-4 py-2">
                     {% if template.comment %}
-                        <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
+                        <div class="text-sm text-heading max-w-xs truncate" title="{{ template.comment }}">{{ template.comment }}</div>
                     {% else %}
-                        <span class="text-gray-400 text-sm">-</span>
+                        <span class="text-muted text-sm">-</span>
                     {% endif %}
                 </td>
             </tr>
@@ -31,9 +31,9 @@
 </div>
 {% else %}
 <div class="text-center py-8">
-    <div class="text-gray-400 text-4xl mb-2">🛡️</div>
-    <p class="text-gray-500 text-sm">No profiles configured yet.</p>
-    <a href="/profiles" class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block">
+    <div class="text-muted text-4xl mb-2">🛡️</div>
+    <p class="text-description text-sm">No profiles configured yet.</p>
+    <a href="/profiles" class="link-info hover:underline text-sm font-medium mt-2 inline-block">
         Create your first profile →
     </a>
 </div>

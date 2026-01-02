@@ -19,7 +19,7 @@
 ## Features
 
 ### Malware Analysis
-- **Automated VM Provisioning**: Creates fresh Azure Windows 11 VMs for each scan
+- **Automated VM Provisioning**: Creates fresh Azure Windows 11 VMs for each submission
 - **EDR Template Support**: Choose from pre-configured deployment scripts (OpenSSH, Sysmon, Windows Defender, etc.)
 - **VM Lifecycle Management**: Automatically shuts down VMs after 1 minute
 - **Database-driven Monitoring**: VM monitoring uses database as source of truth, no manual tracking required
@@ -42,17 +42,17 @@
 
 ### Files
 - `POST /api/files` - Upload file only
-- `POST /api/upload-and-scan` - Upload file and create scan with VM
+- `POST /api/create-submission` - Upload file and create submission with VM
 - `GET /api/files` - List all files
-- `GET /api/files/{id}` - Get file details with scans
-- `DELETE /api/files/{id}` - Delete file and scans
+- `GET /api/files/{id}` - Get file details with submissions
+- `DELETE /api/files/{id}` - Delete file and submissions
 
-### Scans
-- `POST /api/files/{id}/scans` - Create scan (provisions VM)
-- `GET /api/scans` - List all scans
-- `GET /api/scans/{id}` - Get scan details
-- `PUT /api/scans/{id}` - Update scan
-- `POST /api/scans/{id}/shutdown-vm` - Manual VM shutdown
+### Submissions
+- `POST /api/files/{id}/submissions` - Create submission (provisions VM)
+- `GET /api/submissions` - List all submissions
+- `GET /api/submissions/{id}` - Get submission details
+- `PUT /api/submissions/{id}` - Update submission
+- `POST /api/submissions/{id}/shutdown-vm` - Manual VM shutdown
 
 ## Development
 

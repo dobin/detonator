@@ -1,65 +1,40 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
-import os
+
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
-import logging
 
 from .database import get_db, Profile
-from .schemas import  NewScanResponse
-from .db_interface import db_create_file, db_create_scan, db_get_profile_by_name
-from .token_auth import tokenAuth
-
+from .schemas import  NewSubmissionResponse
+from .db_interface import db_create_file, db_create_submission, db_get_profile_by_name
+from .token_auth import require_auth, get_user_from_request
 from .vm_monitor import start_vm_monitoring, stop_vm_monitoring
 from .web_files import router as files_router
-from .web_scans import router as scans_router
+from .web_submissions import router as submissions_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
+from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
+from .utils import sanitize_runtime_seconds
 
 
 # Load environment variables
 load_dotenv()
-
-# Configuration
-READ_ONLY_MODE = os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
 
 # Setup logging - reduce verbosity for HTTP requests
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-if READ_ONLY_MODE:
-    logger.warning("🔒 DETONATOR RUNNING IN READ-ONLY MODE - All write operations are disabled")
-
 app = FastAPI(title="Detonator API", version="0.1.0")
-
-
-# Read-only mode middleware
-# Instead of authentication LOL
-@app.middleware("http")
-async def read_only_middleware(request: Request, call_next):
-    if READ_ONLY_MODE and request.method not in ["GET", "HEAD", "OPTIONS"]:
-        # Allow exception for upload_file_and_scan endpoint
-        if request.url.path == "/api/upload-and-scan" and request.method == "POST":
-            # This endpoint is allowed even in read-only mode
-            pass
-        else:
-            return JSONResponse(
-                status_code=403,
-                content={"detail": "Server is running in read-only mode. Write operations are not permitted."}
-            )
-    response = await call_next(request)
-    return response
 
 
 # Add CORS middleware to allow requests from Flask frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000"],  # Flask will run on port 5000
+    allow_origins=CORS_ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,7 +63,7 @@ async def shutdown_event():
 
 # Include routers
 app.include_router(files_router, prefix="/api")
-app.include_router(scans_router, prefix="/api") 
+app.include_router(submissions_router, prefix="/api") 
 app.include_router(vms_router, prefix="/api")
 app.include_router(profiles_router, prefix="/api")
 
@@ -103,7 +78,7 @@ async def health_check():
     return {
         "status": "healthy", 
         "service": "detonator-api",
-        "read_only_mode": READ_ONLY_MODE
+        "auth_enabled": bool(AUTH_PASSWORD)
     }
 
 
@@ -122,28 +97,33 @@ async def get_connectors():
     return conns
 
 
-@app.post("/api/upload-and-scan", response_model=NewScanResponse)
-async def upload_file_and_scan(
+@app.post("/api/create-submission", response_model=NewSubmissionResponse)
+async def create_submission(
+    request: Request,
     file: UploadFile = FastAPIFile(...),
     source_url: Optional[str] = Form(None),
     file_comment: Optional[str] = Form(None),
-    scan_comment: Optional[str] = Form(None),
+    submission_comment: Optional[str] = Form(None),
     project: Optional[str] = Form(None),
     profile_name: str = Form(...),
     password: Optional[str] = Form(None),
     runtime: Optional[int] = Form(None),
-    malware_path: Optional[str] = Form(None),
-    fileargs: Optional[str] = Form(None),
-    token: Optional[str] = Form(None),
+    drop_path: Optional[str] = Form(None),
+    exec_arguments: Optional[str] = Form(None),
+    execution_mode: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
-    # Check if allowed: token
-    permissions = tokenAuth.get_permissions(token)
-    if permissions.is_anonymous:
-        logger.info("User: anonymous")
+    # Determine user status based on authentication
+    user = get_user_from_request(request)
+    logger.info(f"User: {user}")
+    if user == "guest":
+        logger.info("Guest user")
         runtime = 12
-    else:
-        logger.info("User: authenticated")
+
+    try:
+        runtime = sanitize_runtime_seconds(runtime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     # Check if allowed: profile password
     profile: Profile = db_get_profile_by_name(db, profile_name)
@@ -154,19 +134,35 @@ async def upload_file_and_scan(
             raise HTTPException(status_code=400, detail="Invalid password for profile")
 
     # DB: Create File
-    actual_filename = file.filename
-    if not actual_filename:
+    # Prepend 4 random chars to filename to avoid collisions
+    filename = file.filename
+    if not filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
-    logger.info(f"Uploading file: {actual_filename}")
     file_content = await file.read()
-    file_id = db_create_file(db, actual_filename, file_content, source_url or "", file_comment or "", fileargs or "")
+    file_id = db_create_file(db, 
+                             filename=filename, 
+                             content=file_content, 
+                             source_url=source_url or "", 
+                             comment=file_comment or "", 
+                             exec_arguments=exec_arguments or "", 
+                             user=user)
 
-    # DB: Create scan record (auto-scan)
-    scan_id = db_create_scan(db, file_id, profile_name, scan_comment or "", project or "", runtime or 10, malware_path or "")
+    # DB: Create submission record (auto-submission)
+    submission_id = db_create_submission(
+        db,
+        file_id=file_id,
+        profile_name=profile_name,
+        comment=submission_comment or "",
+        project=project or "",
+        runtime=runtime or 10,
+        drop_path=drop_path or "",
+        execution_mode=execution_mode or "exec",
+        user=user,
+    )
 
     data = { 
         "file_id": file_id,
-        "scan_id": scan_id,
+        "submission_id": submission_id,
     }
 
     return data

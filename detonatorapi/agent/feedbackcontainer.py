@@ -4,7 +4,7 @@ from typing import Optional, Generic, TypeVar
 T = TypeVar('T')
 
 @dataclass
-class Result(Generic[T]):
+class FeedbackContainer(Generic[T]):
     """A result type that can represent success or failure with optional value and error message."""
     success: bool
     value: Optional[T] = None
@@ -15,12 +15,12 @@ class Result(Generic[T]):
         return self.success
     
     @classmethod
-    def ok(cls, value: Optional[T] = None) -> 'Result[T]':
+    def ok(cls, value: Optional[T] = None) -> 'FeedbackContainer[T]':
         """Create a successful result."""
         return cls(success=True, value=value)
     
     @classmethod
-    def error(cls, error_message: str) -> 'Result[T]':
+    def error(cls, error_message: str) -> 'FeedbackContainer[T]':
         """Create a failed result with error message."""
         return cls(success=False, error_message=error_message)
     

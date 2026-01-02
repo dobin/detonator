@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Start Analysis{% endblock %}
+
+{% block content %}
+<div class="card card-body">
+    <h2 class="text-2xl font-bold mb-4">Upload & Start Analysis</h2>
+    <p class="text-secondary mb-6">Upload a file and automatically start malware analysis with VM provisioning.</p>
+    
+    <div class="bg-light p-4 rounded-lg">
+        <form 
+            hx-post="/api/create-submission" 
+            hx-encoding="multipart/form-data"
+            hx-target="#upload-result"
+            hx-indicator="#loading"
+            class="space-y-6"
+        >
+            <!-- File Selection -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">File *</h3>
+                    <p class="text-sm text-description">
+                        Your malware file to execute on the VM <br>
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="file" 
+                        id="file" 
+                        name="file" 
+                        required
+                        class="input"
+                    >
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Profile *</h3>
+                    <p class="text-sm text-description">
+                        The VM / EDR you want to test against
+                    </p>
+                </div>
+                <div>
+                    <select 
+                        id="profile_name" 
+                        name="profile_name"
+                        required
+                        class="input"
+                    >
+                        <option value="">Select a profile...</option>
+                        {% for profile_name, profile in profiles.items() %}
+                        <option value="{{ profile_name }}" title="{{ profile.comment }}" data-require-password="{{ profile.require_password }}">
+                            {{ profile_name }}
+                            {% if profile.edr_collector %} ({{ profile.edr_collector }}){% endif %}
+                            {% if profile.connector %} - {{ profile.connector }}{% endif %}
+                        </option>
+                        {% endfor %}
+                        {% if not profiles %}
+                        <option value="" disabled>No profiles available</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Execution Mode -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Execution Mode *</h3>
+                    <p class="text-sm text-description">
+                        AutoIt is more realistic for initial access payloads. <br>
+                        Direct execution invokes the target directly. Supports .exe arguments. Supports .dll. For testing tools.
+                    </p>
+                </div>
+                <div>
+                    <select 
+                        id="execution_mode" 
+                        name="execution_mode"
+                        class="input"
+                    >
+                        <option value="exec">Direct</option>
+                        <option value="autoit" selected>AutoIt</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- File arguments -->
+            <div id="file_arguments_field" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">File arguments</h3>
+                    <p class="text-sm text-description">
+                        [Optional] .EXE: Command line parameters <br>
+                        [Mandatory] .DLL: Exported function name to invoke
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="text" 
+                        id="exec_arguments" 
+                        name="exec_arguments" 
+                        placeholder="--debug / DllMain"
+                        class="input"
+                    >
+                </div>
+            </div>
+
+            <!-- Runtime -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Runtime (seconds)</h3>
+                    <p class="text-sm text-description">
+                        How long the payload runs. Increase this to observe post-ex behaviors like beacon callbacks.
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="number" 
+                        id="runtime" 
+                        name="runtime" 
+                        min="10" 
+                        max="7200"
+                        step="10"
+                        value="10"
+                        class="input"
+                    >
+                    <p class="mt-2 text-xs text-description">
+                        Accepted range: 10 - 7200 seconds. Default 10 seconds.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Password field - initially hidden -->
+            <div id="password_field" class="grid grid-cols-1 lg:grid-cols-2 gap-4 hidden">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Profile Password</h3>
+                    <p class="text-sm text-description">
+                        This analysis profile requires password authentication. Enter the password to proceed with the analysis.
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter profile password"
+                        class="input"
+                    >
+                </div>
+            </div>
+            
+            <!-- Malware path field -->
+            <div data-auth-required class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Malware Execution Path</h3>
+                    <p class="text-sm text-description">
+                        The target directory path where the malware should be initially placed on the virtual machine
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="text" 
+                        id="drop_path" 
+                        name="drop_path"
+                        placeholder="C:\Users\Public\Downloads\"
+                        class="input"
+                    >
+                    <p class="mt-2 text-xs text-description">
+                        <strong>Default:</strong> <code>C:\Users\Public\Downloads\</code><br>
+                        <strong>Whitelisted execution:</strong> <code>C:\RedEdr\data\</code>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Horizontal Divider -->
+            <div class="border-t border-divider"></div>
+
+            <!-- File Source URL -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">File Source URL</h3>
+                    <p class="text-sm text-description">
+                        [Optional] URL pointing to more information about the payload
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="url" 
+                        id="source_url" 
+                        name="source_url" 
+                        placeholder="https://github.com/dobin/malware/metasploit/test1/"
+                        class="input"
+                    >
+                </div>
+            </div>
+
+            
+            <!-- File Comment -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">File Comment</h3>
+                    <p class="text-sm text-description">
+                        [Optional] description of the payload. What loader, C2 payload etc.
+                    </p>
+                </div>
+                <div>
+                    <textarea 
+                        id="file_comment" 
+                        name="file_comment" 
+                        rows="3"
+                        placeholder="fiber based shc loader with Metasploit winhttp payload"
+                        class="input"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Submission Comment -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Comment</h3>
+                    <p class="text-sm text-description">
+                        [Optional] description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives
+                    </p>
+                </div>
+                <div>
+                    <textarea 
+                        id="submission_comment" 
+                        name="submission_comment" 
+                        rows="3"
+                        placeholder="Check if sgn works against MDE"
+                        class="input"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Project -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-label mb-1">Submission Project</h3>
+                    <p class="text-sm text-description">
+                        [Optional] project name to group related submissions together
+                    </p>
+                </div>
+                <div>
+                    <input 
+                        type="text" 
+                        id="project" 
+                        name="project" 
+                        placeholder="metasploit research A"
+                        class="input"
+                    >
+                </div>
+            </div>
+
+            <div class="flex space-x-4">
+                <button 
+                    type="submit" 
+                    class="btn-primary"
+                >
+                    Upload & Start Execution
+                </button>
+            </div>
+        </form>
+        <div id="upload-result" class="mt-4"></div>
+    </div>
+</div>
+
+<script>
+    // Handle upload response
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'upload-result') {
+            const xhr = evt.detail.xhr;
+            const container = document.getElementById('upload-result');
+            
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                container.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">File uploaded and analysis started!</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p><strong>Submission ID:</strong> ${response.submission_id}</p>
+                                    <p>Analysis has been automatically started</p>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex space-x-2">
+                                        <a href="/submissions" class="btn-info text-sm">
+                                            Monitor Analysis
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Reset form
+                evt.detail.target.closest('form').reset();
+            } else {
+                const response = JSON.parse(xhr.responseText);
+                container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Upload failed</h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <p>${response.detail || response.error || 'Unknown error occurred'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    });
+    
+    // Profile selection handler function
+    function handleProfileSelection(profileSelect) {
+        const selectedOption = profileSelect.options[profileSelect.selectedIndex];
+        const description = selectedOption.getAttribute('title');
+        
+        // Handle password field visibility
+        const requirePassword = selectedOption.getAttribute('data-require-password') === 'True';
+        const passwordField = document.getElementById('password_field');
+        if (requirePassword && profileSelect.value) {
+            passwordField.classList.remove('hidden');
+        } else {
+            passwordField.classList.add('hidden');
+        }
+        
+        // Remove any existing profile info
+        const existingInfo = document.getElementById('profile_info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        
+        // Add profile description if a profile is selected
+        if (profileSelect.value && description) {
+            const infoDiv = document.createElement('div');
+            infoDiv.id = 'profile_info';
+            infoDiv.className = 'mt-2 p-3 info-box rounded-md';
+            infoDiv.innerHTML = `
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 info-box-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="mt-1 text-sm info-box-text">${description}</p>
+                    </div>
+                </div>
+            `;
+            profileSelect.parentNode.appendChild(infoDiv);
+        }
+    }
+
+    // Profile selection event listener
+    document.getElementById('profile_name').addEventListener('change', function(e) {
+        handleProfileSelection(e.target);
+    });
+
+    // Execution mode selection handler
+    document.getElementById('execution_mode').addEventListener('change', function(e) {
+        const fileArgumentsField = document.getElementById('file_arguments_field');
+        if (e.target.value === 'exec') {
+            fileArgumentsField.classList.remove('hidden');
+        } else {
+            fileArgumentsField.classList.add('hidden');
+        }
+    });
+
+    // Initialize profile selection on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileSelect = document.getElementById('profile_name');
+        if (profileSelect && profileSelect.value) {
+            handleProfileSelection(profileSelect);
+        }
+        
+        // Initialize file arguments visibility based on execution mode
+        const executionMode = document.getElementById('execution_mode');
+        const fileArgumentsField = document.getElementById('file_arguments_field');
+        if (executionMode.value === 'exec') {
+            fileArgumentsField.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

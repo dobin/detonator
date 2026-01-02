@@ -7,7 +7,7 @@ import yaml
 import logging
 import os
 
-from detonatorapi.database import get_db_for_thread
+from detonatorapi.database import get_db_direct
 from detonatorapi.db_interface import db_create_profile, db_get_profile_by_name
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,12 @@ def initialize_profiles_from_yaml(db, yaml_data: dict):
             name=profile_name,
             connector=profile_config.get('connector', ''),
             port=profile_config.get('port', 80),
+            rededr_port=profile_config.get('rededr_port', None),
             edr_collector=profile_config.get('edr_collector', ''),
             data=profile_config.get('data', {}),
-            default_malware_path=profile_config.get('default_malware_path', ''),
+            default_drop_path=profile_config.get('default_drop_path', ''),
             comment=profile_config.get('comment', ''),
-            password=profile_config.get('password', '')
+            password=profile_config.get('password', ''),
         )
         logger.info(f"Initialized profile '{profile_name}' from YAML")
 
@@ -53,7 +54,7 @@ def main():
     yaml_data = load_yaml_config('profiles_init.yaml')
     
     # Get database session
-    db = get_db_for_thread()
+    db = get_db_direct()
     try:
         # Initialize profiles from YAML
         initialize_profiles_from_yaml(db, yaml_data)

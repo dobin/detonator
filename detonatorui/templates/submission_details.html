@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Details - {{ submission.id if submission else 'Not Found' }}{% endblock %}
+
+{% block content %}
+<div class="card card-body">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Submission Details - #{{ submission.id if submission else 'Not Found' }}</h2>
+        <div class="space-x-2">
+            <button 
+                onclick="refreshSubmission()"
+                class="btn-primary"
+            >
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <div id="submission-details-container">
+        {% include "partials/submission_details.html" %}
+    </div>
+</div>
+
+<script>
+function refreshSubmission() {
+    {% if submission %}
+    const submissionId = {{ submission.id }};
+    htmx.ajax('GET', `/templates/submission-details/${submissionId}`, {
+        target: '#submission-details-container',
+        swap: 'innerHTML'
+    }).then(() => {
+        // Scroll to bottom of log elements after refresh
+        document.querySelectorAll('[data-scroll-bottom]').forEach(el => {
+            el.scrollTop = el.scrollHeight;
+        });
+    });
+    {% endif %}
+}
+
+// Auto-refresh every 5 seconds if submission is running
+{% if submission and submission.status in ['fresh', 'running'] %}
+setInterval(refreshSubmission, 5000);
+{% endif %}
+
+// Initial scroll to bottom for logs
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-scroll-bottom]').forEach(el => {
+        el.scrollTop = el.scrollHeight;
+    });
+});
+</script>
+{% endblock %}

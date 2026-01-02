@@ -5,7 +5,8 @@ import logging
 from datetime import datetime
 from .post import post_bp
 from .get import get_bp
-from .config import READ_ONLY_MODE
+from .config import API_BASE_URL
+from detonatorapi.settings import AUTH_PASSWORD
 
 
 app = Flask(__name__)
@@ -19,8 +20,19 @@ logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-if READ_ONLY_MODE:
-    logger.warning("🔒 FLASK UI RUNNING IN READ-ONLY MODE - Write operations are disabled")
+
+# Make API_BASE_URL available to all templates
+@app.context_processor
+def inject_api_base_url():
+    # Check if authentication is enabled
+    auth_enabled = False
+    if AUTH_PASSWORD != None and AUTH_PASSWORD != "":
+        auth_enabled = True
+    
+    return {
+        'API_BASE_URL': API_BASE_URL,
+        'AUTH_ENABLED': auth_enabled
+    }
 
 
 # Helper function for Jinja2 templates
@@ -32,15 +44,15 @@ def get_status_color(status):
         'error': 'bg-red-100 text-red-800',
         'instantiating': 'bg-blue-100 text-blue-800',
         'finished': 'bg-blue-100 text-blue-800',
-        'scanning': 'bg-blue-300 text-blue-800',
+        'processing': 'bg-blue-300 text-blue-800',
+        'polling': 'bg-yellow-100 text-yellow-800',
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
 app.jinja_env.globals.update(get_status_color=get_status_color)
-app.jinja_env.globals.update(READ_ONLY_MODE=READ_ONLY_MODE)
 
 
-def get_scan_status_color(status):
+def get_submission_status_color(status):
     if not status:
         return 'bg-gray-100 text-gray-800'
     status_colors = {
@@ -51,7 +63,23 @@ def get_scan_status_color(status):
     }
     return status_colors.get(status.lower(), 'bg-gray-100 text-gray-800')
 # Register the function for use in templates
-app.jinja_env.globals.update(get_scan_status_color=get_scan_status_color)
+app.jinja_env.globals.update(get_submission_status_color=get_submission_status_color)
+
+
+def get_alert_severity_color(severity):
+    if not severity:
+        return 'bg-gray-100 text-gray-800'
+    colors = {
+        'informational': 'bg-gray-100 text-gray-800',
+        'low': 'bg-green-100 text-green-800',
+        'medium': 'bg-yellow-100 text-yellow-800',
+        'high': 'bg-orange-100 text-orange-800',
+        'severe': 'bg-red-100 text-red-800',
+    }
+    return colors.get(severity.lower(), 'bg-gray-200 text-gray-800')
+
+
+app.jinja_env.globals.update(get_alert_severity_color=get_alert_severity_color)
 
 
 
@@ -88,10 +116,3 @@ def pretty_json_filter(s):
 def static_files(filename):
     """Serve static files from the static directory"""
     return app.send_static_file(filename)
-
-
-@app.context_processor
-def inject_global_vars():
-    return {
-        'READ_ONLY': os.getenv("DETONATOR_READ_ONLY", "false").lower() in ("true", "1", "yes", "on")
-    }

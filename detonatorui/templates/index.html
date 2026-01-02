@@ -3,82 +3,71 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-4">Detonator - MalDev scanning made easy</h2>
-    <p class="text-gray-600 mb-6">
-        Scan your RedTeam tools (like C2 loader) against various EDR's installed in VMs. For easy and reproducible MalDev analysis.
-    </p>
-
-    <!-- Profiles Overview -->
-    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-semibold text-gray-800">EDR VMs</h3>
-            <a href="/profiles" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View All →
-            </a>
+<div class="card card-body">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <h2 class="text-2xl font-bold mb-4">Detonator - MalDev Testing Service</h2>
+            
+            <p class="text-secondary mb-6">
+                Submit your RedTeam tools to test them against various EDR's by spinning up VMs.
+            </p><p>
+                Detonator is a controlled malware detonation platform built for red teamers and offensive security researchers.
+            </p><br><p>
+                Upload redteaming tools or initial access payload, select an EDR, and Detonator automatically spins up a 
+                clean virtual machine with that EDR deployed. The payload is executed in a realistic environment, 
+                and Detonator retrieves the EDR's response including: detection status, severity, and more telemetry 
+                on what was flagged.
+            </p><br><p>
+                <b>Test, iterate, and understand EDR behavior without guessing blindly.</b>
+            </p><br><p>
+                Detonator helps to validate tradecraft, measure detection surface, 
+                and refine payloads based on real EDR feedback. Fast, safely, repeatably, and hopefully reproducibly.
+            </p><br>
+            <p>
+                Source:
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><a href="https://github.com/dobin/detonator" class="link">Detonator</a></li>
+                    <li><a href="https://github.com/dobin/detonatorAgent" class="link">DetonatorAgent</a></li>
+                    <li><a href="https://github.com/dobin/rededr" class="link">RedEdr</a></li>
+                </ul>
+            </p><br>
+            <p>
+                Note: 
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>submitted files are private</li>
+                    <li>but the results are public</li>
+                </ul>
+            </p>
         </div>
-        <div id="profiles-overview" 
-             hx-get="/templates/profiles-overview" 
-             hx-trigger="load"
-             hx-swap="innerHTML">
-            <div class="text-center py-4">
-                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                <p class="mt-2 text-gray-600 text-sm">Loading profiles...</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Quick Actions -->
-        <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
-            <h3 class="text-lg font-semibold text-blue-800 mb-3">Start Analysis</h3>
-            <p class="text-blue-700 text-sm mb-4">Upload a file and scan it with a profile. Get the feedback of its installed EDR, and/or the detection surface with RedEdr </p>
-            <a href="/newscan" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 inline-block">
-                Upload & Scan
-            </a>
-        </div>
-                
-        <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
-            <h3 class="text-lg font-semibold text-purple-800 mb-3">Monitor Scans</h3>
-            <p class="text-purple-700 text-sm mb-4">Track the progress of your analysis jobs and view detailed results.</p>
-            <a href="/scans" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block">
-                View Scans
-            </a>
-        </div>
-
-        <div class="bg-green-50 p-6 rounded-lg border border-green-200">
-            <h3 class="text-lg font-semibold text-green-800 mb-3">Manage Files</h3>
-            <p class="text-green-700 text-sm mb-4">View uploaded files, their associated scans, and manage your file collection.</p>
-            <a href="/files" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-block">
-                View Files
-            </a>
-        </div>
-        
-        {% if not READ_ONLY %}
-        <div class="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-            <h3 class="text-lg font-semibold text-yellow-800 mb-3">Upload Only</h3>
-            <p class="text-yellow-700 text-sm mb-4">Upload files for storage without starting analysis (you can scan them later).</p>
-            <a href="/upload" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 inline-block">
-                Upload Only
-            </a>
-        </div>
-        
-        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3">Virtual Machines</h3>
-            <p class="text-gray-700 text-sm mb-4">Monitor and manage your Azure VMs used for malware analysis.</p>
-            <a href="/vms" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block">
-                View VMs
-            </a>
-        </div>
-        {% endif %}
-        
-        <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-200">
-            <h3 class="text-lg font-semibold text-indigo-800 mb-3">Profiles</h3>
-            <p class="text-indigo-700 text-sm mb-4">Configure and manage connection profiles for your analysis environments.</p>
-            <a href="/profiles" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 inline-block">
-                Manage Profiles
-            </a>
+        <div class="flex items-center justify-center">
+            <img src="{{ url_for('static', filename='detonator1.jpg') }}" alt="Detonator" class="rounded-lg shadow-lg max-w-full h-auto">
         </div>
     </div>
 </div>
+
+<script>
+    // Check API status on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        const apiUrl = '{{ API_BASE_URL }}';
+        const checkingDiv = document.getElementById('api-status-checking');
+        const errorDiv = document.getElementById('api-status-error');
+        const urlDisplay = document.getElementById('api-url-display');
+        
+        fetch(apiUrl + '/api/health', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        })
+        .then(response => {
+            checkingDiv.classList.add('hidden');
+            if (! response.ok) {
+                errorDiv.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            checkingDiv.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+        });
+    });
+</script>
 {% endblock %}
