@@ -38,6 +38,52 @@ def logout_page():
 def files_page():
     return render_template("files.html")
 
+@get_bp.route("/files/<int:file_id>/create-submission")
+def create_file_submission_page(file_id):
+    """Page to create a submission for a specific file"""
+    try:
+        # Fetch file details
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=_auth_headers())
+        if file_response.status_code == 200:
+            file_data = file_response.json()
+        else:
+            logger.error(f"Failed to fetch file {file_id}: {file_response.status_code}")
+            flash(f"Failed to load file: {file_response.text}", "error")
+            return redirect(url_for('get.files_page'))
+            
+        # Fetch profiles
+        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
+        if profiles_response.status_code == 200:
+            profiles = profiles_response.json()
+        else:
+            logger.error(f"Failed to fetch profiles: {profiles_response.status_code}")
+            profiles = {}
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching file {file_id}: {e}")
+        flash(f"Error loading file: {str(e)}", "error")
+        return redirect(url_for('get.files_page'))
+    
+    return render_template("create_file_submission.html", file=file_data, profiles=profiles)
+
+@get_bp.route("/files/<int:file_id>/edit")
+def edit_file_page(file_id):
+    """Page to edit a file's metadata"""
+    try:
+        # Fetch file details
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=_auth_headers())
+        if file_response.status_code == 200:
+            file_data = file_response.json()
+        else:
+            logger.error(f"Failed to fetch file {file_id}: {file_response.status_code}")
+            flash(f"Failed to load file: {file_response.text}", "error")
+            return redirect(url_for('get.files_page'))
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching file {file_id}: {e}")
+        flash(f"Error loading file: {str(e)}", "error")
+        return redirect(url_for('get.files_page'))
+    
+    return render_template("edit_file.html", file=file_data)
+
 @get_bp.route("/submissions")
 def submissions_page():
     return render_template("submissions.html")

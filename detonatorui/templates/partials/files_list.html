@@ -22,11 +22,15 @@
                 
                 <!-- Associated Submissions -->
                 {% if file.submissions and file.submissions|length > 0 %}
-                <div class="mt-4 p-3 bg-light rounded\">
-                    <div class="space-y-2\">
+                <div class="mt-4 p-3 bg-light rounded">
+                    <div class="space-y-2">
                         {% for submission in file.submissions|sort(attribute='id', reverse=True) %}
-                        <div class="flex items-center justify-between text-xs\">\n                            <div class=\"flex items-center space-x-2\">
-                                <span class=\"text-secondary\">Submission #{{ submission.id }}: </span>
+                        <div class="flex items-center justify-between text-xs">                            
+                            <div class="flex items-center space-x-2">
+                                <span class="text-secondary">Submission #{{ submission.id }}
+                                    <a href="/submissions/{{ submission.id }}" class="link-info hover:underline text-xs">(View)</a>
+                                    : 
+                                </span>
                                 <span class="px-2 py-1 rounded text-xs font-medium {{ get_status_color(submission.status) }}">{{ submission.status }}</span>
                                 {% if submission.profile %}
                                 <span class="text-description">@{{ submission.profile.name }}</span>
@@ -37,8 +41,6 @@
                                 {% endif %}
                             </div>
                             <div class="flex space-x-1">
-                                <button onclick="viewSubmissionDetails({{ submission.id }})" class="link-info hover:underline text-xs">View</button>
-                                <a href="/submissions?submission_id={{ submission.id }}" class="text-purple-500 hover:text-purple-700 text-xs">Details</a>
                             </div>
                         </div>
                         {% endfor %}
@@ -51,13 +53,18 @@
                 {% endif %}
             </div>
             <div class="flex flex-col space-y-2 ml-4">
-                <button 
-                    data-auth-required
-                    onclick="createSubmission({{ file.id }})"
-                    class="btn-primary text-sm"
+                <a 
+                    href="/files/{{ file.id }}/create-submission"
+                    class="btn-primary text-sm text-center"
                 >
                     Create Submission
-                </button>
+                </a>
+                <a 
+                    href="/files/{{ file.id }}/edit"
+                    class="btn-info text-sm text-center"
+                >
+                    Edit
+                </a>
                 <button 
                     data-auth-required
                     onclick="downloadFile({{ file.id }}, '{{ file.filename }}')"

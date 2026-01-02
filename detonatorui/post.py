@@ -165,3 +165,45 @@ def update_profile(profile_id):
     except requests.RequestException as e:
         logger.exception(f"Exception while updating profile {profile_id}: {e}")
         return jsonify({"error": f"Could not update profile: {str(e)}"}), 500
+
+
+@post_bp.route("/api/files/<int:file_id>/update", methods=["POST"])
+def update_file(file_id):
+    """Proxy endpoint to update a file's metadata via FastAPI"""
+    try:
+        # Forward authentication header from request
+        headers = {}
+        if 'X-Auth-Password' in request.headers:
+            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
+        elif 'Authorization' in request.headers:
+            headers['Authorization'] = request.headers.get('Authorization')
+        
+        # Prepare form data
+        data = {}
+        
+        if 'source_url' in request.form:
+            data['source_url'] = request.form['source_url']
+        if 'comment' in request.form:
+            data['comment'] = request.form['comment']
+        if 'exec_arguments' in request.form:
+            data['exec_arguments'] = request.form['exec_arguments']
+        
+        # Send PUT request to FastAPI
+        response = requests.put(
+            f"{API_BASE_URL}/api/files/{file_id}", 
+            data=data, 
+            headers=headers
+        )
+        
+        result = handle_api_response(response, "file update")
+        
+        # If handle_api_response returned a tuple (error case), return it
+        if isinstance(result, tuple):
+            return result
+        
+        # Success case - return success message
+        return jsonify({"message": "File updated successfully", "file": result}), 200
+        
+    except requests.RequestException as e:
+        logger.exception(f"Exception while updating file {file_id}: {e}")
+        return jsonify({"error": f"Could not update file: {str(e)}"}), 500

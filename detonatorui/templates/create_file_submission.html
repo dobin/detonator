@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Create Submission{% endblock %}
+
+{% block content %}
+<div class="card card-body">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Create New Submission</h2>
+        <a href="/files" class="link-info hover:underline">← Back to Files</a>
+    </div>
+
+    {% if file %}
+    <div class="space-y-4">
+        <div class="border-b border-card pb-4">
+            <div class="mt-2 p-3 info-box rounded-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 info-box-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="mt-1 text-sm info-box-text">
+                            <strong>{{ file.filename }}</strong><br>
+                            {% if file.comment %}Comment: {{ file.comment }}<br>{% endif %}
+                            {% if file.exec_arguments %}exec_arguments: <code class="bg-code px-1 rounded">{{ file.exec_arguments }}</code><br>{% endif %}
+                            Uploaded: {{ file.created_at|strftime('%Y-%m-%d %H:%M:%S') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form 
+            id="create-submission-form"
+            hx-post="{{ API_BASE_URL }}/api/files/{{ file.id }}/createsubmission" 
+            hx-target="#create-submission-result"
+            hx-indicator="#submission-loading"
+            class="space-y-4"
+        >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="submission_comment" class="block text-sm font-medium text-label mb-1">
+                        Submission Comment (optional)
+                    </label>
+                    <textarea 
+                        id="submission_comment" 
+                        name="comment" 
+                        rows="2"
+                        placeholder="e.g., Check if sgn works against elastic"
+                        class="input"
+                    ></textarea>
+                </div>
+                <div>
+                    <label for="project" class="block text-sm font-medium text-label mb-1">
+                        Submission Project (optional)
+                    </label>
+                    <input 
+                        type="text" 
+                        id="project" 
+                        name="project" 
+                        placeholder="e.g., metasploit_1 research"
+                        class="input"
+                    >
+                </div>
+            </div>
+            
+            <div>
+                <label for="profile_name" class="block text-sm font-medium text-label mb-1">
+                    Profile *
+                </label>
+                <select 
+                    id="profile_name" 
+                    name="profile_name"
+                    required
+                    class="input"
+                >
+                    <option value="">Select a profile...</option>
+                    {% for profile_name, profile in profiles.items() %}
+                    <option value="{{ profile_name }}" title="{{ profile.comment }}" data-require-password="{{ profile.require_password }}">
+                        {{ profile_name }}
+                        {% if profile.edr_collector %} ({{ profile.edr_collector }}){% endif %}
+                        {% if profile.connector %} - {{ profile.connector }}{% endif %}
+                    </option>
+                    {% endfor %}
+                    {% if not profiles %}
+                    <option value="" disabled>No profiles available</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            <!-- Password field - initially hidden -->
+            <div id="password_field" class="hidden">
+                <label for="password" class="block text-sm font-medium text-label mb-1">
+                    Password *
+                </label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Enter profile password"
+                    class="input"
+                >
+                <p class="mt-1 text-xs text-description">This profile requires a password for authentication</p>
+            </div>
+
+            <div>
+                <label for="runtime_seconds" class="block text-sm font-medium text-label mb-1">
+                    Runtime (seconds)
+                </label>
+                <input 
+                    type="number" 
+                    id="runtime_seconds" 
+                    name="runtime" 
+                    min="10" 
+                    max="7200" 
+                    step="10" 
+                    value="10"
+                    class="input"
+                >
+                <p class="mt-1 text-xs text-description">
+                    Accepted range: 10 - 7200 seconds. Default 10 seconds.
+                </p>
+            </div>
+
+            <!-- Malware path field -->
+            <div>
+                <label for="drop_path" class="block text-sm font-medium text-label mb-1">
+                    Malware Path (optional)
+                </label>
+                <input 
+                    type="text" 
+                    id="drop_path" 
+                    name="drop_path" 
+                    placeholder="e.g., C:\Users\Public\"
+                    class="input"
+                >
+                <p class="mt-1 text-xs text-description">Specify the target path where the malware should be executed on the VM</p>
+            </div>
+
+            <!-- Execution Mode -->
+            <div>
+                <label for="execution_mode" class="block text-sm font-medium text-label mb-1">
+                    Execution Mode
+                </label>
+                <select 
+                    id="execution_mode" 
+                    name="execution_mode"
+                    class="input"
+                >
+                    <option value="exec" selected>Direct</option>
+                    <option value="autoit">AutoIt</option>
+                </select>
+                <p class="mt-1 text-xs text-description">Select how the malware should be executed on the virtual machine</p>
+            </div>
+            
+            <div id="edr_template_info_container"></div>
+            
+            <div class="flex space-x-4 pt-4">
+                <button 
+                    type="submit" 
+                    class="btn-primary flex-1"
+                >
+                    <span id="submission-loading" class="hidden">Creating...</span>
+                    <span id="submission-button-text">Create Submission</span>
+                </button>
+                <a 
+                    href="/files"
+                    class="btn-gray"
+                >
+                    Cancel
+                </a>
+            </div>
+        </form>
+        
+        <div id="create-submission-result" class="mt-4"></div>
+    </div>
+
+    <script>
+        // Profile selection handler for create submission form
+        document.getElementById('profile_name').addEventListener('change', function(e) {
+            const profileSelect = e.target;
+            const selectedOption = profileSelect.options[profileSelect.selectedIndex];
+            const requirePassword = selectedOption.getAttribute('data-require-password') === 'True';
+            
+            // Handle password field visibility
+            const passwordField = document.getElementById('password_field');
+            if (requirePassword && profileSelect.value) {
+                passwordField.classList.remove('hidden');
+            } else {
+                passwordField.classList.add('hidden');
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('create-submission-form').addEventListener('htmx:beforeRequest', function(evt) {
+            // Show loading state
+            document.getElementById('submission-loading').classList.remove('hidden');
+            document.getElementById('submission-button-text').classList.add('hidden');
+        });
+
+        // Handle response
+        document.getElementById('create-submission-form').addEventListener('htmx:afterRequest', function(evt) {
+            const xhr = evt.detail.xhr;
+            const container = document.getElementById('create-submission-result');
+            
+            // Hide loading state
+            document.getElementById('submission-loading').classList.add('hidden');
+            document.getElementById('submission-button-text').classList.remove('hidden');
+            
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                container.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">Submission created successfully!</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p><strong>Submission ID:</strong> ${response.id}</p>
+                                    <p>Analysis has been started with status: <strong>${response.status}</strong></p>
+                                    ${response.edr_template ? '<p><strong>EDR Template:</strong> ' + response.edr_template + '</p>' : ''}
+                                    ${response.project ? '<p><strong>Project:</strong> ' + response.project + '</p>' : ''}
+                                    ${response.comment ? '<p><strong>Comment:</strong> ' + response.comment + '</p>' : ''}
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex space-x-2">
+                                        <a href="/files" class="btn-success text-sm inline-block">
+                                            Back to Files
+                                        </a>
+                                        <a href="/submissions/${response.id}" class="btn-info text-sm inline-block">
+                                            View Submission
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Reset form
+                evt.detail.target.reset();
+                document.getElementById('edr_template_info_container').innerHTML = '';
+            } else {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    container.innerHTML = `
+                        <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">Submission creation failed</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <p>${response.detail || response.error || 'Unknown error occurred'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    container.innerHTML = `
+                        <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">Submission creation failed</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <p>Server error: ${xhr.status} - ${xhr.statusText}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        });
+    </script>
+    {% else %}
+    <div class="text-center text-red-500">
+        <p>Error: Could not load file information.</p>
+        <a href="/files" class="link-info hover:underline mt-4 inline-block">← Back to Files</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

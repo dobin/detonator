@@ -93,6 +93,30 @@ async def delete_file(
     return {"message": "File deleted successfully"}
 
 
+@router.put("/files/{file_id}", response_model=FileResponse)
+async def update_file(
+    file_id: int,
+    source_url: Optional[str] = Form(None),
+    comment: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
+    """Update file metadata"""
+    db_file = db.query(File).filter(File.id == file_id).first()
+    if db_file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Update fields
+    if source_url is not None:
+        db_file.source_url = source_url
+    if comment is not None:
+        db_file.comment = comment
+    
+    db.commit()
+    db.refresh(db_file)
+    return db_file
+
+
 @router.post("/files/{file_id}/download")
 async def download_file(
     file_id: int,

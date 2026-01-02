@@ -32,7 +32,7 @@
                 <td class="px-3 py-2 border-r border-card">{{ submission.profile.name if submission.profile else '' }}</td>
 
                 <td class="px-3 py-2 font-semibold text-label">Completed:</td>
-                <td class="px-3 py-2 text-timestamp">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="px-3 py-2 text-timestamp">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') if submission.completed_at else 'N/A' }}</td>
             </tr>
 
             <tr>
