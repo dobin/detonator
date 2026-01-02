@@ -35,7 +35,12 @@
                         <p class="text-secondary text-sm">Submission Comment: {{ submission.comment }}</p>
                         {% endif %}
                         {% if submission.profile %}
-                        <p class="text-secondary text-sm">{{submission.profile.edr_collector}} @ {{ submission.profile.name }} (for {{submission.runtime}}s)</p>
+                        <p class="text-secondary text-sm">
+                            {{submission.profile.edr_collector}} @ 
+                            <a href="/profiles/view/{{ submission.profile.id }}" class="link-info hover:underline">
+                                {{ submission.profile.name }} 
+                            </a>
+                            (for {{submission.runtime}}s)</p>
                         {% endif %}
                         {% if submission.drop_path %}
                         <p class="text-secondary text-sm">Malware Path: {{ submission.drop_path }}</p>

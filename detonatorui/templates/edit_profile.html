@@ -1,16 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Profile - {{ profile.name }}{% endblock %}
+{% block title %}{% if readonly %}View{% else %}Edit{% endif %} Profile - {{ profile.name }}{% endblock %}
 
 {% block content %}
 <div class="mx-auto max-w-4xl">
     <!-- Header -->
     <div class="card card-header mb-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-heading">Edit Profile: {{ profile.name }}</h2>
-            <a href="/profiles" class="btn btn-secondary">
-                ← Back to Profiles
-            </a>
+            <h2 class="text-2xl font-bold text-heading">{% if readonly %}View{% else %}Edit{% endif %} Profile: {{ profile.name }}</h2>
+            <div class="flex space-x-3">
+                {% if readonly %}
+                <a href="/profiles/edit/{{ profile.id }}" class="btn btn-primary" data-auth-required>
+                    Edit Profile
+                </a>
+                {% endif %}
+                <a href="/profiles" class="btn btn-secondary">
+                    ← Back to Profiles
+                </a>
+            </div>
         </div>
     </div>
 
@@ -35,9 +42,10 @@
                         name="name" 
                         value="{{ profile.name }}"
                         class="input-field w-full" 
-                        required
+                        {% if not readonly %}required{% endif %}
                         pattern="[A-Za-z0-9_-]+"
-                        title="Only alphanumeric characters allowed with _-, no spaces">
+                        title="Only alphanumeric characters allowed with _-, no spaces"
+                        {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Choose a unique name for this profile (alphanumeric only, no spaces)
@@ -54,11 +62,12 @@
                         id="connector" 
                         name="connector" 
                         class="input-field w-full" 
-                        required
+                        {% if not readonly %}required{% endif %}
                         hx-get="/api/connectors/{{ profile.connector }}"
                         hx-trigger="load"
                         hx-target="#connector-info"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        {% if readonly %}disabled{% endif %}>
                         {% for connector_name in connectors.keys() %}
                             <option value="{{ connector_name }}" {% if connector_name == profile.connector %}selected{% endif %}>
                                 {{ connector_name }}
@@ -83,7 +92,7 @@
                     <label for="edr_collector" class="block text-sm font-medium text-description mb-2">
                         EDR
                     </label>
-                    <select id="edr_collector" name="edr_collector" class="input-field w-full">
+                    <select id="edr_collector" name="edr_collector" class="input-field w-full" {% if readonly %}disabled{% endif %}>
                         <option value="" {% if not profile.edr_collector %}selected{% endif %}>None</option>
                         <option value="mde" {% if profile.edr_collector == "mde" %}selected{% endif %}>mde</option>
                         <option value="defender" {% if profile.edr_collector == "defender" %}selected{% endif %}>defender</option>
@@ -107,7 +116,8 @@
                         name="default_drop_path" 
                         value="{{ profile.default_drop_path or '' }}"
                         class="input-field w-full" 
-                        placeholder="C:\Users\user\Desktop">
+                        placeholder="C:\Users\user\Desktop"
+                        {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Default path where malware will be dropped on the VM
@@ -126,9 +136,10 @@
                         name="port" 
                         value="{{ profile.port }}"
                         class="input-field w-full" 
-                        required
+                        {% if not readonly %}required{% endif %}
                         min="1"
-                        max="65535">
+                        max="65535"
+                        {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Port number for the detonator agent
@@ -149,7 +160,8 @@
                         class="input-field w-full"
                         min="1"
                         max="65535"
-                        placeholder="Optional">
+                        placeholder="Optional"
+                        {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Port number for the RedEdr agent (optional)
@@ -167,7 +179,8 @@
                         name="comment" 
                         rows="3"
                         class="input-field w-full"
-                        placeholder="Add notes about this profile">{{ profile.comment or '' }}</textarea>
+                        placeholder="Add notes about this profile"
+                        {% if readonly %}disabled{% endif %}>{{ profile.comment or '' }}</textarea>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Optional notes or description for this profile
@@ -186,7 +199,8 @@
                         name="password" 
                         value="{{ profile.password or '' }}"
                         class="input-field w-full"
-                        placeholder="Optional profile password">
+                        placeholder="Optional profile password"
+                        {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
                     Optional password to protect this profile
@@ -204,7 +218,8 @@
                         name="data" 
                         rows="10"
                         class="input-field w-full font-mono text-sm"
-                        required>{{ profile.data | tojson(indent=2) }}</textarea>
+                        {% if not readonly %}required{% endif %}
+                        {% if readonly %}disabled{% endif %}>{{ profile.data | tojson(indent=2) }}</textarea>
                     <p class="mt-1 text-sm text-description">
                         Connector-specific configuration in JSON format
                     </p>
@@ -212,17 +227,20 @@
             </div>
 
             <!-- Submit Button -->
+            {% if not readonly %}
             <div class="flex justify-end space-x-3">
                 <a href="/profiles" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">
                     Update Profile
                 </button>
             </div>
+            {% endif %}
         </form>
     </div>
 </div>
 
 <script>
+{% if not readonly %}
 // Handle connector change to update info
 document.getElementById('connector').addEventListener('change', function() {
     const selectedConnector = this.value;
@@ -264,5 +282,6 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         }
     }
 });
+{% endif %}
 </script>
 {% endblock %}

@@ -132,6 +132,37 @@ def vms_page():
 def profiles_page():
     return render_template("profiles.html")
 
+@get_bp.route("/profiles/view/<int:profile_id>")
+def view_profile_page(profile_id):
+    """Page to view a specific profile (read-only)"""
+    try:
+        # Fetch the profile data
+        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=_auth_headers())
+        if response.status_code == 200:
+            profile = response.json()
+        else:
+            logger.error(f"Failed to fetch profile {profile_id}: {response.status_code} {response.text}")
+            flash(f"Failed to load profile: {response.text}", "error")
+            return redirect(url_for('get.profiles_page'))
+        
+        # Fetch available connectors
+        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        if connectors_response.status_code == 200:
+            connectors = connectors_response.json()
+        else:
+            logger.error(f"Failed to fetch connectors: {connectors_response.status_code}")
+            connectors = {}
+            
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching profile {profile_id}: {e}")
+        flash(f"Error loading profile: {str(e)}", "error")
+        return redirect(url_for('get.profiles_page'))
+    
+    return render_template("edit_profile.html", 
+                         profile=profile, 
+                         connectors=connectors,
+                         readonly=True)
+
 @get_bp.route("/profiles/edit/<int:profile_id>")
 def edit_profile_page(profile_id):
     """Page to edit a specific profile"""
