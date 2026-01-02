@@ -16,7 +16,6 @@ class ProfileBase(BaseModel):
     default_drop_path: Optional[str] = ""
     comment: Optional[str] = None
     data: dict
-    mde: Optional[dict] = None
 
 class ProfileCreate(ProfileBase):
     pass
@@ -31,7 +30,6 @@ class ProfileUpdate(BaseModel):
     default_drop_path: Optional[str] = None
     comment: Optional[str] = None
     data: Optional[dict] = None
-    mde: Optional[dict] = None
 
 class ProfileResponse(ProfileBase):
     id: int

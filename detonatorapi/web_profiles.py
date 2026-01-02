@@ -45,6 +45,7 @@ async def get_profiles(db: Session = Depends(get_db)):
         ret[profile.name] = {
             "id": profile.id,
             "connector": profile.connector,
+            "vm_ip": profile.vm_ip,
             "port": profile.port,
             "rededr_port": profile.rededr_port,
             "edr_collector": profile.edr_collector,
@@ -221,6 +222,7 @@ async def update_profile(
     profile_id: int,
     name: str = Form(...),
     connector: str = Form(...),
+    vm_ip: str = Form(...),
     port: int = Form(...),
     rededr_port: Optional[str] = Form(None),
     edr_collector: str = Form(...),
@@ -267,6 +269,7 @@ async def update_profile(
         # Update fields
         profile.name = name
         profile.connector = connector
+        profile.vm_ip = vm_ip
         profile.port = port
         profile.edr_collector = edr_collector
         if rededr_port_value is not None or (rededr_port is not None and rededr_port.strip() == ""):
@@ -285,6 +288,7 @@ async def update_profile(
             "id": profile.id,
             "name": profile.name,
             "connector": profile.connector,
+            "vm_ip": profile.vm_ip,
             "port": profile.port,
             "edr_collector": profile.edr_collector,
             "default_drop_path": profile.default_drop_path,
