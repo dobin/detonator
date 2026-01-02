@@ -113,7 +113,17 @@
                                 {% for alert in submission.alerts %}
                                 <tr>
                                     <td class="px-3 py-2 whitespace-nowrap">{{ alert.source or 'N/A' }}</td>
-                                    <td class="px-3 py-2">{{ alert.title or 'Defender alert' }}</td>
+                                    <td class="px-3 py-2">
+                                        {{ alert.title or 'Defender alert' }}
+                                        {% if submission.profile.edr_collector == "defender" or submission.profile.edr_collector == "mde" %}
+                                            (<a href="https://defendersearch.r00ted.ch/search?threat_name={{ alert.title }}" class="link-info hover:underline" target="_blank">DefenderDB</a>)
+                                        {% elif submission.profile.edr_collector == "elastic" %}
+                                            {% set rule_path = alert.additional_data.rule_id|resolve_elastic_rule if alert.additional_data and alert.additional_data.rule_id else None %}
+                                            {% if rule_path %}
+                                            (<a href="https://github.com/elastic/detection-rules/tree/main/{{ rule_path }}" class="link-info hover:underline" target="_blank">ElasticDB</a>)
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
                                     <td class="px-3 py-2 whitespace-nowrap">
                                         <span class="px-2 py-0.5 rounded {{ get_alert_severity_color(alert.severity) }}">
                                             {{ alert.severity or 'Unknown' }}

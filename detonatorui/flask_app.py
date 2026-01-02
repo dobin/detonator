@@ -3,10 +3,12 @@ import requests
 import os
 import logging
 from datetime import datetime
+from pathlib import Path
 from .post import post_bp
 from .get import get_bp
 from .config import API_BASE_URL
 from detonatorapi.settings import AUTH_PASSWORD
+from detonatorapi.edr_cloud.elastic_rule_resolver import ElasticRuleResolver
 
 
 app = Flask(__name__)
@@ -19,6 +21,11 @@ app.register_blueprint(get_bp)
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+
+# Initialize Elastic Rule Resolver
+# CSV path is relative to the project root
+csv_path = Path(__file__).parent.parent / "elastic_rules" / "elastic_rules.csv"
+elastic_rule_resolver = ElasticRuleResolver(csv_path=str(csv_path))
 
 
 # Make API_BASE_URL available to all templates
@@ -109,6 +116,22 @@ def pretty_json_filter(s):
         return json.dumps(obj, indent=4)
     except Exception:
         return s  # fallback: return original string if invalid
+
+
+# Resolve Elastic rule ID to GitHub path
+@app.template_filter('resolve_elastic_rule')
+def resolve_elastic_rule_filter(rule_id):
+    """Resolve Elastic rule ID to relative GitHub path"""
+    if not rule_id:
+        return None
+    path = elastic_rule_resolver.get_path(rule_id)
+    if path:
+        # Convert absolute path to relative path from detection-rules repo root
+        # Example: /path/to/elastic_rules/detection-rules/rules/windows/file.toml
+        # Should become: rules/windows/file.toml
+        if "detection-rules/" in path:
+            return path.split("detection-rules/", 1)[1]
+    return None
 
 
 # Serve the static files

@@ -20,6 +20,7 @@ azure-mgmt-network = ">=25.0.0"
 azure-mgmt-resource = ">=23.0.0"
 python-dotenv = ">=1.1.1,<2.0.0"
 proxmoxer = "^2.2.0"
+tomli = "^2.3.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
