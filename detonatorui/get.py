@@ -215,7 +215,7 @@ def create_profile_page():
         "name": "",
         "connector": "Live",
         "vm_ip": "",
-        "port": 8888,
+        "port": 8080,
         "rededr_port": None,
         "edr_collector": "",
         "default_drop_path": "",
