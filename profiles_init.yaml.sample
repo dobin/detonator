@@ -1,9 +1,41 @@
-test_live:
+test_defender:
   connector: Live
-  comment: local DetonatorAgent with Defender test
+  comment: DetonatorAgent on localhost standard
+  port: 8080
+  vm_ip: 127.0.0.1
+
+
+test_mde:
+  connector: Live
+  comment: Defender For Endpoint
+  edr_collector: mde
+  port: 8080
+  vm_ip: 192.168.1.1
+  edr_mde:
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    hostname: "DESKTOP-12356"
+    device_id: "4234k4j2k3j4k23j4k2j43"
+
+test_elastic:
+  connector: Live
+  comment: Elastic Defend
+  edr_collector: elastic
+  port: 8080
+  vm_ip: 192.168.1.2
+  edr_elastic:
+    elastic_url: "https://10.10.10.10:9200"
+    elastic_apikey: "bbbb=="
+    hostname: "DESKTOP-424242"
+
+test_rededr:
+  connector: Live
+  comment: Activating RedEdr
   edr_collector: defender
   port: 8080
   vm_ip: 127.0.0.1
+  rededr_port: 8081
+  default_drop_path: C:\RedEdr\data
 
 test_proxmox:
   connector: Proxmox
@@ -11,10 +43,7 @@ test_proxmox:
   password: ''
   edr_collector: defender
   port: 8080
-  rededr_port: 8081
-  default_drop_path: C:\RedEdr\data
   password: secret
-  default_drop_path: C:\Users\\Public\\
   vm_ip: 10.10.20.102
   data:
     proxmox_id: 101
@@ -24,13 +53,7 @@ test_azure:
   connector: NewAzure
   comment: New Azure Win11 Defender
   edr_collector: defender
-  default_drop_path: C:\RedEdr\data
   data:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
     admin_username: admin 
     admin_password: password
-    edr_mde:
-      tenant_id: "00000000-0000-0000-0000-000000000000"
-      client_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-      hostname: "DESKTOP-12356"
-      device_id: "4234k4j2k3j4k23j4k2j43"
