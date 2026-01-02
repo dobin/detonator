@@ -7,7 +7,15 @@
     <!-- Header -->
     <div class="card card-header mb-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-heading">{% if readonly %}View{% else %}Edit{% endif %} Profile: {{ profile.name }}</h2>
+            <h2 class="text-2xl font-bold text-heading">
+                {% if is_create %}
+                    Create New Profile
+                {% elif readonly %}
+                    View Profile: {{ profile.name }}
+                {% else %}
+                    Edit Profile: {{ profile.name }}
+                {% endif %}
+            </h2>
             <div class="flex space-x-3">
                 {% if readonly %}
                 <a href="/profiles/edit/{{ profile.id }}" class="btn btn-primary" data-auth-required>
@@ -25,7 +33,11 @@
     <div class="bg-container rounded-lg shadow p-6 mb-6">
         <div id="form-result" class="mb-4"></div>
         <form 
+            {% if is_create %}
+            hx-post="/api/profiles"
+            {% else %}
             hx-post="/api/profiles/{{ profile.id }}/update"
+            {% endif %}
             hx-target="#form-result"
             hx-swap="innerHTML"
             class="space-y-6"
@@ -43,12 +55,10 @@
                         value="{{ profile.name }}"
                         class="input-field w-full" 
                         {% if not readonly %}required{% endif %}
-                        pattern="[A-Za-z0-9_-]+"
-                        title="Only alphanumeric characters allowed with _-, no spaces"
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Unique, and the main identifier for submissions
+                    Unique, and the main identifier for submissions (alphanumeric, _, - only)
                 </div>
             </div>
 
@@ -69,7 +79,10 @@
                         hx-swap="innerHTML"
                         {% if readonly %}disabled{% endif %}>
                         {% for connector_name in connectors.keys() %}
-                            <option value="{{ connector_name }}" {% if connector_name == profile.connector %}selected{% endif %}>
+                            <option value="{{ connector_name }}" 
+                            {% if connector_name == profile.connector %}selected{% endif %}
+                            {% if is_create and connector_name == "Live"%}selected{% endif %}
+                            >
                                 {{ connector_name }}
                             </option>
                         {% endfor %}
@@ -245,7 +258,7 @@
             <div class="flex justify-end space-x-3">
                 <a href="/profiles" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">
-                    Update Profile
+                    {% if is_create %}Create Profile{% else %}Update Profile{% endif %}
                 </button>
             </div>
             {% endif %}
@@ -282,10 +295,13 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
     if (event.detail.target.id === 'form-result') {
         if (event.detail.successful) {
             const resultDiv = document.getElementById('form-result');
-            resultDiv.innerHTML = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">Profile updated successfully! <a href="/profiles" class="underline font-semibold">Return to profiles</a></div>';
+            const isCreate = {{ 'true' if is_create else 'false' }};
+            const message = isCreate ? 'Profile created successfully!' : 'Profile updated successfully!';
+            resultDiv.innerHTML = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">' + message + ' <a href="/profiles" class="underline font-semibold">Return to profiles</a></div>';
         } else {
             const resultDiv = document.getElementById('form-result');
-            let errorMsg = 'Failed to update profile';
+            const isCreate = {{ 'true' if is_create else 'false' }};
+            let errorMsg = isCreate ? 'Failed to create profile' : 'Failed to update profile';
             try {
                 const response = JSON.parse(event.detail.xhr.responseText);
                 errorMsg = response.error || response.detail || errorMsg;

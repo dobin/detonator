@@ -193,6 +193,42 @@ def edit_profile_page(profile_id):
                          profile=profile, 
                          connectors=connectors)
 
+@get_bp.route("/profiles/create")
+def create_profile_page():
+    """Page to create a new profile"""
+    try:
+        # Fetch available connectors
+        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        if connectors_response.status_code == 200:
+            connectors = connectors_response.json()
+        else:
+            logger.error(f"Failed to fetch connectors: {connectors_response.status_code}")
+            connectors = {}
+            
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching connectors: {e}")
+        flash(f"Error loading connectors: {str(e)}", "error")
+        return redirect(url_for('get.profiles_page'))
+    
+    # Create a blank profile template
+    profile = {
+        "name": "",
+        "connector": "Live",
+        "vm_ip": "",
+        "port": 8888,
+        "rededr_port": None,
+        "edr_collector": "",
+        "default_drop_path": "",
+        "comment": "",
+        "password": "",
+        "data": {}
+    }
+    
+    return render_template("edit_profile.html", 
+                         profile=profile, 
+                         connectors=connectors,
+                         is_create=True)
+
 @get_bp.route("/submissions-table")
 def submissions_table_page():
     return render_template("submissions_table.html")
