@@ -27,7 +27,6 @@ class ConnectorLive(ConnectorBase):
     def get_sample_data(self) -> Dict[str, str]:
         """Return sample data for this connector"""
         return {
-            "ip": "192.168.1.1",
         }
 
 

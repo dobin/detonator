@@ -41,9 +41,6 @@
                         <p class="text-secondary text-sm">Malware Path: {{ submission.drop_path }}</p>
                         {% endif %}
 
-                        {% if submission.vm_ip_address %}
-                        <p class="text-secondary text-sm">VM IP: {{ submission.vm_ip_address }}</p>
-                        {% endif %}
                         {% if submission.edr_verdict %}
                         <p class="text-label mt-2">
                             <span class="px-2 py-1 rounded text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}"> {{ submission.edr_verdict }}</span>

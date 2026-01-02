@@ -35,11 +35,7 @@ def connect_to_agent(submission_id) -> bool:
         thread_db.close()
         return False
     # IP in template?
-    if 'ip' in db_submission.profile.data:
-        agent_ip = db_submission.profile.data['ip']
-    else:
-        # IP in VM?
-        agent_ip = db_submission.vm_ip_address
+    agent_ip = db_submission.profile.vm_ip
     if not agent_ip:
         logger.error(f"Submission {db_submission.id} has no VM IP address defined")
         thread_db.close()
@@ -73,7 +69,8 @@ def submit_file_to_agent(submission_id: int) -> bool:
         raise ValueError(f"Submission {submission_id} not found")
     
     # get agent IP and port
-    agent_ip, agent_port = get_agent_ip_port(db_submission)
+    agent_ip = db_submission.profile.vm_ip
+    agent_port = db_submission.profile.port
 
     # get all required data into local variables
     filename = db_submission.file.filename
@@ -319,26 +316,6 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
     db_submission.edr_verdict = edr_verdict
     db.commit()
     db.close()
-
-
-def get_agent_ip_port(db_submission: Submission) -> tuple[str, int]:
-    agent_ip: Optional[str] = None
-
-    # IP in template?
-    if 'ip' in db_submission.profile.data:
-        agent_ip = db_submission.profile.data['ip']
-    else:
-        # IP in VM?
-        agent_ip = db_submission.vm_ip_address
-
-    if not agent_ip:
-        raise ValueError(f"Submission {db_submission.id} has no VM IP address defined")
-
-    agent_port = db_submission.profile.port  # port should always defined in the profile
-    if not agent_port or agent_port == 0:
-        raise ValueError(f"Submission {db_submission.id} has no profile port defined")
-
-    return agent_ip, agent_port
 
 
 def aquire_lock(thread_db: Session, db_submission: Submission, agentApi: AgentApi) -> bool:

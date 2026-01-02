@@ -15,6 +15,7 @@ def print_profiles(profiles):
         print(f"Profile: {profile_name}")
         print(f"    Connector: {profile.get('connector', '')}")
         print(f"    EDR Collector: {profile.get('edr_collector', '')}")
+        print(f"    VM_IP: {profile.get('vm_ip', '')}")
         if profile.get('default_drop_path'):
             print(f"    Default Malware Path: {profile.get('default_drop_path', '')}")
         print(f"    Port: {profile.get('port', '')}")
@@ -23,8 +24,6 @@ def print_profiles(profiles):
         if profile.get('data', {}).get('image_reference'):
             image_reference_name = profile.get('data', {}).get('image_reference', '').split("/")[-1]  # Last part
             print(f"    Image Reference: {image_reference_name}")
-        if profile.get('data', {}).get('ip'):
-            print(f"    IP: {profile.get('data', {}).get('ip')}")
 
 
 def main():

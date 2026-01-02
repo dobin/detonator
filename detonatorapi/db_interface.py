@@ -87,7 +87,10 @@ def db_create_file(
     return db_file.id
 
 
-def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = "", mde: Optional[dict] = None):
+def db_create_profile(db, 
+                      name: str, 
+                      vm_ip: str,
+                      connector: str, port: int, rededr_port: int, edr_collector: str, data: dict, default_drop_path: str = "", comment: str = "", password: str = "", mde: Optional[dict] = None):
     """Create a new profile in the database"""
     # Handle backward compatibility: if mde is provided, put it in data["edr_mde"]
     if mde is not None:
@@ -97,6 +100,7 @@ def db_create_profile(db, name: str, connector: str, port: int, rededr_port: int
     db_profile = Profile(
         name=name,
         connector=connector,
+        vm_ip=vm_ip,
         port=port,
         rededr_port=rededr_port,
         edr_collector=edr_collector,

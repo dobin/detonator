@@ -3,8 +3,7 @@ test_live:
   comment: local DetonatorAgent with Defender test
   edr_collector: defender
   port: 8080
-  data:
-    ip: 127.0.0.1
+  vm_ip: 127.0.0.1
 
 test_proxmox:
   connector: Proxmox
@@ -16,10 +15,10 @@ test_proxmox:
   default_drop_path: C:\RedEdr\data
   password: secret
   default_drop_path: C:\Users\\Public\\
+  vm_ip: 10.10.20.102
   data:
     proxmox_id: 101
     proxmox_snapshot: latest
-    ip: 10.10.20.102
 
 test_azure:
   connector: NewAzure

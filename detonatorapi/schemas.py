@@ -9,6 +9,7 @@ from datetime import datetime
 class ProfileBase(BaseModel):
     name: str
     connector: str
+    vm_ip: Optional[str] = None
     port: int
     rededr_port: Optional[int] = None
     edr_collector: str
@@ -23,6 +24,7 @@ class ProfileCreate(ProfileBase):
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     connector: Optional[str] = None
+    vm_ip: Optional[str] = None
     port: Optional[int] = None
     rededr_port: Optional[int] = None
     edr_collector: Optional[str] = None
@@ -40,7 +42,7 @@ class ProfileResponse(ProfileBase):
 
 class ProfileStatusResponse(BaseModel):
     id: int
-    ip: Optional[str] = None
+    vm_ip: Optional[str] = None
     port: Optional[int] = None
     rededr_port: Optional[int] = None
     is_available: str

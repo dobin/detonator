@@ -50,7 +50,6 @@ class ConnectorProxmox(ConnectorBase):
         return {
             "proxmox_snapshot": "latest",
             "proxmox_id": 100,
-            "ip": "192.168.1.1",
         }
 
 
@@ -98,7 +97,7 @@ class ConnectorProxmox(ConnectorBase):
                 logger.error(f"Submission {submission_id} not found")
                 thread_db.close()
                 return
-            db_submission.vm_ip_address = db_profile.data['ip']
+            db_submission.vm_ip_address = db_profile.vm_ip
             db_submission_change_status_quick(thread_db, db_submission, "instantiated")
             thread_db.close()
 

@@ -38,8 +38,7 @@ localdetonator:
   edr_collector: defender
   comment: My First Detonator VM
   port: 8080
-  data:
-    ip: 127.0.0.1
+  vm_ip: 127.0.0.1
 ```
 
 Then create the DB:

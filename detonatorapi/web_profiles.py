@@ -60,6 +60,7 @@ async def get_profiles(db: Session = Depends(get_db)):
 async def create_profile(
     name: str = Form(...),
     connector: str = Form(...),
+    vm_ip: str = Form(...),
     port: int = Form(...),
     rededr_port: Optional[str] = Form(None),
     edr_collector: Optional[str] = Form(""),
@@ -103,6 +104,7 @@ async def create_profile(
             db=db,
             name=name,
             connector=connector,
+            vm_ip=vm_ip,
             port=port,
             rededr_port=rededr_port_value,
             edr_collector=edr_collector or "",
@@ -156,15 +158,15 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     
     is_available = ""
     rededr_available = ""
-    ip: str = ""
+    vm_ip: str = ""
     port: int = db_profile.port
     status: str = ""
     if db_profile.connector == "Live": 
-        ip = db_profile.data.get('ip', '')
+        vm_ip = db_profile.vm_ip or ""
     elif db_profile.connector == "Proxmox":
-        ip = db_profile.data.get('ip', '')
+        vm_ip = db_profile.vm_ip or ""
         proxmox_id = db_profile.data.get('proxmox_id', '')
-        if ip == "" or proxmox_id == "":
+        if vm_ip == "" or proxmox_id == "":
             raise HTTPException(status_code=400, detail="Profile does not have ip or proxmox_id configured")
         
         # Get Proxmox connector
@@ -177,7 +179,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
-            "ip": "",
+            "vm_ip": "",
             "port": 0,
             "rededr_port": 0,
             "is_available": "N/A",
@@ -187,7 +189,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     rededr_port = db_profile.rededr_port
 
     # Check agent port status
-    agentApi: AgentApi = AgentApi(ip, port)
+    agentApi: AgentApi = AgentApi(vm_ip, port)
     if agentApi.IsReachable():
         if agentApi.IsInUse():
             is_available = "In use"
@@ -197,7 +199,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         is_available = "Not reachable"
 
     # Check rededr agent status
-    rededrApi = RedEdrApi(ip, rededr_port)
+    rededrApi = RedEdrApi(vm_ip, rededr_port)
     if rededrApi.IsReachable():
         rededr_available = "Reachable"
     else:
@@ -205,7 +207,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
 
     return {
         "id": db_profile.id,
-        "ip": ip,
+        "vm_ip": vm_ip,
         "port": port,
         "rededr_port": rededr_port,
         "is_available": is_available,
@@ -334,20 +336,20 @@ async def release_profile_lock(
     
     # Get IP and port from profile data
     # As this is usually just used by Live, take it from profile data
-    ip = db_profile.data.get('ip', '')
+    vm_ip = db_profile.vm_ip
     port = db_profile.port
     
-    if not ip or not port:
+    if not vm_ip or not port:
         raise HTTPException(status_code=400, detail="Profile does not have IP or port configured")
     
     try:
         # Create agent API instance and release lock
-        agentApi = AgentApi(ip, port)
+        agentApi = AgentApi(vm_ip, port)
         if agentApi.ReleaseLock():
-            logger.info(f"Successfully released lock for profile {profile_id} ({db_profile.name}) at {ip}:{port}")
+            logger.info(f"Successfully released lock for profile {profile_id} ({db_profile.name}) at {vm_ip}:{port}")
             return {"message": f"Lock released successfully for profile '{db_profile.name}'"}
         else:
-            logger.warning(f"Failed to release lock for profile {profile_id} ({db_profile.name}) at {ip}:{port}")
+            logger.warning(f"Failed to release lock for profile {profile_id} ({db_profile.name}) at {vm_ip}:{port}")
             raise HTTPException(status_code=500, detail="Failed to release lock on agent")
     except Exception as e:
         logger.error(f"Error releasing lock for profile {profile_id}: {str(e)}")
@@ -366,13 +368,13 @@ async def reboot(
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    ip = db_profile.data.get('ip', '')
-    if ip == "":
+    vm_ip = db_profile.vm_ip or ""
+    if vm_ip == "":
         raise HTTPException(status_code=400, detail="Profile does not have ip configured")
     try:
         # Execute SSH reboot command
         subprocess.run(
-            ["ssh", f"hacker@{ip}", "shutdown", "/r", "/t", "0"],
+            ["ssh", f"hacker@{vm_ip}", "shutdown", "/r", "/t", "0"],
             check=True,
             timeout=30
         )
