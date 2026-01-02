@@ -48,7 +48,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Choose a unique name for this profile (alphanumeric only, no spaces)
+                    Unique, and the main identifier for submissions
                 </div>
             </div>
 
@@ -76,13 +76,27 @@
                     </select>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    <div id="connector-info">
-                        {% if connectors[profile.connector].comment %}
-                            <div class="text-xs bg-subtle p-2 rounded">
-                                {{ connectors[profile.connector].comment }}
-                            </div>
-                        {% endif %}
-                    </div>
+                    Take "Live" unless you configured Proxmox or Azure
+                </div>
+            </div>
+
+            <!-- VM IP Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="vm_ip" class="block text-sm font-medium text-description mb-2">
+                        VM IP Address <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="vm_ip" 
+                        name="vm_ip" 
+                        value="{{ profile.vm_ip or '' }}"
+                        class="input-field w-full"
+                        placeholder="e.g., 192.168.1.100"
+                        {% if readonly %}disabled{% endif %}>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    IP address of the virtual machine
                 </div>
             </div>
 
@@ -100,7 +114,7 @@
                     </select>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Indicate what kind of EDR it is. Ain't that important!
+                    Optional, not used much currently
                 </div>
             </div>
 
