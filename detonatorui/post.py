@@ -108,3 +108,60 @@ def create_submission():
         return handle_api_response(response, "file upload and submission")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
+
+
+@post_bp.route("/api/profiles/<int:profile_id>/update", methods=["POST"])
+def update_profile(profile_id):
+    """Proxy endpoint to update a profile via FastAPI"""
+    try:
+        # Forward authentication header from request
+        headers = {}
+        if 'X-Auth-Password' in request.headers:
+            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
+        elif 'Authorization' in request.headers:
+            headers['Authorization'] = request.headers.get('Authorization')
+        
+        # Prepare form data
+        data = {}
+        
+        # Required fields
+        if 'name' in request.form:
+            data['name'] = request.form['name']
+        if 'connector' in request.form:
+            data['connector'] = request.form['connector']
+        if 'port' in request.form:
+            data['port'] = request.form['port']
+        if 'data' in request.form:
+            data['data'] = request.form['data']
+        
+        # Optional fields
+        if 'edr_collector' in request.form:
+            data['edr_collector'] = request.form['edr_collector']
+        if 'default_drop_path' in request.form:
+            data['default_drop_path'] = request.form['default_drop_path']
+        if 'comment' in request.form:
+            data['comment'] = request.form['comment']
+        if 'password' in request.form:
+            data['password'] = request.form['password']
+        if 'rededr_port' in request.form:
+            data['rededr_port'] = request.form['rededr_port']
+        
+        # Send PUT request to FastAPI
+        response = requests.put(
+            f"{API_BASE_URL}/api/profiles/{profile_id}", 
+            data=data, 
+            headers=headers
+        )
+        
+        result = handle_api_response(response, "profile update")
+        
+        # If handle_api_response returned a tuple (error case), return it
+        if isinstance(result, tuple):
+            return result
+        
+        # Success case - return success message
+        return jsonify({"message": "Profile updated successfully", "profile": result}), 200
+        
+    except requests.RequestException as e:
+        logger.exception(f"Exception while updating profile {profile_id}: {e}")
+        return jsonify({"error": f"Could not update profile: {str(e)}"}), 500

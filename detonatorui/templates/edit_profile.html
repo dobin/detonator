@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - {{ profile.name }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl">
+    <!-- Header -->
+    <div class="card card-header mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-heading">Edit Profile: {{ profile.name }}</h2>
+            <a href="/profiles" class="btn btn-secondary">
+                ← Back to Profiles
+            </a>
+        </div>
+    </div>
+
+    <!-- Edit Profile Form -->
+    <div class="bg-container rounded-lg shadow p-6 mb-6">
+        <div id="form-result" class="mb-4"></div>
+        <form 
+            hx-post="/api/profiles/{{ profile.id }}/update"
+            hx-target="#form-result"
+            hx-swap="innerHTML"
+            class="space-y-6"
+        >
+            <!-- Name Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-description mb-2">
+                        Profile Name <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        value="{{ profile.name }}"
+                        class="input-field w-full" 
+                        required
+                        pattern="[A-Za-z0-9_-]+"
+                        title="Only alphanumeric characters allowed with _-, no spaces">
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Choose a unique name for this profile (alphanumeric only, no spaces)
+                </div>
+            </div>
+
+            <!-- Connector Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="connector" class="block text-sm font-medium text-description mb-2">
+                        Connector <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                        id="connector" 
+                        name="connector" 
+                        class="input-field w-full" 
+                        required
+                        hx-get="/api/connectors/{{ profile.connector }}"
+                        hx-trigger="load"
+                        hx-target="#connector-info"
+                        hx-swap="innerHTML">
+                        {% for connector_name in connectors.keys() %}
+                            <option value="{{ connector_name }}" {% if connector_name == profile.connector %}selected{% endif %}>
+                                {{ connector_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    <div id="connector-info">
+                        {% if connectors[profile.connector].comment %}
+                            <div class="text-xs bg-subtle p-2 rounded">
+                                {{ connectors[profile.connector].comment }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- EDR Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="edr_collector" class="block text-sm font-medium text-description mb-2">
+                        EDR Collector
+                    </label>
+                    <select id="edr_collector" name="edr_collector" class="input-field w-full">
+                        <option value="" {% if not profile.edr_collector %}selected{% endif %}>None</option>
+                        {% for edr_name in edr_collectors %}
+                            <option value="{{ edr_name }}" {% if edr_name == profile.edr_collector %}selected{% endif %}>
+                                {{ edr_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Select an EDR collector to gather telemetry
+                </div>
+            </div>
+
+            <!-- Default Malware Path Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="default_drop_path" class="block text-sm font-medium text-description mb-2">
+                        Default Malware Path
+                    </label>
+                    <input 
+                        type="text" 
+                        id="default_drop_path" 
+                        name="default_drop_path" 
+                        value="{{ profile.default_drop_path or '' }}"
+                        class="input-field w-full" 
+                        placeholder="C:\Users\user\Desktop">
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Default path where malware will be dropped on the VM
+                </div>
+            </div>
+
+            <!-- Port Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="port" class="block text-sm font-medium text-description mb-2">
+                        Port <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="port" 
+                        name="port" 
+                        value="{{ profile.port }}"
+                        class="input-field w-full" 
+                        required
+                        min="1"
+                        max="65535">
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Port number for the detonator agent
+                </div>
+            </div>
+
+            <!-- RedEdr Port Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="rededr_port" class="block text-sm font-medium text-description mb-2">
+                        RedEdr Port
+                    </label>
+                    <input 
+                        type="number" 
+                        id="rededr_port" 
+                        name="rededr_port" 
+                        value="{{ profile.rededr_port or '' }}"
+                        class="input-field w-full"
+                        min="1"
+                        max="65535"
+                        placeholder="Optional">
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Port number for the RedEdr agent (optional)
+                </div>
+            </div>
+
+            <!-- Comment Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="comment" class="block text-sm font-medium text-description mb-2">
+                        Comment
+                    </label>
+                    <textarea 
+                        id="comment" 
+                        name="comment" 
+                        rows="3"
+                        class="input-field w-full"
+                        placeholder="Add notes about this profile">{{ profile.comment or '' }}</textarea>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Optional notes or description for this profile
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-description mb-2">
+                        Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        value="{{ profile.password or '' }}"
+                        class="input-field w-full"
+                        placeholder="Optional profile password">
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Optional password to protect this profile
+                </div>
+            </div>
+
+            <!-- Data Field (JSON) -->
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="data" class="block text-sm font-medium text-description mb-2">
+                        Configuration Data (JSON) <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        id="data" 
+                        name="data" 
+                        rows="10"
+                        class="input-field w-full font-mono text-sm"
+                        required>{{ profile.data | tojson(indent=2) }}</textarea>
+                    <p class="mt-1 text-sm text-description">
+                        Connector-specific configuration in JSON format
+                    </p>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-3">
+                <a href="/profiles" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    Update Profile
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Handle connector change to update info
+document.getElementById('connector').addEventListener('change', function() {
+    const selectedConnector = this.value;
+    htmx.ajax('GET', `/api/connectors/${selectedConnector}`, {
+        target: '#connector-info',
+        swap: 'innerHTML'
+    });
+});
+
+// Validate JSON before submission
+document.querySelector('form').addEventListener('htmx:configRequest', function(event) {
+    const dataField = document.getElementById('data');
+    try {
+        JSON.parse(dataField.value);
+        dataField.style.borderColor = '';
+    } catch (e) {
+        event.preventDefault();
+        dataField.style.borderColor = 'red';
+        alert('Invalid JSON in data field: ' + e.message);
+    }
+});
+
+// Handle successful response
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.target.id === 'form-result') {
+        if (event.detail.successful) {
+            const resultDiv = document.getElementById('form-result');
+            resultDiv.innerHTML = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">Profile updated successfully! <a href="/profiles" class="underline font-semibold">Return to profiles</a></div>';
+        } else {
+            const resultDiv = document.getElementById('form-result');
+            let errorMsg = 'Failed to update profile';
+            try {
+                const response = JSON.parse(event.detail.xhr.responseText);
+                errorMsg = response.error || response.detail || errorMsg;
+            } catch (e) {
+                // Use default error message
+            }
+            resultDiv.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">Error: ' + errorMsg + '</div>';
+        }
+    }
+});
+</script>
+{% endblock %}

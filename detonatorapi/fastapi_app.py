@@ -97,6 +97,16 @@ async def get_connectors():
     return conns
 
 
+@app.get("/api/edr_collectors")
+async def get_edr_collectors():
+    """Get available EDR collectors"""
+    from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
+    collectors = []
+    for plugin in edr_cloud_plugins:
+        collectors.append(str(plugin))
+    return collectors
+
+
 @app.post("/api/create-submission", response_model=NewSubmissionResponse)
 async def create_submission(
     request: Request,
