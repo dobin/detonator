@@ -81,19 +81,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>
                     <label for="edr_collector" class="block text-sm font-medium text-description mb-2">
-                        EDR Collector
+                        EDR
                     </label>
                     <select id="edr_collector" name="edr_collector" class="input-field w-full">
                         <option value="" {% if not profile.edr_collector %}selected{% endif %}>None</option>
-                        {% for edr_name in edr_collectors %}
-                            <option value="{{ edr_name }}" {% if edr_name == profile.edr_collector %}selected{% endif %}>
-                                {{ edr_name }}
-                            </option>
-                        {% endfor %}
+                        <option value="mde" {% if profile.edr_collector == "mde" %}selected{% endif %}>mde</option>
+                        <option value="defender" {% if profile.edr_collector == "defender" %}selected{% endif %}>defender</option>
+                        <option value="elastic" {% if profile.edr_collector == "elastic" %}selected{% endif %}>elastic</option>
                     </select>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Select an EDR collector to gather telemetry
+                    Indicate what kind of EDR it is. Ain't that important!
                 </div>
             </div>
 

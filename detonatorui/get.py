@@ -152,14 +152,6 @@ def edit_profile_page(profile_id):
         else:
             logger.error(f"Failed to fetch connectors: {connectors_response.status_code}")
             connectors = {}
-        
-        # Fetch available EDR collectors
-        edr_collectors_response = requests.get(f"{API_BASE_URL}/api/edr_collectors", headers=_auth_headers())
-        if edr_collectors_response.status_code == 200:
-            edr_collectors = edr_collectors_response.json()
-        else:
-            logger.error(f"Failed to fetch EDR collectors: {edr_collectors_response.status_code}")
-            edr_collectors = []
             
     except requests.RequestException as e:
         logger.exception(f"Exception while fetching profile {profile_id}: {e}")
@@ -168,8 +160,7 @@ def edit_profile_page(profile_id):
     
     return render_template("edit_profile.html", 
                          profile=profile, 
-                         connectors=connectors,
-                         edr_collectors=edr_collectors)
+                         connectors=connectors)
 
 @get_bp.route("/submissions-table")
 def submissions_table_page():

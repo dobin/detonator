@@ -18,6 +18,7 @@ from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
 from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
 from .utils import sanitize_runtime_seconds
+from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
 
 
 # Load environment variables
@@ -97,14 +98,12 @@ async def get_connectors():
     return conns
 
 
-@app.get("/api/edr_collectors")
-async def get_edr_collectors():
-    """Get available EDR collectors"""
-    from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
-    collectors = []
+@app.get("/api/edr_cloud_plugins")
+async def get_edr_cloud_plugins():
+    cloud_plugins = []
     for plugin in edr_cloud_plugins:
-        collectors.append(str(plugin))
-    return collectors
+        cloud_plugins.append(str(plugin))
+    return cloud_plugins
 
 
 @app.post("/api/create-submission", response_model=NewSubmissionResponse)
