@@ -269,6 +269,27 @@ async def resubmission(
     return {"message": "Submission status reset to 'fresh' for reprocessing", "submission_id": submission_id, "status": db_submission.status}
 
 
+@router.post("/submissions/{submission_id}/stop_exec")
+async def stop_submission_execution(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_auth),
+):
+    """Stop execution of a submission"""
+    db_submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    if db_submission is None:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    # Add log entry about the stop request
+    log_message = f"User requested to stop submission execution"
+    db_submission.agent_phase = "stop"
+    db_submission_add_log(db, db_submission, log_message)
+    
+    db.commit()
+    
+    return {"message": "Stop execution request logged", "submission_id": submission_id}
+
+
 @router.delete("/submissions/{submission_id}")
 async def delete_submission(
     submission_id: int,

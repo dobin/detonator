@@ -114,13 +114,25 @@
             </div>
             
             <div class="flex flex-col space-y-2 ml-4">
-                <button onclick="window.location.href='/submissions/{{ submission.id }}'" class="btn-primary text-sm">Open</button>
+                <button onclick="window.location.href='/submissions/{{ submission.id }}'" class="btn-primary text-sm">
+                    Open
+                </button>
+                {% if submission.agent_phase == "executing" %}
+                <button data-auth-required onclick="submissionStopExec({{ submission.id }})" class="px-3 py-1 rounded text-sm text-white" style="background-color: var(--warning);" title="Stop Execution">
+                    Stop Exec
+                </button>
+                {% endif %}
+                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="px-3 py-1 rounded text-sm text-white" style="background-color: var(--warning);" title="Resubmit">
+                    Resubmit
+                </button>
+                <button data-auth-required onclick="deleteSubmission({{ submission.id }})" class="btn-danger text-sm" title="Delete Submission">
+                    Delete
+                </button>
+                                
                 {% if submission.has_rededr_events %}
                 <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
                 {% endif %}
 
-                <button data-auth-required onclick="resubmissionSubmission({{ submission.id }})" class="px-3 py-1 rounded text-sm text-white" style="background-color: var(--warning);" title="Resubmit">Resubmit</button>
-                <button data-auth-required onclick="deleteSubmission({{ submission.id }})" class="btn-danger text-sm" title="Delete Submission">Delete</button>
             </div>
         </div>
     </div>
@@ -187,6 +199,38 @@ if (typeof resubmissionSubmission === 'undefined') {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Failed to resubmission');
+            });
+        }
+    };
+}
+
+// Define submissionStopExec function globally if not already defined
+if (typeof submissionStopExec === 'undefined') {
+    window.submissionStopExec = function(submissionId) {
+        if (confirm('Are you sure you want to stop this submission execution?')) {
+            fetch('{{ API_BASE_URL }}/api/submissions/' + submissionId + '/stop_exec', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error stopping submission: ' + data.error);
+                } else {
+                    // Trigger refresh of the submissions container via HTMX
+                    if (typeof refreshSubmissions === 'function') {
+                        refreshSubmissions();
+                    } else {
+                        // Fallback: reload the submissions list
+                        htmx.ajax('GET', '/templates/submissions', {
+                            target: '#submissions-container',
+                            swap: 'innerHTML'
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to stop submission');
             });
         }
     };

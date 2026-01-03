@@ -156,10 +156,11 @@ def submit_file_to_agent(submission_id: int) -> bool:
         thread_db.commit()
     elif executionFeedback == ExecutionFeedback.OK:
         db_submission.agent_phase = "executing"
+        thread_db.commit()
+
         # process is being executed. 
         db_submission_add_log(thread_db, db_submission, f"Success executing file {filename}")
         db_submission_add_log(thread_db, db_submission, f"Waiting, runtime of {runtime} seconds...")
-        thread_db.commit()
 
         # boot the agent local EDR data gatherer thread
         # this will regularly update: submission.alerts
@@ -187,7 +188,13 @@ def submit_file_to_agent(submission_id: int) -> bool:
             logger.info("Alert monitoring thread started")
 
         # let it cook
-        time.sleep(runtime)
+        for i in range(runtime):
+            time.sleep(1)
+            # Refresh submission state to check if it's still executing
+            thread_db.refresh(db_submission)
+            if db_submission.agent_phase != "executing":
+                db_submission_add_log(thread_db, db_submission, f"Execution interrupted at {i+1}/{runtime} seconds - agent_phase changed to {db_submission.agent_phase}")
+                break
         
         # enough execution.
         db_submission_add_log(thread_db, db_submission, f"Runtime completed")
@@ -242,8 +249,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # EDR local telemetry processing
     absorb_agent_edr_data(submission_id, agentApi)
 
-    # write all logs to the database
-    db_submission.agent_phase = "finished"
+    # keep "no_execution", "stop", and possibly others
+    if db_submission.agent_phase == "executing":
+        db_submission.agent_phase = "finished"
     db_submission.process_output = process_output
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
