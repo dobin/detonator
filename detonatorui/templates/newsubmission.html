@@ -118,14 +118,13 @@
                         type="number" 
                         id="runtime" 
                         name="runtime" 
-                        min="10" 
+                        min="3" 
                         max="7200"
-                        step="10"
                         value="10"
                         class="input"
                     >
-                    <p class="mt-2 text-xs text-description">
-                        Accepted range: 10 - 7200 seconds. Default 10 seconds.
+                    <p id="runtime_description" class="mt-2 text-xs text-description">
+                        Accepted range: 3 - 7200 seconds. Default 10 seconds.
                     </p>
                 </div>
             </div>
@@ -392,6 +391,19 @@
         const fileArgumentsField = document.getElementById('file_arguments_field');
         if (executionMode.value === 'exec') {
             fileArgumentsField.classList.remove('hidden');
+        }
+        
+        // Check authentication and set runtime field accordingly
+        const password = localStorage.getItem('auth_password');
+        const runtimeField = document.getElementById('runtime');
+        const runtimeDescription = document.getElementById('runtime_description');
+        
+        if (!password) {
+            // User is not authenticated - set runtime to 12 and make read-only
+            runtimeField.value = 12;
+            runtimeField.readOnly = true;
+            runtimeField.classList.add('bg-gray-100', 'cursor-not-allowed');
+            runtimeDescription.innerHTML = 'Runtime is fixed to 12 seconds for guest users.';
         }
     });
 </script>

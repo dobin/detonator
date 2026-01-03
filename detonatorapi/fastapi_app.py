@@ -126,7 +126,7 @@ async def create_submission(
     user = get_user_from_request(request)
     logger.info(f"User: {user}")
     if user == "guest":
-        logger.info("Guest user")
+        logger.info("Guest user for scan submission")
         runtime = 12
 
     try:
