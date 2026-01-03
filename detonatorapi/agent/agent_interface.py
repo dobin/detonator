@@ -68,6 +68,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
     if not db_submission:
         raise ValueError(f"Submission {submission_id} not found")
     
+    db_submission.agent_phase = "transmit"
+    thread_db.commit()
+
     # get agent IP and port
     agent_ip = db_submission.profile.vm_ip
     agent_port = db_submission.profile.port
@@ -134,6 +137,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     if not exec_result:
         db_submission_add_log(thread_db, db_submission, f"Error: When executing file on DetonatorAgent: {exec_result.error_message}")
         # our main task failed. grab the logs from agent to see whats up
+        db_submission.agent_phase = "error"
         logger.info("Gather Agent and Execution logs")
         agent_logs = agentApi.GetAgentLogs()
         process_output = agentApi.GetProcessOutput()
@@ -146,8 +150,12 @@ def submit_file_to_agent(submission_id: int) -> bool:
         return False
     executionFeedback: ExecutionFeedback = exec_result.unwrap()
     if executionFeedback == ExecutionFeedback.VIRUS:
+        db_submission.agent_phase = "no_execution"
+        db_submission.edr_verdict = "virus"
         db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when attempting to execute")
+        thread_db.commit()
     elif executionFeedback == ExecutionFeedback.OK:
+        db_submission.agent_phase = "executing"
         # process is being executed. 
         db_submission_add_log(thread_db, db_submission, f"Success executing file {filename}")
         db_submission_add_log(thread_db, db_submission, f"Waiting, runtime of {runtime} seconds...")
@@ -176,6 +184,8 @@ def submit_file_to_agent(submission_id: int) -> bool:
         # enough execution.
         db_submission_add_log(thread_db, db_submission, f"Runtime completed")
         thread_db.commit()
+    else:
+        logger.error(f"Unknown ExecutionFeedback: {executionFeedback}")
 
     # give some time for windows to scan, deliver the virus ETW alert events n stuff
     time.sleep(SLEEP_TIME_POST_SUBMISSION)
@@ -225,6 +235,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     absorb_agent_edr_data(submission_id, agentApi)
 
     # write all logs to the database
+    db_submission.agent_phase = "finished"
     db_submission.process_output = process_output
     db_submission.agent_logs = agent_logs
     db_submission.rededr_events = rededr_events
@@ -306,14 +317,18 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
         )
         db_submission.alerts.append(db_alert)
 
-    if edrAlertsResponse.detected:
-        logger.info(f"Submission {db_submission.id}: EDR logs indicate: detected")
-        edr_verdict = "detected"
-    else:
-        logger.info(f"Submission {db_submission.id}: EDR logs indicate: not detected")
-        edr_verdict = "not_detected"
 
-    db_submission.edr_verdict = edr_verdict
+    if db_submission.edr_verdict == "virus":
+        logger.info(f"Submission {db_submission.id}: EDR logs indicate: virus (already set)")
+    else:
+        if edrAlertsResponse.detected:
+            logger.info(f"Submission {db_submission.id}: EDR logs indicate: detected")
+            edr_verdict = "detected"
+        else:
+            logger.info(f"Submission {db_submission.id}: EDR logs indicate: not detected")
+            edr_verdict = "not_detected"
+
+        db_submission.edr_verdict = edr_verdict
     db.commit()
     db.close()
 

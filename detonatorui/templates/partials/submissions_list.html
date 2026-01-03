@@ -42,6 +42,11 @@
                             </a>
                             (for {{submission.runtime}}s)</p>
                         {% endif %}
+
+                        {% if submission.agent_phase %}
+                        <p class="text-secondary text-sm">Agent Phase: {{ submission.agent_phase }}</p
+                        {% endif %}
+                            
                         {% if submission.drop_path %}
                         <p class="text-secondary text-sm">Malware Path: {{ submission.drop_path }}</p>
                         {% endif %}

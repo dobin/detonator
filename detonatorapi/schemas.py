@@ -120,21 +120,18 @@ class SubmissionResponse(BaseModel):
     runtime: Optional[int] = None
     drop_path: Optional[str] = None
     execution_mode: Optional[str] = None
-
-    server_logs: Optional[str] = None
-    status: str
     user: str = ""
 
+    status: str
+    agent_phase: str
+
+    server_logs: Optional[str] = None
     agent_logs: Optional[str] = None
     process_output: Optional[str] = None
     rededr_events: Optional[str] = None
     rededr_logs: Optional[str] = None
     edr_verdict: Optional[str] = None
 
-    vm_instance_name: Optional[str] = None
-    vm_ip_address: Optional[str] = None
-    alerts: List["SubmissionAlertResponse"] = []
-    
     # Relationships
     file: Optional[FileResponse] = None
     profile: Optional[ProfileResponse] = None
