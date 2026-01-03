@@ -44,7 +44,11 @@
                         {% endif %}
 
                         {% if submission.agent_phase %}
-                        <p class="text-secondary text-sm">Agent Phase: {{ submission.agent_phase }}</p
+                        <p class="text-secondary text-sm">Agent Phase: {{ submission.agent_phase }}</p>
+                        {% endif %}
+
+                        {% if submission.absorber_status %}
+                        <p class="text-secondary text-sm">Absorber: {{ submission.absorber_status }}</p>
                         {% endif %}
                             
                         {% if submission.drop_path %}

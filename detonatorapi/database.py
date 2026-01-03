@@ -73,6 +73,7 @@ class Submission(Base):
     # TRACK
     status: Mapped[str] = Column(String(20), default="fresh", nullable=False)
     agent_phase: Mapped[str] = Column(String(50), default="", nullable=False)
+    absorber_status: Mapped[str] = Column(String(20), default="", nullable=False)
 
     # OUT
     server_logs: Mapped[str] = Column(Text, nullable=False)

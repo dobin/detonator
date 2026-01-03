@@ -48,42 +48,36 @@ class EdrCloud:
     # Main entry point for the thread
     # Will call poll() periodically until submission is done
     def monitor_loop(self, submission_id: int):
+        db = get_db_direct()
+        submission = db.query(Submission).filter(Submission.id == submission_id).first()
+        if not submission:
+            logger.error(f"EDR Cloud monitor: submission {submission_id} not found")
+            db.close()
+            return
+        submission.absorber_status = "running"
+        db.commit()
+        
         while True:
-            db = None
-            try:
-                db = get_db_direct()
-                submission = db.query(Submission).filter(Submission.id == submission_id).first()
-                if not submission:
+            db.refresh(submission)
+            # check if we are done
+            if submission.status in ("error", "finished"):
+                # check if we are > POLLING_TIME_MINUTES after completed_at
+                if submission.completed_at and \
+                        submission.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) < datetime.utcnow():
                     break
-                
-                # check if we are done
-                if submission.status in ("error", "finished"):
-                    # check if we are > POLLING_TIME_MINUTES after completed_at
-                    if submission.completed_at and \
-                          submission.completed_at + timedelta(minutes=POLLING_TIME_MINUTES) < datetime.utcnow():
-                        break
 
-                # poll
-                self.poll(db, submission)
-                db.commit()
+            # poll
+            self.poll(db, submission)
+            db.commit()
 
-                # sleep a bit before next poll
-                time.sleep(POLL_INTERVAL_SECONDS)
-            except Exception as exc:
-                logger.error(f"Alert monitor loop error: {exc}")
-            finally:
-                if db:
-                    db.close()
+            # sleep a bit before next poll
+            time.sleep(POLL_INTERVAL_SECONDS)
 
         # We finished. Close alerts
-        db = get_db_direct()
-        try:
-            submission = db.query(Submission).filter(Submission.id == submission_id).first()
-            if submission:
-                self.finish_monitoring(db, submission)
-            db.commit()
-        finally:
-            db.close()
+        db.refresh(submission)
+        submission.absorber_status = "finished"
+        self.finish_monitoring(db, submission)
+        db.close()
 
 
     def store_alerts(self, db: Session, submission: Submission, alerts: List[SubmissionAlert]) -> bool:
