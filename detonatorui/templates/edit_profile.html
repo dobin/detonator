@@ -58,7 +58,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Unique, and the main identifier for submissions (alphanumeric, _, - only)
+                    A unique name. Is the main identifier for the profile.
                 </div>
             </div>
 
@@ -89,7 +89,7 @@
                     </select>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Take "Live" unless you configured Proxmox or Azure
+                    Take "Live" Connector unless you configured Proxmox or Azure.
                 </div>
             </div>
 
@@ -109,7 +109,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    IP address of the virtual machine
+                    IP address of the target virtual machine where DetonatorAgent is running.
                 </div>
             </div>
 
@@ -127,7 +127,8 @@
                     </select>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Optional, not used much currently
+                    The EDR installed on the VM, if applicable.<br>
+                    Optional, most configuration is in the DetonatorAgent or Cloud EDR settings.
                 </div>
             </div>
 
@@ -147,7 +148,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Default path where malware will be dropped on the VM
+                    Path where malware will be dropped on the VM.
                 </div>
             </div>
 
@@ -169,7 +170,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Port number for the detonator agent
+                    Port number on the VM of the DetonatorAgent. 
                 </div>
             </div>
 
@@ -191,7 +192,7 @@
                         {% if readonly %}disabled{% endif %}>
                 </div>
                 <div class="text-sm text-description pt-7">
-                    Port number for the RedEdr agent (optional)
+                    Port number for the RedEdr agent on the VM (optional).
                 </div>
             </div>
 
