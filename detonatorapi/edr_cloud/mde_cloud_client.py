@@ -8,17 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 class MdeCloudClient:
-    def __init__(self, tenant_config: Dict[str, any]):
-        self.tenant_id = tenant_config.get("tenant_id")
+
+    def __init__(self, tenant_id: str, client_id: str):
+        self.tenant_id = tenant_id
         if not self.tenant_id:
             raise ValueError("tenant_id missing in MDE configuration")
 
-        self.authority = tenant_config.get("authority") or f"https://login.microsoftonline.com/{self.tenant_id}"
-        self.scopes = tenant_config.get("scopes") or ["https://graph.microsoft.com/.default"]
+        self.authority = f"https://login.microsoftonline.com/{self.tenant_id}"
+        self.scopes = ["https://graph.microsoft.com/.default"]
         if isinstance(self.scopes, str):
             self.scopes = [self.scopes]
 
-        self.client_id = tenant_config.get("client_id")
+        self.client_id = client_id
         if not self.client_id:
             raise ValueError("client_id missing in MDE configuration")
 
@@ -26,54 +27,9 @@ class MdeCloudClient:
         if not self.client_secret:
             raise ValueError(f"Environment variable MDE_AZURE_CLIENT_SECRET is not set")
 
-        self.base_url = tenant_config.get("base_url", "https://graph.microsoft.com")
+        self.base_url = "https://graph.microsoft.com"
         self._token_cache: Tuple[Optional[str], Optional[datetime]] = (None, None)
 
-
-    def _get_access_token(self) -> str:
-        token, expires_at = self._token_cache
-        if token and expires_at and datetime.utcnow() < expires_at:
-            return token
-
-        token_url = f"{self.authority.rstrip('/')}/oauth2/v2.0/token"
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "scope": " ".join(self.scopes),
-            "grant_type": "client_credentials",
-        }
-        response = requests.post(token_url, data=data, timeout=10)
-        if response.status_code != 200:
-            raise RuntimeError(f"Failed to obtain MDE token: {response.status_code} {response.text}")
-        payload = response.json()
-        token = payload.get("access_token")
-        expires_in = payload.get("expires_in", 3599)
-        self._token_cache = (token, datetime.utcnow() + timedelta(seconds=expires_in - 30))
-        return token
-
-
-    def _request(self, method: str, path: str, **kwargs):
-        headers = kwargs.pop("headers", {})
-        headers["Authorization"] = f"Bearer {self._get_access_token()}"
-        headers["Content-Type"] = "application/json"
-        url = f"{self.base_url.rstrip('/')}{path}"
-        response = requests.request(method, url, headers=headers, timeout=15, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
-        return response
-
-
-    @staticmethod
-    def _fmt_datetime(value: datetime) -> str:
-        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-    def _build_alert_evidence_query(self, filters: List[str], pipeline: List[str]) -> str:
-        lines = ["AlertEvidence"]
-        lines.extend(filters)
-        lines.extend(pipeline)
-        return "\n".join(lines).strip()
-    
 
     def fetch_alerts(
         self,
@@ -137,3 +93,50 @@ class MdeCloudClient:
             "resolvingComment": comment,
         }
         self._request("PATCH", f"/v1.0/security/incidents/{incident_id}", json=body)
+
+
+    def _get_access_token(self) -> str:
+        token, expires_at = self._token_cache
+        if token and expires_at and datetime.utcnow() < expires_at:
+            return token
+
+        token_url = f"{self.authority.rstrip('/')}/oauth2/v2.0/token"
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "scope": " ".join(self.scopes),
+            "grant_type": "client_credentials",
+        }
+        response = requests.post(token_url, data=data, timeout=10)
+        if response.status_code != 200:
+            raise RuntimeError(f"Failed to obtain MDE token: {response.status_code} {response.text}")
+        payload = response.json()
+        token = payload.get("access_token")
+        expires_in = payload.get("expires_in", 3599)
+        self._token_cache = (token, datetime.utcnow() + timedelta(seconds=expires_in - 30))
+        return token
+
+
+    def _request(self, method: str, path: str, **kwargs):
+        headers = kwargs.pop("headers", {})
+        headers["Authorization"] = f"Bearer {self._get_access_token()}"
+        headers["Content-Type"] = "application/json"
+        url = f"{self.base_url.rstrip('/')}{path}"
+        response = requests.request(method, url, headers=headers, timeout=15, **kwargs)
+        if response.status_code >= 400:
+            raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
+        return response
+
+
+
+    def _build_alert_evidence_query(self, filters: List[str], pipeline: List[str]) -> str:
+        lines = ["AlertEvidence"]
+        lines.extend(filters)
+        lines.extend(pipeline)
+        return "\n".join(lines).strip()
+    
+
+    @staticmethod
+    def _fmt_datetime(value: datetime) -> str:
+        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+

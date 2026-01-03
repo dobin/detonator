@@ -176,7 +176,15 @@ def submit_file_to_agent(submission_id: int) -> bool:
             db_submission_add_log(thread_db, db_submission, f"Starting EDR Cloud plugin: {edr_cloud_plugin.__class__.__name__}")
             # It will start a new thread
             # ENDS: on submission state change
-            edr_cloud_plugin.start_monitoring_thread(submission_id)
+            edr_cloud_plugin.InitializeClient(db_submission.profile.data)
+            thread = threading.Thread(
+                target=edr_cloud_plugin.monitor_loop,
+                name=f"monitor-{submission_id}",
+                daemon=True,
+                args=(submission_id,)
+            )
+            thread.start()
+            logger.info("Alert monitoring thread started")
 
         # let it cook
         time.sleep(runtime)
