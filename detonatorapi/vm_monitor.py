@@ -88,8 +88,8 @@ class VMMonitorTask:
                 continue
 
             # cleanup failed
-            if status == "error" and submission.vm_exist == 1:
-                db_submission_change_status_quick(db, submission, "killing")
+            #if status == "error" and submission.vm_exist == 1:
+            #    db_submission_change_status_quick(db, submission, "killing")
 
             # State Machine
             match status:

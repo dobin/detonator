@@ -255,9 +255,6 @@ async def resubmission(
     db_submission.rededr_logs = None
     db_submission.edr_verdict = ""
     db_submission.completed_at = None
-    db_submission.vm_exist = 0
-    db_submission.vm_instance_name = None
-    db_submission.vm_ip_address = None
     
     # Add log entry about the resubmission
     log_message = f"[{datetime.utcnow().isoformat()}] Submission reset to 'fresh' status for reprocessing"

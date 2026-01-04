@@ -3,7 +3,7 @@ import time
 import threading
 from typing import Dict, List, Optional
 
-from detonatorapi.database import get_db_direct, Submission
+from detonatorapi.database import get_db_direct, Submission, AzureVmInstance
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log, db_submission_change_status
 from detonatorapi.connectors.azure_manager import initialize_azure_manager, submissionid_to_vmname
 
@@ -89,10 +89,6 @@ class ConnectorNewAzure(ConnectorBase):
                 return
             vm_name = submissionid_to_vmname(submission_id)
             if azure_manager.delete_vm_resources(vm_name):
-                db_submission.vm_exist = 0
-                # keep it for now
-                #db_submission.vm_instance_name = None
-                #db_submission.vm_ip_address = None
                 db_submission_add_log(thread_db, db_submission, "VM successfully removed")
                 db_submission_change_status_quick(thread_db, db_submission, "removed")
             else:
@@ -106,12 +102,23 @@ class ConnectorNewAzure(ConnectorBase):
         """Attempt to kill (stop and delete) the VM"""
         def kill_thread(submission_id: int):
             thread_db = get_db_direct()
+            
+            # submission
             db_submission = thread_db.get(Submission, submission_id)
             if not db_submission:  # check mostly for syntax checker
                 logger.error(f"Submission {submission_id} not found")
                 thread_db.close()
                 return
-            vm_name = db_submission.vm_instance_name
+            
+            # AzureVmInstance
+            db_azure = thread_db.query(AzureVmInstance).filter(AzureVmInstance.submission_id == submission_id).first()
+            if not db_azure:
+                logger.error(f"Azure VM instance for submission {submission_id} not found")
+                db_submission_change_status_quick(thread_db, db_submission, "error", "Azure VM instance not found")
+                thread_db.close()
+                return
+
+            vm_name = db_azure.vm_instance_name
             azure_manager = get_azure_manager()
             if not azure_manager:
                 db_submission_change_status_quick(thread_db, db_submission, "error", "Azure not configured")
@@ -120,7 +127,7 @@ class ConnectorNewAzure(ConnectorBase):
             logger.info(f"Killing VM {vm_name} submission {submission_id}")
 
             # Stop if running
-            powerState = azure_manager.get_vm_status(db_submission.vm_instance_name)
+            powerState = azure_manager.get_vm_status(vm_name)
             if powerState == "running":
                 if azure_manager.shutdown_vm(vm_name):
                     db_submission_add_log(thread_db, db_submission, "VM successfully stopped")
@@ -130,12 +137,10 @@ class ConnectorNewAzure(ConnectorBase):
             # Always try to remove
             if azure_manager.delete_vm_resources(vm_name):
                 db_submission_add_log(thread_db, db_submission, "VM successfully killed")
-                db_submission.vm_exist = 0  # Set to 0 to indicate VM is removed
             else:
                 db_submission_add_log(thread_db, db_submission, "VM failed deleting")
             
             # Set it to killed. We tried.
-            # (never to error and vm_exist = 1 as it will be killed again)
             db_submission_change_status_quick(thread_db, db_submission, "killed")
             thread_db.close()
 

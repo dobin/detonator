@@ -15,7 +15,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.core.exceptions import ResourceNotFoundError
 
 from detonatorapi.utils import mylog
-from detonatorapi.database import Submission, get_db_direct
+from detonatorapi.database import Submission, AzureVmInstance, get_db_direct
 
 
 # Set the logging level for Azure SDK loggers to WARNING to reduce verbosity
@@ -81,16 +81,12 @@ class AzureManager:
         db = get_db_direct()
 
         try:
-            # All required information is in the database entry
+            # All required information is in the DB submission/profile
             db_submission = db.get(Submission, submission_id)
             if not db_submission:
                 logger.error(f"Submission with ID {submission_id} not found in database")
                 # No DB to update
                 return False
-            
-            # DB UPDATE: Indicate we creating the VM currently
-            db_submission.vm_instance_name = vm_name
-            db.commit()
             
             logger.info(f"Azure: Creating VM: {vm_name} with profile {db_submission.profile.name}")
             logger.info(f"Azure: This can take a few minutes")
@@ -140,9 +136,13 @@ class AzureManager:
             logger.info(f"VM {vm_name} created successfully with public IP: {public_ip_info.ip_address}")
 
             # DB UPDATE: VM details
-            db_submission.vm_exist = 1
-            db_submission.vm_ip_address = public_ip_info.ip_address
-            db_submission.server_logs += mylog(f"VM {vm_name} created. IP: {public_ip_info.ip_address}")
+            db_azure = AzureVmInstance(
+                submission_id=submission_id,
+                vm_exist=1,
+                vm_instance_name=vm_name,
+                vm_ip_address=public_ip_info.ip_address
+            )
+            db.add(db_azure)
             db.commit()
             return True
             
@@ -423,6 +423,14 @@ class AzureManager:
                 except Exception as e:
                     logger.warning(f"Failed to delete {resource_name}: {str(e)}")
             
+            # set vm_exist to 0 in DB
+            db = get_db_direct()
+            db_submission = db.query(Submission).filter(Submission.vm_instance_name == vm_name).first()
+            if db_submission:
+                db_submission.vm_exist = 0
+                db.commit()
+            db.close()
+
             logger.info(f"Successfully deleted VM and resources: {vm_name}")
             return True
 

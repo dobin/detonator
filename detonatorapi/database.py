@@ -83,12 +83,6 @@ class Submission(Base):
     rededr_logs: Mapped[str] = Column(Text, nullable=True)
     rededr_events: Mapped[str] = Column(Text, nullable=True)
     
-    # Set by Instantiate, for Azure
-    # TEMP
-    vm_exist: Mapped[int] = Column(Integer, default=0, nullable=False)
-    vm_instance_name: Mapped[str] = Column(String(100), nullable=True)
-    vm_ip_address: Mapped[str] = Column(String(15), nullable=True)
-
     # META
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -118,6 +112,19 @@ class SubmissionAlert(Base):
 
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
     submission: Mapped[Submission] = relationship("Submission", back_populates="alerts")
+
+
+class AzureVmInstance(Base):
+    __tablename__ = "azure_vm_instances"
+
+    id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    submission_id: Mapped[int] = Column(Integer, ForeignKey("submissions.id"), nullable=False)
+
+    vm_exist: Mapped[int] = Column(Integer, default=0, nullable=False)
+    vm_instance_name: Mapped[str] = Column(String(100), nullable=True)
+    vm_ip_address: Mapped[str] = Column(String(15), nullable=True)
+
+    submission: Mapped[Submission] = relationship("Submission")
 
 
 # Create tables

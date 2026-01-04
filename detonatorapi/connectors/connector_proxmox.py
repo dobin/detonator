@@ -97,7 +97,6 @@ class ConnectorProxmox(ConnectorBase):
                 logger.error(f"Submission {submission_id} not found")
                 thread_db.close()
                 return
-            db_submission.vm_ip_address = db_profile.vm_ip
             db_submission_change_status_quick(thread_db, db_submission, "instantiated")
             thread_db.close()
 
@@ -155,9 +154,6 @@ class ConnectorProxmox(ConnectorBase):
             proxmox_snapshot = db_profile.data['proxmox_snapshot']
 
             if self.proxmox_manager.RevertVm(proxmox_id, proxmox_snapshot):
-                # keep it for now
-                #db_submission.vm_instance_name = None
-                #db_submission.vm_ip_address = None
                 db_submission_add_log(thread_db, db_submission, "VM successfully reverted")
             else:
                 db_submission_change_status(submission_id, "error")
@@ -192,9 +188,6 @@ class ConnectorProxmox(ConnectorBase):
             db_profile: Profile = db_submission.profile
             proxmox_id = db_profile.data['proxmox_id']
             proxmox_snapshot = db_profile.data['proxmox_snapshot']
-            vm_name = db_submission.vm_instance_name
-
-            logger.info(f"Proxmox: Killing VM {vm_name} submission {submission_id}")
 
             # Stop if running
             powerState = self.proxmox_manager.StatusVm(proxmox_id)
@@ -211,7 +204,6 @@ class ConnectorProxmox(ConnectorBase):
                 db_submission_add_log(thread_db, db_submission, "VM failed deleting")
             
             # Set it to killed. We tried.
-            # (never to error and vm_exist = 1 as it will be killed again)
             db_submission_change_status(submission_id, "killed")
             thread_db.close()
 
