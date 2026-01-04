@@ -4,8 +4,6 @@ import os
 import sys
 from typing import Optional
 
-from detonatorapi.utils import filename_randomizer
-
 
 class DetonatorClient:
     def __init__(self, baseUrl, token, debug=False):
@@ -52,8 +50,6 @@ class DetonatorClient:
             return None
 
         upload_filename = os.path.basename(filename)
-        if randomize_filename:
-            upload_filename = filename_randomizer(upload_filename)
 
         # Read the file
         with open(filename, 'rb') as f:
