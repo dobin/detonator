@@ -353,12 +353,15 @@ def profiles_template():
                     status_response = requests.get(url, headers=_auth_headers())
                     if status_response.status_code == 200:
                         status_data = status_response.json()
+                        template['is_inuse'] = status_data.get('is_inuse', 'false')
                         template['available'] = status_data.get('is_available', 'false')
                         template['rededr_available'] = status_data.get('rededr_available', '')
                     else:
+                        template['is_inuse'] = "Error"
                         template['available'] = "Error"
                         template['rededr_available'] = "Error"
                 except requests.RequestException:
+                    template['is_inuse'] = "Error"
                     template['available'] = "Error"
                     template['rededr_available'] = "Error"
                 

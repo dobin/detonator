@@ -158,6 +158,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Profile not found")
     
     is_available = ""
+    is_inuse = ""
     rededr_available = ""
     vm_ip: str = ""
     port: int = db_profile.port
@@ -192,12 +193,14 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     # Check agent port status
     agentApi: AgentApi = AgentApi(vm_ip, port)
     if agentApi.IsReachable():
-        if agentApi.IsInUse():
-            is_available = "In use"
-        else:
-            is_available = "Reachable"
+        is_available = "Reachable"
     else:
         is_available = "Not reachable"
+
+    if agentApi.IsInUse():
+        is_inuse = "In use"
+    else:
+        is_inuse = "Free"
 
     # Check rededr agent status
     rededrApi = RedEdrApi(vm_ip, rededr_port)
@@ -212,6 +215,7 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         "port": port,
         "rededr_port": rededr_port,
         "is_available": is_available,
+        "is_inuse": is_inuse,
         "rededr_available": rededr_available,
         "status": status,
     }
