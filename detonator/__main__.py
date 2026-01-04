@@ -15,6 +15,7 @@ from detonatorui.flask_app import app as flask_app
 from detonatorapi.logging_config import setup_logging
 from detonatorapi.fastapi_app import app as fastapi_app
 from detonatorapi.connectors.connectors import connectors
+from detonatorapi.database import File
 
 from detonatorapi.settings import CORS_ALLOW_ORIGINS
 from detonatorui.config import API_BASE_URL
@@ -103,6 +104,41 @@ def print_cors_help():
     print("\n" + "="*70 + "\n")
 
 
+def refresh_files_from_disk():
+    # get a list of filenames of files in upload/
+    upload_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'upload'))
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
+    disk_files = os.listdir(upload_dir)
+
+    # get a list of filenames of files in the database
+    db = get_db_direct()
+    db_files = db.query(File).all()
+    db_filenames = [f.filename for f in db_files]
+
+    new_files = [f for f in disk_files if f not in db_filenames]
+    for filename in new_files:
+        if filename.startswith('.'):
+            continue  # skip hidden files
+        # create a new File record in the database
+        file_path = os.path.join(upload_dir, filename)
+        if os.path.isfile(file_path):
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            file_hash = File.calculate_hash(content)
+            db_file = File(
+                filename=filename,
+                file_hash=file_hash,
+                user="Admin",
+                comment="Restored from disk",
+            )
+            db.add(db_file)
+            logger.info(f"DB: Indexed file from disk: {filename}")
+    db.commit()
+    db.close()
+
+
+
 def main():
     setup_logging()
     args = parse_arguments()
@@ -141,6 +177,10 @@ def main():
         if profile.data and "edr_mde" in profile.data:
             mde_configured = profile.name
             break
+
+    # re-read uploads/ to index files without db entry
+    refresh_files_from_disk()
+
     db.close()
 
     if mde_configured:
