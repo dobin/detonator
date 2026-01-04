@@ -82,47 +82,33 @@ class DetonatorClient:
         )
         
         submission_id = None
-        if response.status_code == 200:
-            #print("Success! File uploaded and submission created.")
-            try:
-                json_response = response.json()
-                submission_id = json_response.get('submission_id')
-                print(f"File ID: {json_response.get('file_id')}, Submission ID: {submission_id}")
-            except:
-                print("Response is not valid JSON")
-                return None
-        else:
-            print("Error:")
+        if response.status_code != 200:
+            print(f"Error: Received status code {response.status_code} from server")
             print(response.text)
             return None
+        try:
+            json_response = response.json()
+            submission_id = json_response.get('submission_id')
+            status = json_response.get('status')
+            print(f"File ID: {json_response.get('file_id')}, Submission ID: {submission_id}")
+        except:
+            print("Response is not valid JSON")
+            return None
+        if status == "error":
+            print(f"Error during submission: {json_response.get('message')}")
+            return None
 
-        # Wait for completion
+        # Wait for completion (alerts are printed during polling)
+        print("Polling for alerts until submission is complete...")
         final_submission = self._wait_for_submission_completion(submission_id)
         print("") # because of the ...
         if not final_submission:
             print("Submission error")
             return None
-
-        # Non finished (error mostly)
-        if final_submission.get('status') != 'finished':
-            print(f"Submission did not complete successfully: {final_submission.get('status')}")
-            print(final_submission.get('server_logs'))
-            return None
-
-        # check for RedEdr first (no edr_verdict print)
-        profile = self.get_profile(profile_name)
-        if profile and profile.get('edr_collector') == 'RedEdr':
-            print("RedEdr data available, but not printed.")
+        if final_submission.get('edr_verdict'):
+            print(f"Submission Result: {final_submission['edr_verdict']}")
         else:
-            if final_submission.get('edr_verdict'):
-                print(f"Submission Result: {final_submission['edr_verdict']}")
-            else:
-                print("No edr_verdict available?")
-
-            # print alerts
-            if final_submission.get('alerts'):
-                for alert in final_submission['alerts']:
-                    print(f"- [{alert['severity']}] {alert['title']} (Source: {alert['source']})")
+            print("No edr_verdict available?")
 
         return submission_id
                     
@@ -141,16 +127,27 @@ class DetonatorClient:
     def _wait_for_submission_completion(self, submission_id, timeout=3600) -> Optional[dict]:
         #print(f"Waiting for submission {submission_id} to complete...")i
         start_time = time.time()
+        seen_alerts = set()  # Track alerts we've already printed
         
         while time.time() - start_time < timeout:
             submission = self.get_submission(submission_id)
             if not submission:
                 print("Error: Could not get submission status")
                 return None
+            
+            # Check for new alerts
+            if submission.get('alerts'):
+                for alert in submission['alerts']:
+                    # Create a unique identifier for each alert
+                    alert_key = (alert.get('title'), alert.get('severity'), alert.get('source'))
+                    if alert_key not in seen_alerts:
+                        print(f"\n[ALERT] [{alert['severity']}] {alert['title']} (Source: {alert['source']})")
+                        seen_alerts.add(alert_key)
+                        sys.stdout.flush()
                 
             #print(f"Submission {submission_id} status: {submission['status']}")
-            sys.stdout.write(f".")
-            sys.stdout.flush()
+            #sys.stdout.write(f".")
+            #sys.stdout.flush()
             
             if submission['status'] in ["finished", "error"]:
                 #print(f"Submission finished with status: {submission['status']}")
