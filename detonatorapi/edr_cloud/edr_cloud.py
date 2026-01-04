@@ -93,4 +93,9 @@ class EdrCloud:
             #submission.alerts.append(alert)  # SQLAlchemy should handle this automatically
             logger.info(f"submission {submission.id}: New alert stored: {alert.alert_id}")
 
+        if len(alerts) > 0:
+            if submission.edr_verdict != "virus":
+                submission.edr_verdict = "detected"
+            db.commit()
+
         return True
