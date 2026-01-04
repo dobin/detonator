@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto bg-container rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-6">Upload File (Storage Only)</h2>
+    <h2 class="text-2xl font-bold mb-6 text-gray-100">Upload File (Storage Only)</h2>
     <div class="info-box rounded-md p-4 mb-6">
         <p class="info-box-text">
             <strong>Note:</strong> This page only uploads files for storage. No automatic analysis will be started. 
@@ -30,41 +30,11 @@
                 required
                 class="input"
             >
-            <div class="mt-2">
-                <label class="flex items-center">
-                    <input 
-                        type="checkbox" 
-                        id="randomize_filename" 
-                        name="randomize_filename" 
-                        checked
-                        class="h-4 w-4 checkbox-accent border-input rounded"
-                    >
-                    <span class="ml-2 text-sm text-label">Randomize Filename</span>
-                </label>
-                <p class="mt-1 text-xs text-description">
-                    Prepends random characters to the filename. Note that processes based with that filename will be observed, so avoid explorer.exe and similar.
-                </p>
-            </div>
-            <p class="text-description text-sm mt-1">Upload a .exe or .dll file (no analysis will be started)</p>
-        </div>
-
-        <div>
-            <label for="source_url" class="block text-sm font-medium text-label mb-2">
-                Source URL (optional)
-            </label>
-            <input 
-                type="url" 
-                id="source_url" 
-                name="source_url" 
-                placeholder="https://example.com/file"
-                class="input"
-            >
-            <p class="text-description text-sm mt-1">Where did you download this file from?</p>
         </div>
 
         <div>
             <label for="exec_arguments" class="block text-sm font-medium text-label mb-2">
-                exec_arguments (optional)
+                Command Line Arguments (optional)
             </label>
             <input 
                 type="text" 
@@ -74,6 +44,19 @@
                 class="input"
             >
             <p class="text-description text-sm mt-1">Command line exec_arguments to pass to the executable</p>
+        </div>
+
+        <div>
+            <label for="source_url" class="block text-sm font-medium text-label mb-2">
+                Source URL (optional)
+            </label>
+            <input 
+                type="text" 
+                id="source_url" 
+                name="source_url" 
+                placeholder="https://github.com/dobin/DetonatorLab/file"
+                class="input"
+            >
         </div>
 
         <div>

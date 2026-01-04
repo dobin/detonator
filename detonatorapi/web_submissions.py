@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Form
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from typing import List, Optional
@@ -162,7 +162,13 @@ async def update_submission(
 @router.post("/files/{file_id}/createsubmission", response_model=SubmissionResponse)
 async def file_create_submission(
     file_id: int,
-    submission_data: FileCreateSubmission,
+    profile_name: str = Form(...),
+    execution_mode: str = Form("exec"),
+    runtime: int = Form(10),
+    password: Optional[str] = Form(None),
+    drop_path: Optional[str] = Form(""),
+    comment: Optional[str] = Form(None),
+    project: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_auth),
 ):
@@ -173,26 +179,25 @@ async def file_create_submission(
         raise HTTPException(status_code=404, detail="File not found")
     
     # Check if allowed
-    profile = db_get_profile_by_name(db, submission_data.profile_name)
+    profile = db_get_profile_by_name(db, profile_name)
     if not profile:
         raise HTTPException(status_code=400, detail="Profile not found")
     
     # Password check
     if len(profile.password) > 0:
-        if not submission_data.password or submission_data.password != profile.password:
+        if not password or password != profile.password:
             raise HTTPException(status_code=403, detail="Invalid password for profile")
 
     # Extract data with defaults
-    profile_name = submission_data.profile_name or ""
-    comment = submission_data.comment or ""
-    project = submission_data.project or ""
+    comment = comment or ""
+    project = project or ""
     try:
-        runtime_override = sanitize_runtime_seconds(submission_data.runtime)
+        runtime_sanitized = sanitize_runtime_seconds(runtime)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    runtime = runtime_override if runtime_override is not None else 10
-    drop_path = submission_data.drop_path or ""
-    execution_mode = submission_data.execution_mode or "exec"
+    runtime_final = runtime_sanitized if runtime_sanitized is not None else 10
+    drop_path = drop_path or ""
+    execution_mode = execution_mode or "exec"
     
     if not profile_name:
         raise HTTPException(status_code=400, detail="Profile is required")
@@ -204,7 +209,7 @@ async def file_create_submission(
         profile_name,
         comment,
         project,
-        runtime=runtime,
+        runtime=runtime_final,
         drop_path=drop_path,
         execution_mode=execution_mode,
     )
