@@ -30,14 +30,15 @@ class CloudElasticPlugin(EdrCloud):
     
 
     def InitializeClient(self, profile_data: dict) -> bool:
+        mydata = profile_data.get("edr_elastic", {})
         required_keys = ("elastic_url", "elastic_apikey", "hostname")
         for key in required_keys:
-            if key not in profile_data:
+            if key not in mydata:
                 raise RuntimeError(f"Profile data edr_elastic missing key: {key}")
         
         self.elasticClient = ElasticCloudClient(
-            base_url=profile_data.get("elastic_url", ""),
-            api_key=profile_data.get("elastic_apikey", ""),
+            base_url=mydata.get("elastic_url", ""),
+            api_key=mydata.get("elastic_apikey", ""),
         )
         return True
     

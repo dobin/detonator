@@ -33,14 +33,16 @@ class CloudMdePlugin(EdrCloud):
 
 
     def InitializeClient(self, profile_data) -> bool:
+        mydata = profile_data.get("edr_mde", {})
+
         required_keys = ("tenant_id", "client_id")
         for key in required_keys:
-            if key not in profile_data:
+            if key not in mydata:
                 raise RuntimeError(f"Profile data edr_mde missing key: {key}")
             
         self.mdeClient = MdeCloudClient(
-            tenant_id=profile_data.get("tenant_id", ""),
-            client_id=profile_data.get("client_id", ""),
+            tenant_id=mydata.get("tenant_id", ""),
+            client_id=mydata.get("client_id", ""),
         )
         return True
 
