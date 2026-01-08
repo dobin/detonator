@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 import logging
@@ -14,6 +14,7 @@ from .agent.rededr_agent import RedEdrAgentApi as RedEdrApi
 from .token_auth import require_auth
 from .connectors.connectors import connectors
 from .connectors.connector_proxmox import ConnectorProxmox
+from .token_auth import get_user_from_request
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
 
 
 @router.get("/profiles")
-async def get_profiles(db: Session = Depends(get_db)):
+async def get_profiles(request: Request, db: Session = Depends(get_db)):
     """Get available profiles"""
     profiles = db_list_profiles(db)
 
@@ -51,9 +52,10 @@ async def get_profiles(db: Session = Depends(get_db)):
             "edr_collector": profile.edr_collector,
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
-            "data": profile.data,
             "require_password": requires_password,
         }
+        if get_user_from_request(request) == "admin":
+            ret[profile.name]["data"] = profile.data
     return ret
 
 
@@ -142,9 +144,14 @@ async def create_profile(
 
 
 @router.get("/profiles/{profile_id}", response_model=ProfileResponse)
-async def get_profile(profile_id: int, db: Session = Depends(get_db)):
+async def get_profile(request: Request, profile_id: int, db: Session = Depends(get_db)):
     """Get a specific profile by ID"""
     db_profile = db_get_profile_by_id(db, profile_id)
+
+    if get_user_from_request(request) != "admin":
+        if db_profile:
+            db_profile.data = {}
+
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     return db_profile
