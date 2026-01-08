@@ -70,7 +70,7 @@ class RedEdrAgentApi:
     def IsReachable(self) -> bool:
         # Check if RedEdr API is reachable
         try:
-            test_response = requests.get(self.rededr_url, timeout=1.0)
+            test_response = requests.get(self.rededr_url, timeout=0.2)
             # Can also be 404, just connect is enough
             #return test_response.status_code == 200
             return True

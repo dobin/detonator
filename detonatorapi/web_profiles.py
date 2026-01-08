@@ -190,24 +190,30 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         }
     rededr_port = db_profile.rededr_port
 
+    is_available = ""
+    is_inuse = ""
+    rededr_available = ""
+
     # Check agent port status
     agentApi: AgentApi = AgentApi(vm_ip, port)
     if agentApi.IsReachable():
         is_available = "Reachable"
+
+        # Check if agent is in use
+        if agentApi.IsInUse():
+            is_inuse = "In use"
+        else:
+            is_inuse = "Free"
     else:
         is_available = "Not reachable"
 
-    if agentApi.IsInUse():
-        is_inuse = "In use"
-    else:
-        is_inuse = "Free"
-
-    # Check rededr agent status
-    rededrApi = RedEdrApi(vm_ip, rededr_port)
-    if rededrApi.IsReachable():
-        rededr_available = "Reachable"
-    else:
-        rededr_available = "Not reachable"
+    if rededr_port is not None and rededr_port > 0:
+        # Check rededr agent status
+        rededrApi = RedEdrApi(vm_ip, rededr_port)
+        if rededrApi.IsReachable():
+            rededr_available = "Reachable"
+        else:
+            rededr_available = "Not reachable"
 
     return {
         "id": db_profile.id,
