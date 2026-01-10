@@ -43,10 +43,11 @@ class ProfileStatusResponse(BaseModel):
     vm_ip: Optional[str] = None
     port: Optional[int] = None
     rededr_port: Optional[int] = None
-    is_available: str
-    is_inuse: str
-    rededr_available: Optional[str] = None
-    status: str
+
+    agent_alive: bool
+    agent_inuse: Optional[bool] = None
+    rededr_alive: Optional[bool] = None
+    vm_status: str
 
 
 #################

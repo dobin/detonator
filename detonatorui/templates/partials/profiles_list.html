@@ -1,4 +1,4 @@
-{% if templates %}
+{% if profiles %}
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-subtle">
@@ -7,7 +7,7 @@
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Type</th>
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">EDR</th>
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Agent</th>
-                <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Locked</th>
+                <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">InUse</th>
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">RedEdr</th>
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Info</th>
                 <th class="px-2 py-2 text-left text-xs font-medium text-description uppercase tracking-wider">Comment</th>
@@ -16,53 +16,55 @@
             </tr>
         </thead>
         <tbody class="bg-table divide-y divide-dark">
-            {% for template_name, template in templates.items() %}
+            {% for profile_name, profile in profiles.items() %}
             <tr class="hover:bg-table-hover">
                 <td class="px-3 py-2">
-                    <div class="text-sm font-medium text-heading">{{ template_name }}</div>
+                    <div class="text-sm font-medium text-heading">{{ profile_name }}</div>
                 </td>
                 <td class="px-2 py-2">
-                    <div class="text-xs text-heading">{{ template.connector }}</div>
+                    <div class="text-xs text-heading">{{ profile.connector }}</div>
                 </td>
                 <td class="px-2 py-2">
-                    <div class="text-xs text-heading">{{ template.edr_collector or 'N/A' }}</div>
+                    <div class="text-xs text-heading">{{ profile.edr_collector or 'N/A' }}</div>
                 </td>
                 <td class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                        <span class="text-xs text-heading">{{ template.vm_ip or 'N/A' }}:{{ template.port or 'N/A' }}</span>
-                        {% if template.available == "Reachable" %}
+                        <span class="text-xs text-heading">{{ profile.vm_ip or 'N/A' }}:{{ profile.port or 'N/A' }}</span>
+                        {% if profile.agent_alive %}
                             <svg class="w-3 h-3 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Reachable">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                             </svg>
-                        {% elif template.available == "Not reachable" %}
+                        {% else %}
                             <svg class="w-3 h-3 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Not reachable">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                            </svg>
-                        {% elif template.available == "In use" %}
-                            <svg class="w-3 h-3 icon-active flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="In use">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
                             </svg>
                         {% endif %}
                     </div>
                 </td>
                 <td class="px-2 py-2">
-                    <div class="text-xs text-heading">{{ template.is_inuse or 'N/A' }}</div>
+                    <div class="text-xs text-heading">
+                        {% if profile.agent_inuse == None %}
+                            &nbsp;
+                        {% elif profile.agent_inuse == True %}
+                            Yes
+                        {% elif profile.agent_inuse == False %}
+                            No
+                        {% endif %}
+                    </div>
                 </td>
                 <td class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                        <span class="text-xs text-heading">{{ template.rededr_port or '-' }}</span>
-                        {% if template.rededr_port %}
-                            {% if template.rededr_available == "Reachable" %}
+                        {% if profile.rededr_port %}
+                            <span class="text-xs text-heading">{{ profile.rededr_port }}</span>
+                            {% if profile.rededr_alive == None %}
+                                &nbsp;
+                            {% elif profile.rededr_alive == True %}
                                 <svg class="w-3 h-3 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Reachable">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                 </svg>
-                            {% elif template.rededr_available == "Not reachable" %}
+                            {% elif profile.rededr_alive == False %}
                                 <svg class="w-3 h-3 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="Not reachable">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                </svg>
-                            {% elif template.rededr_available == "In use" %}
-                                <svg class="w-3 h-3 icon-active flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" title="In use">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
                                 </svg>
                             {% endif %}
                         {% endif %}
@@ -70,33 +72,30 @@
                 </td>
                 <td class="px-2 py-2">
                     <div class="text-xs text-heading">
-                        {% if template.status %}
-                            <div>{{ template.status }}</div>
-                        {% endif %}
-                        {% if template.default_drop_path %}
-                            <div class="text-xs text-description">{{ template.default_drop_path }}</div>
+                        {% if profile.default_drop_path %}
+                            <div class="text-xs text-description">{{ profile.default_drop_path }}</div>
                         {% endif %}
                     </div>
                 </td>
                 <td class="px-2 py-2">
-                    {% if template.comment %}
-                        <div class="text-xs text-heading max-w-[150px] truncate" title="{{ template.comment }}">{{ template.comment }}</div>
+                    {% if profile.comment %}
+                        <div class="text-xs text-heading max-w-[150px] truncate" title="{{ profile.comment }}">{{ profile.comment }}</div>
                     {% else %}
                         <span class="text-muted text-xs">-</span>
                     {% endif %}
                 </td>
                 <td class="px-2 py-2">
-                    {% if template.require_password %}
-                        <div class="text-xs text-heading">Yes</div>
+                    {% if profile.require_password %}
+                        <span class="text-muted text-xs">Yes</span>
                     {% else %}
-                        <span class="text-muted text-xs">No</span>
+                        <div class="text-xs text-heading">No</div>
                     {% endif %}
                 </td>
                 <td class="px-2 py-2 text-sm font-medium">
                     <div class="flex space-x-1">
                         <!-- View Profile -->
                         <a 
-                            href="/profiles/view/{{ template.id }}"
+                            href="/profiles/view/{{ profile.id }}"
                             class="text-blue-600 hover:text-blue-900" 
                             title="View Profile">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +107,7 @@
                         <!-- Edit Profile -->
                         <a 
                             data-auth-required
-                            href="/profiles/edit/{{ template.id }}"
+                            href="/profiles/edit/{{ profile.id }}"
                             class="link-info hover:underline" 
                             title="Edit Profile">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +118,7 @@
                         <!-- Delete Profile -->
                         <button 
                             data-auth-required
-                            onclick="deleteProfile({{ template.id }}, '{{ template_name }}')"
+                            onclick="deleteProfile({{ profile.id }}, '{{ profile_name }}')"
                             class="text-red-600 hover:text-red-900" 
                             title="Delete Profile">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,10 +127,10 @@
                         </button>
 
                         <!-- DetonatorAgent: Release Lock -->
-                        {% if template.available == "In use" %}
+                        {% if profile.agent_inuse %}
                             <button 
                                 data-auth-required
-                                onclick="releaseLock({{ template.id }}, '{{ template_name }}')"
+                                onclick="releaseLock({{ profile.id }}, '{{ profile_name }}')"
                                 class="text-orange-600 hover:text-orange-900" 
                                 title="Release Lock">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,11 +139,11 @@
                             </button>
                         {% endif %}
 
-                        {% if template.connector == "Proxmox" %}
+                        {% if profile.connector == "Proxmox" %}
                             <!-- Proxmox: Reboot VM -->
                             <button 
                                 data-auth-required
-                                onclick="rebootProfile({{ template.id }}, '{{ template_name }}')"
+                                onclick="rebootProfile({{ profile.id }}, '{{ profile_name }}')"
                                 class="text-purple-600 hover:text-purple-900" 
                                 title="Reboot VM">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +154,7 @@
                             <!-- Proxmox: Revert to Snapshot -->
                             <button 
                                 data-auth-required
-                                onclick="revertProfile({{ template.id }}, '{{ template_name }}')"
+                                onclick="revertProfile({{ profile.id }}, '{{ profile_name }}')"
                                 class="text-indigo-600 hover:text-indigo-900" 
                                 title="Revert to Snapshot">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

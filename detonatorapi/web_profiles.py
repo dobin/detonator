@@ -164,14 +164,18 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
     
-    is_available = ""
-    is_inuse = ""
-    rededr_available = ""
     vm_ip: str = ""
     port: int = db_profile.port
-    status: str = ""
+    rededr_port = db_profile.rededr_port
+    
+    agent_alive: bool = False
+    agent_inuse: Optional[bool] = None
+    rededr_alive: Optional[bool] = None
+    vm_status: str = ""
+
     if db_profile.connector == "Live": 
         vm_ip = db_profile.vm_ip or ""
+        vm_status = ""
     elif db_profile.connector == "Proxmox":
         vm_ip = db_profile.vm_ip or ""
         proxmox_id = db_profile.data.get('proxmox_id', '')
@@ -183,54 +187,51 @@ async def get_profile_status(profile_id: int, db: Session = Depends(get_db)):
         if not proxmox_connector or not isinstance(proxmox_connector, ConnectorProxmox):
             raise HTTPException(status_code=500, detail="Proxmox connector not available")
         proxmox_manager = proxmox_connector.proxmox_manager
-
-        status = proxmox_manager.StatusVm(proxmox_id)
+        vm_status = proxmox_manager.StatusVm(proxmox_id)
     elif db_profile.connector == "Azure":
         return {
             "id": db_profile.id,
             "vm_ip": "",
             "port": 0,
             "rededr_port": 0,
-            "is_available": "N/A",
-            "rededr_available": "N/A",
-            "status": status,
-        }
-    rededr_port = db_profile.rededr_port
 
-    is_available = ""
-    is_inuse = ""
-    rededr_available = ""
+            "agent_alive": False,
+            "agent_inuse": False,
+            "rededr_alive": None,
+            "vm_status": "",
+        }
 
     # Check agent port status
     agentApi: AgentApi = AgentApi(vm_ip, port)
     if agentApi.IsReachable():
-        is_available = "Reachable"
+        agent_alive = True
 
         # Check if agent is in use
         if agentApi.IsInUse():
-            is_inuse = "In use"
+            agent_inuse = True
         else:
-            is_inuse = "Free"
+            agent_inuse = False
     else:
-        is_available = "Not reachable"
+        agent_alive = False
 
     if rededr_port is not None and rededr_port > 0:
         # Check rededr agent status
         rededrApi = RedEdrApi(vm_ip, rededr_port)
         if rededrApi.IsReachable():
-            rededr_available = "Reachable"
+            rededr_alive = True
         else:
-            rededr_available = "Not reachable"
+            rededr_alive = False
 
     return {
         "id": db_profile.id,
         "vm_ip": vm_ip,
         "port": port,
         "rededr_port": rededr_port,
-        "is_available": is_available,
-        "is_inuse": is_inuse,
-        "rededr_available": rededr_available,
-        "status": status,
+
+        "agent_alive": agent_alive,
+        "agent_inuse": agent_inuse,
+        "rededr_alive": rededr_alive,
+        "vm_status": vm_status,
     }
 
 

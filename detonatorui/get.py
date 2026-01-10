@@ -344,50 +344,35 @@ def profiles_template():
     try:
         response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
         if response.status_code == 200:
-            templates = response.json()
+            profiles = response.json()
             
-            # Check status for each template
-            for template_name, template in templates.items():
-                url = f"{API_BASE_URL}/api/profiles/{template['id']}/status"
+            # Check status for each profile
+            for profile_name, profile in profiles.items():
+                url = f"{API_BASE_URL}/api/profiles/{profile['id']}/status"
                 try:
                     status_response = requests.get(url, headers=_auth_headers())
                     if status_response.status_code == 200:
                         status_data = status_response.json()
-                        template['is_inuse'] = status_data.get('is_inuse', 'false')
-                        template['available'] = status_data.get('is_available', 'false')
-                        template['rededr_available'] = status_data.get('rededr_available', '')
+                        profile['agent_alive'] = status_data.get('agent_alive', False)
+                        profile['agent_inuse'] = status_data.get('agent_inuse', None)
+                        profile['rededr_alive'] = status_data.get('rededr_alive', None)
                     else:
-                        template['is_inuse'] = "Error"
-                        template['available'] = "Error"
-                        template['rededr_available'] = "Error"
+                        profile['agent_alive'] = False
+                        profile['agent_inuse'] = None
+                        profile['rededr_alive'] = None
                 except requests.RequestException:
-                    template['is_inuse'] = "Error"
-                    template['available'] = "Error"
-                    template['rededr_available'] = "Error"
+                    profile['agent_alive'] = False
+                    profile['agent_inuse'] = None
+                    profile['rededr_alive'] = None
                 
                 # Add the name to the template for easier access in templates
-                template['name'] = template_name
-
-            # check for lock status for each template
-            for template_name, template in templates.items():
-                lock_url = f"{API_BASE_URL}/api/lock/{template['id']}/lock"
-                try:
-                    lock_response = requests.get(lock_url, headers=_auth_headers())
-                    if lock_response.status_code == 200:
-                        template['locked'] = lock_response.json().get('is_locked', 'false')
-                    else:
-                        template['locked'] = "Error"
-                except requests.RequestException:
-                    template['locked'] = "Error"
-                
-                # Add the name to the template for easier access in templates
-                template['name'] = template_name
+                profile['name'] = profile_name
         else:
-            templates = {}
+            profiles = {}
     except requests.RequestException:
-        templates = {}
+        profiles = {}
     
-    return render_template("partials/profiles_list.html", templates=templates)
+    return render_template("partials/profiles_list.html", profiles=profiles)
 
 @get_bp.route("/templates/profiles-overview")
 def profiles_overview_template():
