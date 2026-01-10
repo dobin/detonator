@@ -126,6 +126,7 @@ class SubmissionResponse(BaseModel):
 
     status: str
     agent_phase: str
+    absorber_status: str
 
     server_logs: Optional[str] = None
     agent_logs: Optional[str] = None

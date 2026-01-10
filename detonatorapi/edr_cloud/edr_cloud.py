@@ -77,6 +77,7 @@ class EdrCloud:
         db.refresh(submission)
         submission.absorber_status = "finished"
         self.finish_monitoring(db, submission)
+        db.commit()
         db.close()
 
 
