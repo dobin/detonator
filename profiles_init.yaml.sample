@@ -7,8 +7,7 @@ test_defender:
 
 test_mde:
   connector: Live
-  comment: Defender For Endpoint
-  edr_collector: mde
+  comment: Defender For Endpoint (Cloud Console)
   port: 8080
   vm_ip: 192.168.1.1
   edr_mde:
@@ -19,8 +18,7 @@ test_mde:
 
 test_elastic:
   connector: Live
-  comment: Elastic Defend
-  edr_collector: elastic
+  comment: Elastic Defend (Self-hosted Console)
   port: 8080
   vm_ip: 192.168.1.2
   edr_elastic:
@@ -31,7 +29,6 @@ test_elastic:
 test_rededr:
   connector: Live
   comment: Activating RedEdr
-  edr_collector: defender
   port: 8080
   vm_ip: 127.0.0.1
   rededr_port: 8081
@@ -41,7 +38,6 @@ test_proxmox:
   connector: Proxmox
   comment: Private RedEdr ETW & ETW-TI event collector
   password: ''
-  edr_collector: defender
   port: 8080
   password: secret
   vm_ip: 10.10.20.102
@@ -52,7 +48,6 @@ test_proxmox:
 test_azure:
   connector: NewAzure
   comment: New Azure Win11 Defender
-  edr_collector: defender
   data:
     image_reference: /subscriptions/<subscription>/resourceGroups/detonator-rg/providers/Microsoft.Compute/galleries/detonator_gallery/images/detonator-vm-def
     admin_username: admin 

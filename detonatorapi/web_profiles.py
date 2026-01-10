@@ -49,7 +49,6 @@ async def get_profiles(request: Request, db: Session = Depends(get_db)):
             "vm_ip": profile.vm_ip,
             "port": profile.port,
             "rededr_port": profile.rededr_port,
-            "edr_collector": profile.edr_collector,
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "require_password": requires_password,
@@ -66,7 +65,6 @@ async def create_profile(
     vm_ip: str = Form(...),
     port: int = Form(...),
     rededr_port: Optional[str] = Form(None),
-    edr_collector: Optional[str] = Form(""),
     default_drop_path: Optional[str] = Form(""),
     comment: Optional[str] = Form(""),
     password: Optional[str] = Form(""),
@@ -110,12 +108,10 @@ async def create_profile(
             vm_ip=vm_ip,
             port=port,
             rededr_port=rededr_port_value,
-            edr_collector=edr_collector or "",
             data=data_dict,
             default_drop_path=default_drop_path or "",
             comment=comment or "",
             password=password or "",
-            mde=mde_dict or {}
         )
         
         # Return the created profile
@@ -128,11 +124,9 @@ async def create_profile(
             "name": created_profile.name,
             "connector": created_profile.connector,
             "port": created_profile.port,
-            "edr_collector": created_profile.edr_collector,
             "default_drop_path": created_profile.default_drop_path,
             "comment": created_profile.comment,
             "data": created_profile.data,
-            "mde": created_profile.data.get("edr_mde", {}),
             "created_at": created_profile.created_at
         }
         
@@ -243,7 +237,6 @@ async def update_profile(
     vm_ip: str = Form(...),
     port: int = Form(...),
     rededr_port: Optional[str] = Form(None),
-    edr_collector: str = Form(...),
     default_drop_path: str = Form(""),
     comment: str = Form(""),
     data: str = Form(...),
@@ -289,7 +282,6 @@ async def update_profile(
         profile.connector = connector
         profile.vm_ip = vm_ip
         profile.port = port
-        profile.edr_collector = edr_collector
         if rededr_port_value is not None or (rededr_port is not None and rededr_port.strip() == ""):
             profile.rededr_port = rededr_port_value
         profile.default_drop_path = default_drop_path
@@ -308,11 +300,9 @@ async def update_profile(
             "connector": profile.connector,
             "vm_ip": profile.vm_ip,
             "port": profile.port,
-            "edr_collector": profile.edr_collector,
             "default_drop_path": profile.default_drop_path,
             "comment": profile.comment,
             "data": profile.data,
-            "mde": profile.data.get("edr_mde", {}),
             "password": password or "",
             "created_at": profile.created_at
         }

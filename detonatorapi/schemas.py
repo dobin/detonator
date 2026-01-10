@@ -12,7 +12,6 @@ class ProfileBase(BaseModel):
     vm_ip: Optional[str] = None
     port: int
     rededr_port: Optional[int] = None
-    edr_collector: str
     default_drop_path: Optional[str] = ""
     comment: Optional[str] = None
     data: dict
@@ -26,7 +25,6 @@ class ProfileUpdate(BaseModel):
     vm_ip: Optional[str] = None
     port: Optional[int] = None
     rededr_port: Optional[int] = None
-    edr_collector: Optional[str] = None
     default_drop_path: Optional[str] = None
     comment: Optional[str] = None
     data: Optional[dict] = None

@@ -35,7 +35,6 @@ and configure it something like:
 ```yaml
 localdetonator:
   type: Live
-  edr_collector: defender
   comment: My First Detonator VM
   port: 8080
   vm_ip: 127.0.0.1

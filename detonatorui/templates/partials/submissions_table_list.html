@@ -49,9 +49,6 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.profile %}
                         <div class="text-sm text-heading">{{ submission.profile.name }}</div>
-                        {% if submission.profile.edr_collector %}
-                            <div class="text-xs text-description">{{ submission.profile.edr_collector }}</div>
-                        {% endif %}
                     {% else %}
                         <span class="text-muted">-</span>
                     {% endif %}
@@ -63,7 +60,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.status == "finished" %}
-                        {% if submission.profile.edr_collector == "RedEdr" %}
+                        {% if submission.rededr_events %}
                             <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
                         {% elif submission.edr_verdict %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">

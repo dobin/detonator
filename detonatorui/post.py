@@ -137,8 +137,6 @@ def create_profile():
             data['data'] = request.form['data']
         
         # Optional fields
-        if 'edr_collector' in request.form:
-            data['edr_collector'] = request.form['edr_collector']
         if 'default_drop_path' in request.form:
             data['default_drop_path'] = request.form['default_drop_path']
         if 'comment' in request.form:
@@ -196,8 +194,6 @@ def update_profile(profile_id):
             data['data'] = request.form['data']
         
         # Optional fields
-        if 'edr_collector' in request.form:
-            data['edr_collector'] = request.form['edr_collector']
         if 'default_drop_path' in request.form:
             data['default_drop_path'] = request.form['default_drop_path']
         if 'comment' in request.form:

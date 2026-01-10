@@ -217,7 +217,6 @@ def create_profile_page():
         "vm_ip": "",
         "port": 8080,
         "rededr_port": None,
-        "edr_collector": "",
         "default_drop_path": "",
         "comment": "",
         "password": "",

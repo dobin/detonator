@@ -87,7 +87,6 @@ def test_profile_validation(client, profile_name, results):
             results.add_pass(f"Profile '{profile_name}' validation")
             print(f"  Profile details:")
             print(f"    Connector: {profile.get('connector', 'N/A')}")
-            print(f"    EDR Collector: {profile.get('edr_collector', 'N/A')}")
             return profile
         else:
             results.add_fail(f"Profile '{profile_name}' validation", 
@@ -164,8 +163,8 @@ def main():
     
     # Required arguments
     parser.add_argument("--url", default="https://detonatorapi.r00ted.ch", help="Detonator server URL (e.g., http://localhost:8000)")
-    parser.add_argument("--token", default="", help="Authentication token")
-    parser.add_argument("--profile", default="mde", help="Profile name to test")
+    #parser.add_argument("--token", default="", help="Authentication token")
+    parser.add_argument("--profile", required=True, help="Profile name to test")
     
     # Optional arguments
     parser.add_argument("--runtime", type=int, default=10, 

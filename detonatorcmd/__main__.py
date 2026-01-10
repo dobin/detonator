@@ -14,7 +14,6 @@ def print_profiles(profiles):
         print("")
         print(f"Profile: {profile_name}")
         print(f"    Connector: {profile.get('connector', '')}")
-        print(f"    EDR Collector: {profile.get('edr_collector', '')}")
         print(f"    VM_IP: {profile.get('vm_ip', '')}")
         if profile.get('default_drop_path'):
             print(f"    Default Malware Path: {profile.get('default_drop_path', '')}")

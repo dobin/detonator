@@ -25,7 +25,6 @@ class Profile(Base):
     vm_ip: Mapped[str] = Column(String(15), nullable=True)
     port: Mapped[int] = Column(Integer, nullable=False)
     rededr_port: Mapped[int] = Column(Integer, nullable=True)
-    edr_collector: Mapped[str] = Column(String(100), nullable=False)
     default_drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
     comment: Mapped[str] = Column(Text, nullable=True)
     data: Mapped[dict] = Column(JSON, default={}, nullable=False)

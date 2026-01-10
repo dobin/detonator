@@ -68,7 +68,6 @@
                 {% for profile_name, profile in profiles.items() %}
                 <option value="{{ profile_name }}" title="{{ profile.comment }}" data-require-password="{{ profile.require_password }}">
                     {{ profile_name }}
-                    {% if profile.edr_collector %} ({{ profile.edr_collector }}){% endif %}
                     {% if profile.connector %} - {{ profile.connector }}{% endif %}
                 </option>
                 {% endfor %}
