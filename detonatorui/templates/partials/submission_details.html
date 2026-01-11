@@ -28,8 +28,8 @@
                 <td class="px-3 py-2 font-semibold text-label">Submission Status:</td>
                 <td class="px-3 py-2 border-r border-card"><span class="px-2 py-1 rounded text-xs {{ get_status_color(submission.status) }}">{{ submission.status }}</span></td>
 
-                <td class="px-3 py-2 font-semibold text-label">Profile:</td>
-                <td class="px-3 py-2 border-r border-card">{{ submission.profile.name if submission.profile else '' }}</td>
+                <td class="px-3 py-2 font-semibold text-label">User:</td>
+                <td class="px-3 py-2">{{ submission.user or '' }}</td>
 
                 <td class="px-3 py-2 font-semibold text-label">Completed:</td>
                 <td class="px-3 py-2 text-timestamp">{{ submission.completed_at|strftime('%Y-%m-%d %H:%M:%S') if submission.completed_at else 'N/A' }}</td>
@@ -42,8 +42,30 @@
                 <td class="px-3 py-2 font-semibold text-label">Project:</td>
                 <td class="px-3 py-2 border-r border-card">{{ submission.project or '' }}</td>
 
-                <td class="px-3 py-2 font-semibold text-label">Runtime (s):</td>
-                <td class="px-3 py-2 text-timestamp">{{ submission.runtime }}</td>
+                <td class="px-3 py-2 font-semibold text-label">Profile:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.profile.name if submission.profile else '' }}</td>
+            </tr>
+
+            <tr>
+                <td class="px-3 py-2 font-semibold text-label">Execution Mode:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.execution_mode or '' }} for {{ submission.runtime }} seconds</td>
+
+                <td class="px-3 py-2 font-semibold text-label">Drop Path:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.drop_path or '' }}</td>
+
+                <td class="px-3 py-2 font-semibold text-label">Profile Connector:</td>
+                <td class="px-3 py-2">{{ submission.profile.connector if submission.profile else '' }}</td>
+            </tr>
+
+            <tr>
+                <td class="px-3 py-2 font-semibold text-label">Agent Phase:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.agent_phase or '' }}</td>
+
+                <td class="px-3 py-2 font-semibold text-label">Absorber Status:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.absorber_status or '' }}</td>
+
+                <td class="px-3 py-2 font-semibold text-label">Profile Comment:</td>
+                <td class="px-3 py-2 border-r border-card">{{ submission.profile.comment if submission.profile else '' }}</td>
             </tr>
         </tbody>
     </table>
