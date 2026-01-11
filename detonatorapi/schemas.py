@@ -157,6 +157,7 @@ class SubmissionAlertResponse(BaseModel):
     detection_source: Optional[str] = None
     detected_at: Optional[datetime] = None
     additional_data: Optional[dict] = None
+    raw: str
     created_at: datetime
 
     class Config:

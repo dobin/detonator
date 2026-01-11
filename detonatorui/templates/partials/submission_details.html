@@ -129,6 +129,7 @@
                                     <th class="px-3 py-2 text-left font-medium text-label">Category</th>
                                     <th class="px-3 py-2 text-left font-medium text-label">Detection Source</th>
                                     <th class="px-3 py-2 text-left font-medium text-label">Detected At</th>
+                                    <th class="px-3 py-2 text-left font-medium text-label">Raw</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-dark bg-table">
@@ -158,6 +159,25 @@
                                         {{ alert.detected_at|strftime('%Y-%m-%d %H:%M:%S') }}
                                         {% else %}
                                         N/A
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-3 py-2 whitespace-nowrap">
+                                        {% if alert.raw %}
+                                        <button class="px-3 py-1.5 text-sm rounded bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm" 
+                                                onclick="showJsonDialog({{ loop.index0 }})">
+                                            View
+                                        </button>
+                                        <div id="json-dialog-{{ loop.index0 }}" class="json-dialog hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900">
+                                            <div class="bg-card border border-divider rounded shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+                                                <div class="flex justify-between items-center p-4 border-b border-divider">
+                                                    <span class="text-label font-medium text-base">Raw Alert Data</span>
+                                                    <button class="text-label hover:text-red-500 text-2xl leading-none" onclick="hideJsonDialog({{ loop.index0 }})">&times;</button>
+                                                </div>
+                                                <div class="overflow-auto flex-1 p-4">
+                                                    <pre class="text-xs text-label">{{ alert.raw|pretty_json }}</pre>
+                                                </div>
+                                            </div>
+                                        </div>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -228,6 +248,43 @@
             clickedButton.classList.remove('border-transparent', 'text-description');
             clickedButton.classList.add('tab-active');
         }
+
+        function showJsonDialog(index) {
+            // Hide all other dialogs
+            document.querySelectorAll('.json-dialog').forEach(d => {
+                if (d.id !== `json-dialog-${index}`) {
+                    d.classList.add('hidden');
+                }
+            });
+
+            const dialog = document.getElementById(`json-dialog-${index}`);
+            dialog.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function hideJsonDialog(index) {
+            const dialog = document.getElementById(`json-dialog-${index}`);
+            dialog.classList.add('hidden');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        // Close dialogs when clicking on backdrop
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('json-dialog')) {
+                event.target.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close dialogs with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.json-dialog').forEach(d => {
+                    d.classList.add('hidden');
+                });
+                document.body.style.overflow = '';
+            }
+        });
     </script>
 </div>
 
