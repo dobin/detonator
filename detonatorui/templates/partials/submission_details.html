@@ -168,13 +168,13 @@
                                             View
                                         </button>
                                         <div id="json-dialog-{{ loop.index0 }}" class="json-dialog hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900">
-                                            <div class="bg-card border border-divider rounded shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+                                            <div class="bg-card border border-divider rounded shadow-2xl flex flex-col" style="width: 90%; max-width: 1200px; height: 90vh;">
                                                 <div class="flex justify-between items-center p-4 border-b border-divider flex-shrink-0">
                                                     <span class="text-label font-medium text-base">Raw Alert Data</span>
                                                     <button class="text-label hover:text-red-500 text-2xl leading-none" onclick="hideJsonDialog({{ loop.index0 }})">&times;</button>
                                                 </div>
-                                                <div class="overflow-auto flex-1 p-4 min-h-0">
-                                                    <pre class="text-xs text-label whitespace-pre-wrap break-words">{{ alert.raw|pretty_json }}</pre>
+                                                <div class="flex-1 p-4" style="overflow-y: auto; overflow-x: auto;">
+                                                    <pre class="text-xs text-label" style="margin: 0; white-space: pre; word-wrap: normal;">{{ alert.raw|pretty_json }}</pre>
                                                 </div>
                                             </div>
                                         </div>
