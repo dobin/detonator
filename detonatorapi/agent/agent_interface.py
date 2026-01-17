@@ -149,6 +149,28 @@ def submit_file_to_agent(submission_id: int) -> bool:
         thread_db.close()
         return False
     executionFeedback: ExecutionFeedback = exec_result.unwrap()
+
+    if executionFeedback == ExecutionFeedback.VIRUS or executionFeedback == ExecutionFeedback.OK:
+        # Only if execution worked
+        # if there is a cloud edr, boot it now
+        # E.g. for elastic, which will give the AV results via cloud
+        # boot the relevant EDR Cloud monitoring plugin (if any)
+        edr_cloud_plugin: Optional[EdrCloud] = get_relevant_edr_cloud_plugin(db_submission.profile.data)
+        if edr_cloud_plugin is not None:
+            db_submission_add_log(thread_db, db_submission, f"Starting EDR Cloud plugin: {edr_cloud_plugin.__class__.__name__}")
+            # It will start a new thread
+            # ENDS: on submission state change
+            edr_cloud_plugin.InitializeClient(db_submission.profile.data)
+            thread = threading.Thread(
+                target=edr_cloud_plugin.monitor_loop,
+                name=f"monitor-{submission_id}",
+                daemon=True,
+                args=(submission_id,)
+            )
+            thread.start()
+            logger.info("Alert monitoring thread started")
+
+    # handle each of the two cases
     if executionFeedback == ExecutionFeedback.VIRUS:
         db_submission.agent_phase = "no_execution"
         db_submission.edr_verdict = "virus"
@@ -168,24 +190,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
         # BUT: we gonna overwrite it at the end of the function
         # ALSO: we dont create submission.alerts and submission.edr_verdict in here
         # ENDS: on submission state change
+        # With proxmox, this will only run as long as the VM is alive (i.e. processing = process executing)
         db_submission_add_log(thread_db, db_submission, f"Starting local EDR data gatherer")
         threading.Thread(target=thread_local_edr_gatherer, args=(submission_id, agentApi )).start()
-
-        # boot the relevant EDR Cloud monitoring plugin if any
-        edr_cloud_plugin: Optional[EdrCloud] = get_relevant_edr_cloud_plugin(db_submission.profile.data)
-        if edr_cloud_plugin is not None:
-            db_submission_add_log(thread_db, db_submission, f"Starting EDR Cloud plugin: {edr_cloud_plugin.__class__.__name__}")
-            # It will start a new thread
-            # ENDS: on submission state change
-            edr_cloud_plugin.InitializeClient(db_submission.profile.data)
-            thread = threading.Thread(
-                target=edr_cloud_plugin.monitor_loop,
-                name=f"monitor-{submission_id}",
-                daemon=True,
-                args=(submission_id,)
-            )
-            thread.start()
-            logger.info("Alert monitoring thread started")
 
         # let it cook
         for i in range(runtime):
@@ -236,6 +243,9 @@ def submit_file_to_agent(submission_id: int) -> bool:
     agent_logs = agentApi.GetAgentLogs()
     process_output = agentApi.GetProcessOutput()       # always for now
 
+    # local EDR alerts
+    absorb_agent_edr_data(submission_id, agentApi)
+
     # we finished 
     if DO_LOCKING:
         logger.info("Attempt to release lock")
@@ -245,9 +255,6 @@ def submit_file_to_agent(submission_id: int) -> bool:
         else:
             db_submission_add_log(thread_db, db_submission, f"Successfully released lock")
     db_submission_add_log(thread_db, db_submission, f"All information gathered from Agents, processing logs...")
-
-    # EDR local telemetry processing
-    absorb_agent_edr_data(submission_id, agentApi)
 
     # keep "no_execution", "stop", and possibly others
     if db_submission.agent_phase == "executing":
@@ -301,6 +308,8 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
     if edrAlertsResponse is None:
         logger.warning(f"Submission {submission_id}: could not get EDR logs from Agent")
         return
+    else:
+        logger.info(f"Submission {submission_id}: got {len(edrAlertsResponse.alerts)} EDR alerts from Agent")
 
     # insert all non-existing alerts into DB
     db = get_db_direct()
