@@ -17,55 +17,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/submissions/count")
-async def get_submissions_count(
-    request: Request,
-    status: Optional[str] = Query(None, description="Filter by submission status"),
-    project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
-    edr_verdict: Optional[str] = Query(None, description="Filter by submission edr_verdict"),
-    search: Optional[str] = Query(None, description="Search in project, submission comment, file comment, or filename"),
-    user_filter: Optional[str] = Query(None, description="Filter by user (guest/admin/all)", alias="user"),
-    db: Session = Depends(get_db)
-):
-    """Get count of submissions with filtering capabilities"""
-    query = db.query(Submission).options(
-        joinedload(Submission.file),
-        joinedload(Submission.profile),
-        joinedload(Submission.alerts),
-    )
-    
-    # Filter by user if guest
-    user = get_user_from_request(request)
-    if user == "guest":
-        query = query.filter(Submission.user == "guest")
-    
-    if user_filter and user_filter != "all":
-        query = query.filter(Submission.user == user_filter)
-    
-    # Apply filters (same as in get_submissions)
-    if status:
-        query = query.filter(Submission.status == status)
-    
-    if project:
-        query = query.filter(Submission.project.ilike(f"%{project}%"))
-    
-    if edr_verdict:
-        query = query.filter(Submission.edr_verdict.ilike(f"%{edr_verdict}%"))
-    
-    if search:
-        # Search across multiple fields
-        search_filter = or_(
-            Submission.project.ilike(f"%{search}%"),
-            Submission.comment.ilike(f"%{search}%"),
-            Submission.file.has(File.filename.ilike(f"%{search}%")),
-            Submission.file.has(File.comment.ilike(f"%{search}%"))
-        )
-        query = query.filter(search_filter)
-    
-    count = query.count()
-    return {"count": count}
-
-
 @router.get("/submissions", response_model=List[SubmissionResponse])
 async def get_submissions(
     request: Request,
@@ -245,8 +196,8 @@ async def resubmission(
     if db_submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
     
-    if db_submission.status != "error":
-        raise HTTPException(status_code=400, detail=f"Can only resubmission submissions in 'error' status. Current status: {db_submission.status}")
+    #if db_submission.status != "error":
+    #    raise HTTPException(status_code=400, detail=f"Can only resubmission submissions in 'error' status. Current status: {db_submission.status}")
     
     # Reset submission to fresh status
     db_submission.status = "fresh"
