@@ -201,8 +201,9 @@ async def resubmission(
     
     # Reset submission to fresh status
     db_submission.status = "fresh"
+    db_submission.created_at = datetime.utcnow()
     db_submission.updated_at = datetime.utcnow()
-
+    
     # and all the possile fields
     db_submission.server_logs = ""
     db_submission.process_output = ""
@@ -210,7 +211,7 @@ async def resubmission(
     db_submission.rededr_events = ""
     db_submission.rededr_logs = ""
     db_submission.edr_verdict = ""
-    #db_submission.completed_at = None
+    db_submission.completed_at = None
     
     # Add log entry about the resubmission
     log_message = f"[{datetime.utcnow().isoformat()}] Submission reset to 'fresh' status for reprocessing"
