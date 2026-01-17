@@ -95,13 +95,13 @@ class CloudElasticPlugin(EdrCloud):
                 raw=json.dumps(alert),
                 
                 alert_id=alert.get("_id"),
-                title=source.get("kibana.alert.rule.name"),
-                severity=source.get("kibana.alert.severity"),
+                title=source.get("kibana.alert.rule.name", "N/A"),
+                severity=source.get("kibana.alert.severity", "N/A"),
                 category="",  # TBD
-                detection_source=source.get("message"),
+                detection_source=source.get("message", "N/A"),
                 detected_at=detected_dt,
                 additional_data={
-                    "rule_id": source.get("kibana.alert.rule.rule_id"),
+                    "rule_id": source.get("kibana.alert.rule.rule_id", "N/A"),
                 }
             )
             converted_alerts.append(submissionAlert)
