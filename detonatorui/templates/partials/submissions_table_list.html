@@ -55,7 +55,11 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.profile %}
-                        <div class="text-sm text-heading">{{ submission.profile.name }}</div>
+                        <div class="text-sm text-heading">
+                        {% if submission.execution_mode %} 
+                            {{ submission.execution_mode }} @    
+                        {% endif %}
+                        {{ submission.profile.name }}</div>
                     {% else %}
                         &nbsp;
                     {% endif %}
