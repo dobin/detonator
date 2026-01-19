@@ -17,10 +17,11 @@
 
 # === CONFIG ===
 USER="rededr@pve"
-TOKEN_NAME="detonator"
+TOKEN_NAME="rededr"
 VMID="101"
 
-# Or the aclmod stuff breaks because it has issues with ! in token names
+# IMPORTANT!
+# Or the aclmod stuff breaks because bash has unsolvable issues with ! in token names
 set +H
 
 # === CREATE USER ===
