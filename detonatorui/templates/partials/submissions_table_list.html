@@ -7,8 +7,8 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">File Comment</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Submission Comment</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Project</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Profile</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-description uppercase tracking-wider">Result</th>
             </tr>
         </thead>
@@ -34,7 +34,7 @@
                             {{ submission.file.comment }}
                         </div>
                     {% else %}
-                        <span class="text-muted">-</span>
+                        &nbsp;
                     {% endif %}
                 </td>
                 <td class="px-6 py-4">
@@ -43,32 +43,31 @@
                             {{ submission.comment }}
                         </div>
                     {% else %}
-                        <span class="text-muted">-</span>
+                        &nbsp;
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    {% if submission.project %}
+                        <div class="text-sm text-heading">{{ submission.project.name }}</div>
+                    {% else %}
+                        &nbsp;
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     {% if submission.profile %}
                         <div class="text-sm text-heading">{{ submission.profile.name }}</div>
                     {% else %}
-                        <span class="text-muted">-</span>
+                        &nbsp;
                     {% endif %}
                 </td>
+                
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_status_color(submission.status) }}">
-                        {{ submission.status }}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    {% if submission.status == "finished" %}
-                        {% if submission.rededr_events %}
-                            <button onclick="window.open('/semidatasieve/{{ submission.id }}')" class="btn-danger text-sm">RedEdr</button>
-                        {% elif submission.edr_verdict %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">
-                                {{ submission.edr_verdict }}
-                            </span>
-                        {% else %}
-                            <span class="text-muted">-</span>
-                        {% endif %}
+                    {% if submission.edr_verdict %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ get_submission_status_color(submission.edr_verdict) }}">
+                            {{ submission.edr_verdict }}
+                        </span>
+                    {% else %}
+                        &nbsp;
                     {% endif %}
                 </td>
             </tr>
