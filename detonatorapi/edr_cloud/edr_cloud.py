@@ -95,7 +95,7 @@ class EdrCloud:
             logger.info(f"submission {submission.id}: New alert stored: {alert.alert_id}")
 
         if len(alerts) > 0:
-            if submission.edr_verdict != "virus":
+            if submission.edr_verdict != "file_detected":
                 submission.edr_verdict = "detected"
             db.commit()
 

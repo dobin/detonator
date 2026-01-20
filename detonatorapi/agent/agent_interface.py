@@ -173,7 +173,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # handle each of the two cases
     if executionFeedback == ExecutionFeedback.VIRUS:
         db_submission.agent_phase = "no_execution"
-        db_submission.edr_verdict = "virus"
+        db_submission.edr_verdict = "file_detected"
         db_submission_add_log(thread_db, db_submission, f"File {filename} is detected as malware when attempting to execute")
         thread_db.commit()
     elif executionFeedback == ExecutionFeedback.OK:
@@ -343,8 +343,8 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
         db_submission.alerts.append(db_alert)
 
 
-    if db_submission.edr_verdict == "virus":
-        logger.info(f"Submission {db_submission.id}: EDR logs indicate: virus (already set)")
+    if db_submission.edr_verdict == "file_detected":
+        logger.info(f"Submission {db_submission.id}: EDR logs indicate: file_detected (already set)")
     else:
         if edrAlertsResponse.detected:
             logger.info(f"Submission {db_submission.id}: EDR logs indicate: detected")
