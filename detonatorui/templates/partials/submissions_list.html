@@ -103,7 +103,11 @@
                             </tbody>
                         </table>
                         {% elif submission.status == "finished" %}
-                            (No alerts)
+                            {% if submission.absorber_status == "running" %}
+                                (No alerts yet - absorber still running)
+                            {% else %}
+                                (No alerts)
+                            {% endif %}
                         {% else %}
                             <pre class="bg-card-header p-2 rounded text-sm max-h-32 overflow-y-auto" data-scroll-bottom
                                 >{{(submission.server_logs.strip().split('\n')[-5:]|join('\n')).strip()}}
