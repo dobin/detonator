@@ -4,6 +4,13 @@
 
 Use this guide: https://github.com/peasead/elastic-container
 
+* Use a 30-day trial version or your own license (without a valid license you only have a few detections)
+* Security -> Manage -> Policies
+  * Turn on Malware, Ransomware, Memory threat
+  * Set all to "Detect" instead of "Prevent"
+  * Make sure all events collection is enabled
+  * "Enable to register Elastic as an official Antivirus solution for Windows OS. This will also disable Windows Defender" (we have our own Defender VMs)
+
 
 ## Setup Elastic for Detonator Integration
 
