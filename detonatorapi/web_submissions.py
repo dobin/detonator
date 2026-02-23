@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 
 from detonatorapi.db_interface import db_submission_change_status_quick
-from .database import get_db, File, Submission
+from .database import get_db, File, Submission, SubmissionAlert
 from .schemas import SubmissionResponse, SubmissionUpdate, FileCreateSubmission
 from .connectors.azure_manager import get_azure_manager
 from .db_interface import db_create_submission, db_get_profile_by_name, db_submission_add_log
@@ -198,6 +198,9 @@ async def resubmission(
     
     #if db_submission.status != "error":
     #    raise HTTPException(status_code=400, detail=f"Can only resubmission submissions in 'error' status. Current status: {db_submission.status}")
+    
+    # Delete all SubmissionAlerts for this submission
+    db.query(SubmissionAlert).filter(SubmissionAlert.submission_id == submission_id).delete()
     
     # Reset submission to fresh status
     db_submission.status = "fresh"
