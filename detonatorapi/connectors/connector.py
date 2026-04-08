@@ -37,25 +37,33 @@ class ConnectorBase:
 
     def connect(self, submission_id: int):
         def connect_thread(submission_id: int):
-            if connect_to_agent(submission_id):
-                db_submission_change_status(submission_id, "connected")
-            else:
-                db_submission_change_status(submission_id, "error", "Could not connect")
+            try:
+                if connect_to_agent(submission_id):
+                    db_submission_change_status(submission_id, "connected")
+                else:
+                    db_submission_change_status(submission_id, "error", "Could not connect")
+            except Exception as e:
+                logger.error(f"connect_thread unhandled exception for submission {submission_id}: {e}")
+                db_submission_change_status(submission_id, "error", str(e))
 
         threading.Thread(target=connect_thread, args=(submission_id, )).start()
 
 
     def process(self, submission_id: int, pre_wait: int = 0):
         def process_thread(submission_id: int):
-            # TODO This is to handle Azure VM startup weirdness
-            # Just because we could connect, doesnt mean we want to immediately process
-            # Let the VM start up for a bit
-            time.sleep(pre_wait)
+            try:
+                # TODO This is to handle Azure VM startup weirdness
+                # Just because we could connect, doesnt mean we want to immediately process
+                # Let the VM start up for a bit
+                time.sleep(pre_wait)
 
-            if submit_file_to_agent(submission_id):
-                db_submission_change_status(submission_id, "processed")
-            else:
-                db_submission_change_status(submission_id, "stop", f"Could not start trace on RedEdr")
+                if submit_file_to_agent(submission_id):
+                    db_submission_change_status(submission_id, "processed")
+                else:
+                    db_submission_change_status(submission_id, "stop", f"Could not start trace on RedEdr")
+            except Exception as e:
+                logger.error(f"process_thread unhandled exception for submission {submission_id}: {e}")
+                db_submission_change_status(submission_id, "error", str(e))
 
         threading.Thread(target=process_thread, args=(submission_id, )).start()
 

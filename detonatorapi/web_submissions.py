@@ -95,6 +95,8 @@ async def update_submission(
     
     # Update fields
     update_data = submission_update.dict(exclude_unset=True)
+    # Status transitions are controlled by the state machine; reject caller-supplied status changes
+    update_data.pop("status", None)
     if "runtime" in update_data:
         try:
             update_data["runtime"] = sanitize_runtime_seconds(update_data["runtime"])
@@ -113,6 +115,7 @@ async def update_submission(
 @router.post("/files/{file_id}/createsubmission", response_model=SubmissionResponse)
 async def file_create_submission(
     file_id: int,
+    request: Request,
     profile_name: str = Form(...),
     execution_mode: str = Form("exec"),
     runtime: int = Form(10),
@@ -163,6 +166,7 @@ async def file_create_submission(
         runtime=runtime_final,
         drop_path=drop_path,
         execution_mode=execution_mode,
+        user=get_user_from_request(request),
     )
     
     # Retrieve the created submission to return full details
@@ -196,8 +200,9 @@ async def resubmission(
     if db_submission is None:
         raise HTTPException(status_code=404, detail="Submission not found")
     
-    #if db_submission.status != "error":
-    #    raise HTTPException(status_code=400, detail=f"Can only resubmission submissions in 'error' status. Current status: {db_submission.status}")
+    #active_states = {"instantiating", "connecting", "processing", "stopping", "removing", "killing"}
+    #if db_submission.status in active_states:
+    #    raise HTTPException(status_code=400, detail=f"Cannot resubmit a submission in active state '{db_submission.status}'")
     
     # Delete all SubmissionAlerts for this submission
     db.query(SubmissionAlert).filter(SubmissionAlert.submission_id == submission_id).delete()

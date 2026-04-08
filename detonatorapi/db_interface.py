@@ -81,7 +81,14 @@ def db_create_file(
         user=user
     )
     db.add(db_file)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        raise
 
     logger.info(f"DB: Created file {db_file.id} with filename: {actual_filename}")
     return db_file.id

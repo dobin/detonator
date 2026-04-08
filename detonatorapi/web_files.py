@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 import logging
 import os
+from urllib.parse import quote
 
 from .database import get_db, File, Submission
 from .schemas import FileResponse, FileWithSubmissions
@@ -141,6 +142,6 @@ async def download_file(
         content=content,
         media_type="application/octet-stream",
         headers={
-            "Content-Disposition": f"attachment; filename={db_file.filename}"
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(db_file.filename)}"
         }
     )

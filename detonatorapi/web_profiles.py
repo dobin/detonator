@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import logging
 import json
+import ipaddress
 import requests
 import subprocess
 
@@ -92,6 +93,11 @@ async def create_profile(
         # Check if profile name is alphanumeric, no spaces
         if not name.isalnum():
             raise HTTPException(status_code=400, detail="Profile name must be alphanumeric with no spaces")
+
+        # Validate connector against registered connectors
+        valid_connectors = list(connectors.get_all().keys())
+        if connector not in valid_connectors:
+            raise HTTPException(status_code=400, detail=f"Invalid connector '{connector}'. Must be one of: {valid_connectors}")
         
         # Check if profile name already exists
         existing_profile = db.query(Profile).filter(Profile.name == name).first()
@@ -142,12 +148,13 @@ async def get_profile(request: Request, profile_id: int, db: Session = Depends(g
     """Get a specific profile by ID"""
     db_profile = db_get_profile_by_id(db, profile_id)
 
-    if get_user_from_request(request) != "admin":
-        if db_profile:
-            db_profile.data = {}
-
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
+
+    if get_user_from_request(request) != "admin":
+        db.expunge(db_profile)
+        db_profile.data = {}
+
     return db_profile
 
 
@@ -258,6 +265,11 @@ async def update_profile(
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
         
+        # Validate connector against registered connectors
+        valid_connectors = list(connectors.get_all().keys())
+        if connector not in valid_connectors:
+            raise HTTPException(status_code=400, detail=f"Invalid connector '{connector}'. Must be one of: {valid_connectors}")
+
         # Check if new name conflicts with existing profile (excluding current one)
         if name != profile.name:
             existing = db.query(Profile).filter(Profile.name == name, Profile.id != profile_id).first()
@@ -383,6 +395,10 @@ async def reboot(
     vm_ip = db_profile.vm_ip or ""
     if vm_ip == "":
         raise HTTPException(status_code=400, detail="Profile does not have ip configured")
+    try:
+        ipaddress.ip_address(vm_ip)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Profile has an invalid IP address configured")
     try:
         # Execute SSH reboot command
         subprocess.run(
