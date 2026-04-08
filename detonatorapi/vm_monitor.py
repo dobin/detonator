@@ -18,6 +18,8 @@ from .connectors.connectors import connectors
 
 logger = logging.getLogger(__name__)
 
+ING_STATES_TIMEOUT_MINUTES = 30
+
 
 
 class VMMonitorTask:
@@ -74,6 +76,14 @@ class VMMonitorTask:
             # Skip finished (nothing todo)
             if status in [ 'finished', 'error' ]:
                 continue
+
+            # Detect submissions stuck in transitional states — recover them
+            if status.endswith("ing"):
+                cutoff = datetime.utcnow() - timedelta(minutes=ING_STATES_TIMEOUT_MINUTES)
+                if submission.updated_at < cutoff:
+                    logger.error(f"Submission {submission_id} stuck in state '{status}' for >{ING_STATES_TIMEOUT_MINUTES}min, forcing to error")
+                    db_submission_change_status_quick(db, submission, "error")
+                    continue
 
             # get responsible VM manager, based on the profile->connector
             if not submission.profile.connector:
