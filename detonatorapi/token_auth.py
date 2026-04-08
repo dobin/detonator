@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from fastapi import Request, HTTPException
 import base64
+import hmac
 
 from .settings import AUTH_PASSWORD
 
@@ -14,7 +15,7 @@ def check_password_auth(request: Request) -> bool:
     
     # Check for X-Auth-Password header
     auth_password = request.headers.get("X-Auth-Password", "")
-    if auth_password == AUTH_PASSWORD:
+    if hmac.compare_digest(auth_password, AUTH_PASSWORD):
         return True
     
     # Check for Authorization header (Basic or Bearer)
@@ -23,7 +24,7 @@ def check_password_auth(request: Request) -> bool:
         # Support "Bearer <password>" format
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
-            if token == AUTH_PASSWORD:
+            if hmac.compare_digest(token, AUTH_PASSWORD):
                 return True
         # Support "Basic <base64>" format for curl compatibility
         elif auth_header.startswith("Basic "):
@@ -32,12 +33,12 @@ def check_password_auth(request: Request) -> bool:
                 # Basic auth format is "username:password", we only care about password
                 if ':' in decoded:
                     _, password = decoded.split(':', 1)
-                    if password == AUTH_PASSWORD:
+                    if hmac.compare_digest(password, AUTH_PASSWORD):
                         return True
                 # Or just the password alone
-                elif decoded == AUTH_PASSWORD:
+                elif hmac.compare_digest(decoded, AUTH_PASSWORD):
                     return True
-            except:
+            except (ValueError, UnicodeDecodeError):
                 pass
     
     return False
