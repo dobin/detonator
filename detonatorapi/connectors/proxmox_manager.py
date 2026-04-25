@@ -146,6 +146,11 @@ class ProxmoxManager:
         if not self.proxmoxApi:
             raise Exception("Proxmox API not initialized")
 
+        # Wait for any pending lock (e.g. rollback) to clear before starting
+        if not self.WaitForVmUnlock(proxmox_id, timeout=40):
+            logger.error(f"VM {proxmox_id} still locked, cannot start")
+            return False
+
         task = self.proxmoxApi.nodes(self.proxmox_node_name).qemu(proxmox_id).status.start.post()
         if not self._waitForTask(task):
             return False
