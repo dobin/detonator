@@ -30,6 +30,10 @@ def handle_api_response(response, operation_name="operation"):
             "error": "Access forbidden. Check permissions or profile password.",
             "forbidden": True
         }, 403
+    elif response.status_code == 413:
+        return {
+            "error": "File too large. Maximum allowed size is 128 MB."
+        }, 413
     else:
         logger.error(f"API error for {operation_name}: {response.status_code} - {response.text}")
         return {"error": f"API error: {response.text}"}, response.status_code

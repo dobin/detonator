@@ -15,6 +15,8 @@ from .settings import UPLOAD_DIR
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+MAX_FILE_SIZE = 128 * 1024 * 1024  # 128 MB
+
 
 @router.post("/files", response_model=FileResponse)
 async def upload_file(
@@ -30,8 +32,10 @@ async def upload_file(
     actual_filename = file.filename
     if not actual_filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
-    # Read file content
-    content = await file.read()
+    # Read file content with size limit to prevent memory exhaustion
+    content = await file.read(MAX_FILE_SIZE + 1)
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum allowed size is 128 MB.")
     file_id = db_create_file(db, actual_filename, content, source_url or "", comment or "", exec_arguments or "")
 
     db_file = db.query(File).filter(File.id == file_id).options(joinedload(File.submissions)).first()

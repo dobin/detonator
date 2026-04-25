@@ -19,7 +19,7 @@ from .web_profiles import router as profiles_router
 from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
 from .utils import sanitize_runtime_seconds
 from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
-
+from .web_files import MAX_FILE_SIZE
 
 # Load environment variables
 load_dotenv()
@@ -147,7 +147,10 @@ async def create_submission(
     filename = file.filename
     if not filename:
         raise HTTPException(status_code=400, detail="Filename cannot be empty")
-    file_content = await file.read()
+    
+    file_content = await file.read(MAX_FILE_SIZE + 1)
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum allowed size is 128 MB.")
     file_id = db_create_file(db, 
                              filename=filename, 
                              content=file_content, 

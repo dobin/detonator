@@ -13,6 +13,13 @@ from detonatorapi.edr_cloud.elastic_rule_resolver import ElasticRuleResolver
 
 app = Flask(__name__)
 app.secret_key = "detonator-secret-key"  # Change this in production
+app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024  # 128 MB
+
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({"error": "File too large. Maximum allowed size is 128 MB."}), 413
+
 
 app.register_blueprint(post_bp)
 app.register_blueprint(get_bp)
