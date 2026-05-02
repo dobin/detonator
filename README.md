@@ -22,11 +22,15 @@ $ curl http://127.0.0.1:8080/api/lock/status
 Install python stuff:
 
 ```bash
-# Install Deps
-$ apt install python3-poetry
+# Install uv
+$ pip install uv
+
+# Create a virtual environment
+$ uv venv
+$ source .venv/bin/activate
 
 # Install dependencies
-$ poetry install
+$ uv pip install -r requirements.txt
 ```
 
 Create `profiles_init.yaml` (e.g. by copying `profiles_init.yaml.sample`) 
@@ -43,12 +47,12 @@ localdetonator:
 Then create the DB:
 ```
 # Create DB
-$ poetry run python migrate_profiles_yaml.py
+$ python migrate_profiles_yaml.py
 ```
 
 And run the server:
 ```bash
-$ poetry run python -m detonator
+$ python -m detonator
 ```
 
 Access the web interface on `http://localhost:5000`. 
@@ -60,7 +64,7 @@ The REST API is at `http://localhost:8000`.
 To submit a file on the previously configured `localdetonator`:
 
 ```bash
-$ poetry run python -m detonatorcmd submission sample.exe --profile localdetonator
+$ python -m detonatorcmd submission sample.exe --profile localdetonator
 File ID: 1, Submission ID: 1
 .........................
 Submission Result: not_detected
