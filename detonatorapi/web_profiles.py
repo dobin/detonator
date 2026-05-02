@@ -90,9 +90,10 @@ async def create_profile(
             except json.JSONDecodeError:
                 raise HTTPException(status_code=400, detail="Invalid JSON in mde field")
             
-        # Check if profile name is alphanumeric, no spaces
-        if not name.isalnum():
-            raise HTTPException(status_code=400, detail="Profile name must be alphanumeric with no spaces")
+        # Check if profile name is alphanumeric with underscores and dashes, no spaces
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+            raise HTTPException(status_code=400, detail="Profile name must be alphanumeric with underscores and dashes, no spaces")
 
         # Validate connector against registered connectors
         valid_connectors = list(connectors.get_all().keys())
@@ -275,6 +276,11 @@ async def update_profile(
             existing = db.query(Profile).filter(Profile.name == name, Profile.id != profile_id).first()
             if existing:
                 raise HTTPException(status_code=400, detail=f"Profile with name '{name}' already exists")
+        
+        # Validate profile name format (alphanumeric with underscores and dashes, no spaces)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+            raise HTTPException(status_code=400, detail="Profile name must be alphanumeric with underscores and dashes, no spaces")
         
         mde_dict: Optional[dict] = None
         if mde is not None:

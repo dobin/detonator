@@ -9,9 +9,12 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold text-heading">Profiles</h2>
             <div class="space-x-3">
+                <a href="/profiles/create" class="btn btn-primary" data-auth-required>
+                    Create New Profile
+                </a>
                 <button 
                     onclick="htmx.ajax('GET', '/templates/profiles', {target: '#profiles-list', swap: 'innerHTML'})"
-                    class="btn-primary">
+                    class="btn btn-secondary">
                     Refresh
                 </button>
             </div>
