@@ -44,22 +44,15 @@ def connect_to_agent(submission_id) -> bool:
     
     url = "http://" + agent_ip + ":" + str(agent_port)
 
-    for attempt in range(15):  # 15 * (1 + 3) = 60s
-        try:
-            response = requests.get(url, timeout=3)
-            # just connect
-            #if response.status_code == 200:
-            db_submission_add_log(thread_db, db_submission, f"Connected to agent at {url} on attempt {attempt + 1}")
-            thread_db.close()
-            return True
-        except requests.RequestException as e:
-            db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Could not connect to agent at {url}")
-        
-        time.sleep(1)
-
-    db_submission_add_log(thread_db, db_submission, f"Failed to connect to agent at {url} after 10 attempts")
-    thread_db.close()
-    return False
+    try:
+        response = requests.get(url, timeout=3)
+        db_submission_add_log(thread_db, db_submission, f"Connected to agent at {url}")
+        thread_db.close()
+        return True
+    except requests.RequestException as e:
+        db_submission_add_log(thread_db, db_submission, f"Could not connect to agent at {url}: {e}")
+        thread_db.close()
+        return False
 
 
 def submit_file_to_agent(submission_id: int) -> bool:
@@ -104,7 +97,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
 
     # Acquire lock on DetonatorAgent
     if DO_LOCKING and not aquire_lock(thread_db, db_submission, agentApi):
-        db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip} after 4 attempts")
+        db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip}")
         thread_db.close()
         return False
     
@@ -368,23 +361,14 @@ def absorb_agent_edr_data(submission_id, agentApi: AgentApi):
 
 def aquire_lock(thread_db: Session, db_submission: Submission, agentApi: AgentApi) -> bool:
     logger.info("Attempt to acquire lock at DetonatorAgent")
-    # Try to acquire lock 4 times with 30 second intervals
-    lock_acquired = False
-    attempts = 6
-    for attempt in range(attempts):
-        if agentApi.IsInUse():
-            db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Agent is currently in use")
-        else:
-            lock_result = agentApi.AcquireLock()
-            if lock_result:
-                db_submission_add_log(thread_db, db_submission, f"Successfully acquired lock on attempt {attempt + 1}")
-                lock_acquired = True
-                break
-            else:
-                db_submission_add_log(thread_db, db_submission, f"Attempt {attempt + 1}: Could not lock Agent: {lock_result.error_message}")
-        
-        if attempt < attempts - 1:  # Don't sleep after the last attempt
-            db_submission_add_log(thread_db, db_submission, f"Waiting 30 seconds before retry...")
-            time.sleep(30)
-    
-    return lock_acquired
+    if agentApi.IsInUse():
+        db_submission_add_log(thread_db, db_submission, "Agent is currently in use")
+        return False
+
+    lock_result = agentApi.AcquireLock()
+    if lock_result:
+        db_submission_add_log(thread_db, db_submission, "Successfully acquired lock")
+        return True
+    else:
+        db_submission_add_log(thread_db, db_submission, f"Could not lock Agent: {lock_result.error_message}")
+        return False

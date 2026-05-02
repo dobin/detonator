@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from detonatorapi.database import get_db_direct, Submission, Profile
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log, db_get_profile_by_id, db_submission_change_status
+from detonatorapi.agent.agent_api import AgentApi
 
 from .connector import ConnectorBase
 from detonatorapi.settings import *
@@ -14,9 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 PROXMOX_NO_RESET = False  # for debugging
-
-INSTANCE_USED_SLEEP_TIME = 10  # seconds to wait if instance is already used
-INSTANCE_USED_RETRIES = 30     # how many retries of INSTANCE_USED_SLEEP_TIME
 
 POST_VM_START_WAIT = 20       # seconds to wait after starting VM (after revert to snapshot)
 
@@ -53,6 +51,38 @@ class ConnectorProxmox(ConnectorBase):
         }
 
 
+    def is_available(self, submission_id: int) -> bool:
+        """Check if the Proxmox VM is available: no other submission using it,
+        and the agent is reachable and not locked."""
+        db = get_db_direct()
+        try:
+            submission = db.get(Submission, submission_id)
+            if not submission:
+                return False
+
+            # Check if another submission is already using this profile's VM
+            submissions_using_vm = db.query(Submission).filter(
+                Submission.id != submission_id,
+                Submission.status.not_in(["finished", "error"]),
+                Submission.profile_id == submission.profile_id
+            ).first()
+            if submissions_using_vm:
+                return False
+
+            # Check agent reachability and lock status
+            agent_ip = submission.profile.vm_ip
+            agent_port = submission.profile.port
+            if not agent_ip:
+                return False
+            agent_api = AgentApi(agent_ip, agent_port)
+            if not agent_api.IsReachable():
+                return False
+            if agent_api.IsInUse():
+                return False
+            return True
+        finally:
+            db.close()
+
     def instantiate(self, submission_id: int):
         def instantiate_thread(submission_id: int): 
             thread_db = get_db_direct()
@@ -63,28 +93,6 @@ class ConnectorProxmox(ConnectorBase):
                 return
             db_profile: Profile = db_submission.profile
             proxmox_id = db_profile.data['proxmox_id']
-
-            # check/wait for vm availability
-            for attempt in range(INSTANCE_USED_RETRIES):
-                submissions_using_vm = thread_db.query(Submission).filter(
-                    Submission.id != submission_id,
-                    Submission.status.not_in(["finished", "error"]),
-                    Submission.profile_id == db_submission.profile_id
-                ).all()
-                if submissions_using_vm:
-                    db_submission_add_log(thread_db, db_submission, f"Submission {submission_id}: Proxmox instance already used by another submission. Will try again ({attempt+1}/{INSTANCE_USED_RETRIES})")
-                    # print the other submissions using the VM
-                    for other_submission in submissions_using_vm:
-                        logger.info(f"Submission {submission_id}: Proxmox instance used by submission {other_submission.id} (status: {other_submission.status})")
-
-                    time.sleep(INSTANCE_USED_SLEEP_TIME)
-                else:
-                    break
-            else:
-                # If we exhausted all retries, set error and return
-                db_submission_change_status(submission_id, "error", f"Submission {submission_id}: Proxmox instance still in use after maximum retries.")
-                thread_db.close()
-                return
 
             # if vm is not running, wait for it. 
             if not self.proxmox_manager.WaitForVmStatus(proxmox_id, "running", timeout=10):

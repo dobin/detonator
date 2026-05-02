@@ -3,6 +3,8 @@ import threading
 from typing import Dict, List, Optional
 
 from detonatorapi.db_interface import db_submission_change_status
+from detonatorapi.database import get_db_direct, Submission
+from detonatorapi.agent.agent_api import AgentApi
 
 from .connector import ConnectorBase
 
@@ -29,6 +31,25 @@ class ConnectorLive(ConnectorBase):
         return {
         }
 
+    def is_available(self, submission_id: int) -> bool:
+        """Check if the agent is reachable and not locked."""
+        db = get_db_direct()
+        try:
+            submission = db.get(Submission, submission_id)
+            if not submission:
+                return False
+            agent_ip = submission.profile.vm_ip
+            agent_port = submission.profile.port
+            if not agent_ip:
+                return False
+            agent_api = AgentApi(agent_ip, agent_port)
+            if not agent_api.IsReachable():
+                return False
+            if agent_api.IsInUse():
+                return False
+            return True
+        finally:
+            db.close()
 
     def instantiate(self, submission_id: int):
         # nothing todo here, the VM is already running

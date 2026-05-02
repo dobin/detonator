@@ -36,6 +36,9 @@ class ConnectorNewAzure(ConnectorBase):
             "admin_password": "secret",
         }
 
+    def is_available(self, submission_id: int) -> bool:
+        """Azure always creates a new VM per submission, so it's always available."""
+        return True
 
     def instantiate(self, submission_id: int):
         def instantiate_thread(submission_id: int): 

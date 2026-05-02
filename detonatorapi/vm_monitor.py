@@ -104,8 +104,11 @@ class VMMonitorTask:
             # State Machine
             match status:
                 case "fresh":
-                    # Start the process with instantiating the VM
-                    db_submission_change_status_quick(db, submission, "instantiate")
+                    # Only transition to instantiate if the connector says the VM is available
+                    if connector.is_available(submission_id):
+                        db_submission_change_status_quick(db, submission, "instantiate")
+                    else:
+                        logger.info(f"Submission {submission_id}: VM not available yet, staying in fresh")
 
                 case "instantiate":
                     db_submission_change_status_quick(db, submission, "instantiating")

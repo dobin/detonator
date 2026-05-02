@@ -31,6 +31,14 @@ class ConnectorBase:
         """Return sample data for this connector"""
         return {}
 
+    def is_available(self, submission_id: int) -> bool:
+        """Check if the VM for this submission is available (reachable and not locked).
+        
+        The vm_monitor will only transition a submission from 'fresh' to 'instantiate'
+        when this returns True. Subclasses should override to add connector-specific checks.
+        """
+        return True
+
     def instantiate(self, submission_id: int):
         raise NotImplementedError("This method should be overridden by subclasses")
 
