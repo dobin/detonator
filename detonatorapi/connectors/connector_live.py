@@ -32,12 +32,23 @@ class ConnectorLive(ConnectorBase):
         }
 
     def is_available(self, submission_id: int) -> bool:
-        """Check if the agent is reachable and not locked."""
+        """Check if the agent is reachable, not locked, and no other submission
+        is already active on this profile."""
         db = get_db_direct()
         try:
             submission = db.get(Submission, submission_id)
             if not submission:
                 return False
+
+            # Check if another submission is already using this profile's VM
+            other_active = db.query(Submission).filter(
+                Submission.id != submission_id,
+                Submission.status.not_in(["finished", "error"]),
+                Submission.profile_id == submission.profile_id
+            ).first()
+            if other_active:
+                return False
+
             agent_ip = submission.profile.vm_ip
             agent_port = submission.profile.port
             if not agent_ip:
