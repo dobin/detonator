@@ -11,8 +11,7 @@ def print_profiles(profiles):
         return
 
     for profile_name, profile in profiles.items():
-        print("")
-        print(f"Profile: {profile_name}")
+        print(f"  {profile_name}")
         print(f"    Connector: {profile.get('connector', '')}")
         print(f"    VM_IP: {profile.get('vm_ip', '')}")
         if profile.get('default_drop_path'):
@@ -23,7 +22,7 @@ def print_profiles(profiles):
         if profile.get('data', {}).get('image_reference'):
             image_reference_name = profile.get('data', {}).get('image_reference', '').split("/")[-1]  # Last part
             print(f"    Image Reference: {image_reference_name}")
-
+        print()
 
 def main():
     parser = argparse.ArgumentParser(description="Detonator Command Line Client")
@@ -33,9 +32,7 @@ def main():
     parser.add_argument("--url", default="http://localhost:8000", help="API base URL")
     parser.add_argument("--password", default="", help="Password for the profile (if required)")
     parser.add_argument("--token", default="", help="Token (if you have one)")
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
-    parser.add_argument("--drop-path", default="", help="Path to drop malware files")
-
+    
     # Submission related
     parser.add_argument("--profile", "-p", default="", help="Profile to use")
     parser.add_argument("--file-comment", "-c", default="", help="Comment for the file")
@@ -44,9 +41,13 @@ def main():
     parser.add_argument("--source-url", "-s", default="", help="Source URL of the file")
     parser.add_argument("--exec_arguments", "-a", default="", help="Command line arguments (parameter or dll function) to pass to the executable")
     #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for submission completion")
-    parser.add_argument("--runtime", type=int, default=10, help="Runtime in seconds")
+    parser.add_argument("--runtime", "-r", type=int, default=10, help="Runtime in seconds")
     parser.add_argument("--no-randomize-filename", action="store_true", default=False, help="Randomize filename before upload")
-    
+    parser.add_argument("--drop-path", default="", help="Path to drop malware files")
+
+    # generic
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+
     args = parser.parse_args()
     
     detClient = DetonatorClient(args.url, args.token, args.debug)
