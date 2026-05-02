@@ -43,7 +43,8 @@ class DetonatorClient:
                   runtime, 
                   drop_path="", 
                   exec_arguments="", 
-                  randomize_filename=True
+                  randomize_filename=True,
+                  exec_mode="exec",
     ) -> Optional[str]:
         if not os.path.exists(filename):
             print(f"Error: File {filename} does not exist")
@@ -70,6 +71,7 @@ class DetonatorClient:
             'runtime': runtime,
             'drop_path': drop_path,
             'exec_arguments': exec_arguments,
+            'execution_mode': exec_mode,
         }
         response = requests.post(
             f"{self.baseUrl}/api/create-submission",
