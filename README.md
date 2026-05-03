@@ -30,7 +30,7 @@ $ uv venv
 $ source .venv/bin/activate
 
 # Install dependencies
-$ uv pip install -r requirements.txt
+(detonator) $ uv pip install -r requirements.txt
 ```
 
 Create `profiles_init.yaml` (e.g. by copying `profiles_init.yaml.sample`) 
@@ -52,7 +52,7 @@ $ python migrate_profiles_yaml.py
 
 And run the server:
 ```bash
-$ python -m detonator
+(detonator) $ python -m detonator
 ```
 
 Access the web interface on `http://localhost:5000`. 
@@ -64,10 +64,13 @@ The REST API is at `http://localhost:8000`.
 To submit a file on the previously configured `localdetonator`:
 
 ```bash
-$ python -m detonatorcmd submission sample.exe --profile localdetonator
+(detonator) $ python -m detonatorcmd --profile localdetonator test.exe
 File ID: 1, Submission ID: 1
-.........................
-Submission Result: not_detected
+Polling for alerts until submission is complete...
+
+[ALERT] [Severe] Trojan:Win32/Ravartar!rfn (Source: Defender Local)
+
+Submission Result: file_detected
 ```
 
 All the gathered data:
