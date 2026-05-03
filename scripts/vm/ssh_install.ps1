@@ -4,9 +4,6 @@
 #
 # https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement
 
-# Replace <pubkey> with your actual public key
-$authorizedKey = "<pubkey>"
-
 # Install SSH on Windows
 # And add a public key for the 'Administrators' group
 # For Detonator remote upgrade for RedEdr
