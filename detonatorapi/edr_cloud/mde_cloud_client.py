@@ -88,12 +88,11 @@ class MdeCloudClient:
     def resolve_incident(self, incident_id: str, comment: str):
         body = {
             "status": "resolved",
-            "classification": "truePositive",
+            "classification": "FalsePositive",
             "determination": "securityTesting",
             "resolvingComment": comment,
         }
         self._request("PATCH", f"/v1.0/security/incidents/{incident_id}", json=body)
-
 
     def _get_access_token(self) -> str:
         token, expires_at = self._token_cache

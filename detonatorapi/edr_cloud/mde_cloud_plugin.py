@@ -2,7 +2,7 @@ import logging
 import threading
 import pprint
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple, List
 from sqlalchemy.orm import Session, joinedload
 import json
@@ -141,23 +141,34 @@ class CloudMdePlugin(EdrCloud):
     
 
     def _auto_close(self, db: Session, submission: Submission):
+        if not self.mdeClient:
+            raise RuntimeError("MDE Client not initialized")
+
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
-        
-        #closed_incidents = set()
-        #for alert in submission.alerts:
-        #    if not alert.auto_closed_at:
-        #        try:
-        #            self.mdeClient.resolve_alert(alert.alert_id, comment)
-        #            alert.status = "Resolved"
-        #            alert.auto_closed_at = datetime.utcnow()
-        #            alert.comment = comment
-        #        except Exception as exc:
-        #            logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
-        #    incident_id = alert.incident_id
-        #    if incident_id and incident_id not in closed_incidents:
-        #        try:
-        #            self.mdeClient.resolve_incident(incident_id, comment)
-        #            closed_incidents.add(incident_id)
-        #        except Exception as exc:
-        #            logger.error(f"Failed to resolve incident {incident_id}: {exc}")
-        #db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
+
+        closed_incidents = set()
+        for alert in submission.alerts:
+            if not alert.auto_closed_at:
+                try:
+                    # Update the alert in the MDE Client
+                    self.mdeClient.resolve_alert(alert.alert_id, comment) # Or equivalent mdeClient alert update endpoint
+                    
+                    # Update ORM attributes
+                    alert.status = "Resolved"
+                    alert.auto_closed_at = datetime.now(timezone.utc)
+                    alert.comment = comment
+                    
+                except Exception as exc:
+                    logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
+                    
+            incident_id = alert.incident_id
+            if incident_id and incident_id not in closed_incidents:
+                try:
+                    self.mdeClient.resolve_incident(incident_id, comment)
+                    closed_incidents.add(incident_id)
+                except Exception as exc:
+                    logger.error(f"Failed to resolve incident {incident_id}: {exc}")
+
+        # Add the submission log and commit the changes to the database
+        db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
+        db.commit()
