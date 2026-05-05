@@ -58,6 +58,33 @@ And run the server:
 Access the web interface on `http://localhost:5000`. 
 The REST API is at `http://localhost:8000`. 
 
+## Setup
+
+### Setup VMs
+
+The following scripts are optimized for my usage. Read through them and copy paste what you need. 
+
+[setup_detonator_windows.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/setup_detonator_windows.ps1) will help you configure Windows, and correctly install and configure RedEdr and Detonator:
+* Enabling Autologon
+* Disable OOBE, Windows Welcome Experience, and more annoyances
+* Create rededr user
+* Install RedEdr and DetonatorAgent, configure startup and firewall rules
+
+[update_detonatoragent.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_detonatoragent.ps1) and [update_rededr.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_rededr.ps1) are scripts to deploy onto the VM, which when executed (e.g. via SSH) will update the RedEdr and DetonatorAgent installation. 
+
+[ssh_install.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/ssh_install.ps1) shows how you install SSH on Windows for root remote access. Helpful for updating the installation. 
+
+
+### Setup Proxmox
+
+The following scripts are to be executed on the Proxmox host. 
+
+[proxmox_create_user_permission.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_create_user_permissions.sh) will create an API
+user/key to be used with Detonator so it can start/stop/revert VMs. Note the permissions are set per-VM. 
+
+[proxmox_update_snapshot.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_update_snapshot.sh) helps updating a VM by
+stopping & reverting it, running the update scripts (stored on the desktop), and then creating a new snapshot. 
+
 
 ## Usage
 
