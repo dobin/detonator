@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from detonatorapi.database import get_db_direct, Submission
 from detonatorapi.db_interface import db_submission_change_status_quick, db_submission_add_log, db_submission_change_status
-from detonatorapi.agent.agent_interface import connect_to_agent, submit_file_to_agent, thread_local_edr_gatherer
+from detonatorapi.agent.agent_interface import connect_to_agent, submit_file_to_agent, gather_execution_results
 from detonatorapi.edr_cloud.mde_cloud_plugin import CloudMdePlugin
 
 logger = logging.getLogger(__name__)
@@ -65,10 +65,13 @@ class ConnectorBase:
                 # Let the VM start up for a bit
                 time.sleep(pre_wait)
 
-                if submit_file_to_agent(submission_id):
-                    db_submission_change_status(submission_id, "processed")
-                else:
+                execution_feedback = submit_file_to_agent(submission_id)
+                if execution_feedback is None:
                     db_submission_change_status(submission_id, "stop", f"Could not start trace on RedEdr")
+                    return
+
+                gather_execution_results(submission_id, execution_feedback)
+                db_submission_change_status(submission_id, "processed")
             except Exception as e:
                 logger.error(f"process_thread unhandled exception for submission {submission_id}: {e}")
                 db_submission_change_status(submission_id, "error", str(e))

@@ -53,9 +53,18 @@ def connect_to_agent(submission_id) -> bool:
         db_submission_add_log(thread_db, db_submission, f"Could not connect to agent at {url}: {e}")
         thread_db.close()
         return False
+ 
 
-
-def submit_file_to_agent(submission_id: int) -> bool:
+# This will: 
+# - lock the agent
+# - prepare RedEdr
+# - transmit the file to the agent for execution
+# - attempt to execute the file on the agent/VM
+# It will return ExecutionFeedback.Ok if successfully executed, 
+#   ExecutionFeedback.Virus if the agent detected the file written as malware (did not execute),
+#   or None if there was an error and the execution didnt start.
+def submit_file_to_agent(submission_id: int) -> Optional[ExecutionFeedback]:
+    """Submit file to agent for execution. Returns ExecutionFeedback on success, or None on failure."""
     thread_db = get_db_direct()
     db_submission: Submission = thread_db.get(Submission, submission_id)
     if not db_submission:
@@ -64,17 +73,12 @@ def submit_file_to_agent(submission_id: int) -> bool:
     db_submission.agent_phase = "transmit"
     thread_db.commit()
 
-    # get agent IP and port
-    agent_ip = db_submission.profile.vm_ip
-    agent_port = db_submission.profile.port
-
     # get all required data into local variables
     filename = db_submission.file.filename
     exec_arguments = db_submission.file.exec_arguments
     runtime = db_submission.runtime
     drop_path = db_submission.drop_path
     execution_mode = db_submission.execution_mode
-    rededr_port = db_submission.profile.rededr_port
     
     # Read file content from disk
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -82,11 +86,14 @@ def submit_file_to_agent(submission_id: int) -> bool:
         # Hard error, as we cant scan anything
         db_submission_add_log(thread_db, db_submission, f"Error: File {filename} not found on disk")
         thread_db.close()
-        return False
+        return None
     with open(file_path, 'rb') as f:
         file_content = f.read()
 
-    # Initialize Agent APIs    
+    # Initialize Agent APIs
+    agent_ip = db_submission.profile.vm_ip
+    agent_port = db_submission.profile.port
+    rededr_port = db_submission.profile.rededr_port
     agentApi = AgentApi(agent_ip, agent_port)
     rededrApi: RedEdrAgentApi|None = None
     if rededr_port is not None:
@@ -99,7 +106,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     if DO_LOCKING and not aquire_lock(thread_db, db_submission, agentApi):
         db_submission_add_log(thread_db, db_submission, f"Error: Failed to acquire lock on DetonatorAgent at {agent_ip}")
         thread_db.close()
-        return False
+        return None
     
     # Clear logs on DetonatorAgent
     if not agentApi.ClearAgentLogs():
@@ -122,7 +129,7 @@ def submit_file_to_agent(submission_id: int) -> bool:
     # Execute file on DetonatorAgent
     if not drop_path or drop_path == "":
         drop_path = "C:\\Users\\Public\\Downloads\\"
-    if not exec_arguments or exec_arguments == "":
+    if not exec_arguments:
         exec_arguments = ""
     db_submission_add_log(thread_db, db_submission, f"Executing file {filename} on DetonatorAgent at {agent_ip}")
     db_submission_add_log(thread_db, db_submission, f"Executing with for {runtime}s and path {drop_path}")
@@ -146,8 +153,34 @@ def submit_file_to_agent(submission_id: int) -> bool:
         # release lock
         agentApi.ReleaseLock()
 
-        return False
+        return None
     executionFeedback: ExecutionFeedback = exec_result.unwrap()
+    thread_db.close()
+
+    return executionFeedback
+
+
+def gather_execution_results(submission_id: int, executionFeedback: ExecutionFeedback) -> bool:
+    """Gather execution results from agent after file execution."""
+    thread_db = get_db_direct()
+    db_submission: Submission = thread_db.get(Submission, submission_id)
+    if not db_submission:
+        logger.error(f"Submission {submission_id} not found")
+        return False
+
+    filename = db_submission.file.filename
+    runtime = db_submission.runtime
+
+    agent_ip = db_submission.profile.vm_ip
+    agent_port = db_submission.profile.port
+    rededr_port = db_submission.profile.rededr_port
+    agentApi = AgentApi(agent_ip, agent_port)
+    rededrApi: RedEdrAgentApi|None = None
+    if rededr_port is not None:
+        rededrApi = RedEdrAgentApi(agent_ip, rededr_port)
+        if not rededrApi.IsReachable():
+            db_submission_add_log(thread_db, db_submission, f"Warning: RedEdr Agent at {agent_ip}:{rededr_port} is not reachable")
+            rededrApi = None  # disable
 
     if executionFeedback == ExecutionFeedback.VIRUS or executionFeedback == ExecutionFeedback.OK:
         # Only if execution worked
