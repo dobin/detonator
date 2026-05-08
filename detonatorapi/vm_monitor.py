@@ -108,7 +108,7 @@ class VMMonitorTask:
                     if connector.is_available(submission_id):
                         db_submission_change_status_quick(db, submission, "instantiate")
                     else:
-                        logger.info(f"Submission {submission_id}: VM not available yet, staying in fresh")
+                        logger.info(f"Submission {submission_id}: VM not available. Unlock or remove stale submissions.")
 
                 case "instantiate":
                     db_submission_change_status_quick(db, submission, "instantiating")
