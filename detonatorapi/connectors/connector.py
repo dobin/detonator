@@ -134,26 +134,25 @@ class ConnectorBase:
                     logger.info("Alert monitoring thread started")
 
             if executionFeedback == ExecutionFeedback.VIRUS:
+                # Not executed, detected on file-write
                 db_submission.agent_phase = "no_execution"
                 db_submission.edr_verdict = "file_detected"
                 db_submission_add_log(thread_db, db_submission, f"File {db_submission.file.filename} is detected as malware when writing to disk (no execution)")
                 thread_db.commit()
             elif executionFeedback is ExecutionFeedback.ERROR:
+                # No write, no execution, something went wrong
                 logger.error(f"Error when executing file: {db_submission.file.filename}")
                 db_submission.agent_phase = "error"
                 db_submission.edr_verdict = "error"
                 db_submission_add_log(thread_db, db_submission, f"File {db_submission.file.filename} execution failed to start")
                 thread_db.commit()
             elif executionFeedback == ExecutionFeedback.OK:
+                # process is being executed. 
                 db_submission.agent_phase = "executing"
                 db_submission.edr_verdict = "pending"
-                thread_db.commit()
-
-                # process is being executed. 
                 db_submission_add_log(thread_db, db_submission, f"Success executing file {db_submission.file.filename}")
                 db_submission_add_log(thread_db, db_submission, f"Waiting, runtime of {db_submission.runtime} seconds...")
-
-                runtime = db_submission.runtime
+                thread_db.commit()
 
                 # boot the agent local EDR data gatherer thread
                 # this will regularly update: submission.alerts
@@ -165,6 +164,7 @@ class ConnectorBase:
                 db_submission_add_log(thread_db, db_submission, f"Starting local EDR data gatherer")
 
                 # let it cook
+                runtime = db_submission.runtime
                 elapsed = 0
                 while elapsed < runtime:
                     time.sleep(SLEEP_INTERVAL_PROCESSING)
@@ -184,9 +184,13 @@ class ConnectorBase:
                 
                 # enough execution.
                 db_submission_add_log(thread_db, db_submission, f"Finished execution")
+                if db_submission.agent_phase == "executing":
+                    # keep "no_execution", "stop", and possibly others
+                    db_submission.agent_phase = "finished"
                 thread_db.commit()
 
                 # give some time for windows to scan, deliver the virus ETW alert events n stuff
+                # for short runtimes (or events at the end of runtime)
                 time.sleep(SLEEP_TIME_POST_SUBMISSION)
 
                 # Get RedEdr Events & Logs
@@ -222,9 +226,6 @@ class ConnectorBase:
                 else:
                     db_submission_add_log(thread_db, db_submission, f"Successfully released lock")
 
-            # keep "no_execution", "stop", and possibly others
-            if db_submission.agent_phase == "executing":
-                db_submission.agent_phase = "finished"
             db_submission.completed_at = datetime.utcnow()
             db_submission_add_log(thread_db, db_submission, f"All information gathered from Agents, processing logs...")
 
