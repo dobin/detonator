@@ -128,21 +128,44 @@ class AgentApi:
         # multipart form-data
         try:
             response = requests.post(url, files=files, data=data)
-            if response.status_code == 200:
-                j = response.json()
-                if j.get("status", "") == "virus" :
-                    logger.info(f"Agent: File {filename} is detected as malware")
-                    return FeedbackContainer.ok(ExecutionFeedback.VIRUS)
-                return FeedbackContainer.ok(ExecutionFeedback.OK)
-            else:
-                # response.text is a json, extract message
-                try:
-                    j = response.json()
-                    error_message = j.get("message", response.text)
-                except Exception:
-                    error_message = response.text
-                logger.warning(f"Agent HTTP response error: {error_message}")
+            
+            # its json response for both 200 and 500
+            j = response.json()
+            # j.Status: string ("ok", "virus", "error")
+            # j.Pid: int (0 means weirdness)
+            # j.Message: optional message
+
+            if response.status_code != 200:
+                error_message = j.get("message", response.text)
+                logger.warning(f"Agent didnt like our data: {error_message}")
                 return FeedbackContainer.error(error_message)
+
+            status = j.get("status", "")
+            pid = j.get("pid", 0)
+            message = j.get("message", "")
+
+            if status == "ok":
+                if pid != 0:
+                    # All good. It is executed and tracked
+                    logger.info(f"Agent: File {filename} executed successfully with PID {pid}")
+                else: 
+                    # Likely executed, but no pid found
+                    logger.warning(f"Agent: File {filename} executed, but PID is 0 (possible tracking or execution issue)")   
+                    if message and message!= "":
+                        logger.warning(f"Agent message: {message}")
+                return FeedbackContainer.ok(ExecutionFeedback.OK)
+            elif status == "error":
+                # Something went wrong when executing the file
+                logger.warning(f"Agent: File {filename} error when executing: {message}")
+                return FeedbackContainer.ok(ExecutionFeedback.ERROR)
+            elif status == "virus":
+                logger.info(f"Agent: File {filename} is detected as malware")
+                return FeedbackContainer.ok(ExecutionFeedback.VIRUS)
+            else: 
+                logger.warning(f"Agent: Unknown status in ExecFile response: {status}")
+                # we ignore
+                return FeedbackContainer.ok(ExecutionFeedback.OK)
+
         except requests.exceptions.RequestException as e:
             error_msg = f"Request exception: {e}"
             logger.warning(f"Agent HTTP response error: {error_msg}")
