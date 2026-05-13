@@ -71,13 +71,6 @@
                     <div class="col-span-8">
                         {% if submission.alerts and submission.alerts|length > 0 %}
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead>
-                                <tr>
-                                    <th class="px-3 py-2 text-left font-medium text-label">Threat</th>
-                                    <th class="px-3 py-2 text-left font-medium text-label">Severity</th>
-                                    <th class="px-3 py-2 text-left font-medium text-label">Source</th>
-                                </tr>
-                            </thead>
                             <tbody class="divide-y divide-gray-200">
                                 {% for alert in submission.alerts %}
                                 <tr>
@@ -119,7 +112,7 @@
             
             <div class="flex flex-col space-y-2 ml-4">
                 <button onclick="window.location.href='/submissions/{{ submission.id }}'" class="btn-primary text-sm">
-                    Open
+                    Details
                 </button>
                 {% if submission.agent_phase == "executing" %}
                 <button data-auth-required onclick="submissionStopExec({{ submission.id }})" class="px-3 py-1 rounded text-sm text-white" style="background-color: var(--warning);" title="Stop Execution">
