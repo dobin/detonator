@@ -53,7 +53,7 @@ class CrowdstrikeCloudClient:
         end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         filter_parts = [
-            f"hostname:'{hostname}'",
+            f"device.hostname:'{hostname}'",
             f"created_timestamp:>'{start_iso}'",
             f"created_timestamp:<'{end_iso}'",
         ]
