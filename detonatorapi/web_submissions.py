@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Form
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import or_
 from typing import List, Optional
 from datetime import datetime
@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 @router.get("/submissions", response_model=List[SubmissionResponse])
 async def get_submissions(
     request: Request,
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    skip: int = Query(0, description="Number of records to skip"),
+    limit: int = Query(100, description="Maximum number of records to return"),
     status: Optional[str] = Query(None, description="Filter by submission status"),
     project: Optional[str] = Query(None, description="Filter by project name (case-insensitive partial match)"),
     edr_verdict: Optional[str] = Query(None, description="Filter by submission edr_verdict"),
@@ -30,7 +30,7 @@ async def get_submissions(
     db: Session = Depends(get_db)
 ):
     """Get submissions with filtering capabilities"""
-    query = db.query(Submission).options(joinedload(Submission.file), joinedload(Submission.profile), joinedload(Submission.alerts))
+    query = db.query(Submission).options(selectinload(Submission.file), selectinload(Submission.profile), selectinload(Submission.alerts))
     
     # Filter by user if guest
     user = get_user_from_request(request)
