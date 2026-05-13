@@ -54,8 +54,8 @@ class CrowdstrikeCloudClient:
 
         filter_parts = [
             f"device.hostname:'{hostname}'",
-            f"created_timestamp:>'{start_iso}'",
-            f"created_timestamp:<'{end_iso}'",
+            f"context_timestamp:>'{start_iso}'",
+            f"context_timestamp:<'{end_iso}'",
         ]
         fql_filter = "+".join(filter_parts)
 
