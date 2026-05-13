@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form, Header, Request
 from fastapi.responses import Response
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload, joinedload
 from typing import List, Optional
 import logging
 import os
@@ -46,7 +46,7 @@ async def upload_file(
 @router.get("/files", response_model=List[FileWithSubmissions])
 async def get_files(request: Request, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all files with their submissions"""
-    files = db.query(File).options(selectinload(File.submissions).selectinload(Submission.profile)).order_by(File.id.desc()).offset(skip).limit(limit).all()
+    files = db.query(File).options(joinedload(File.submissions).joinedload(Submission.profile)).order_by(File.id.desc()).offset(skip).limit(limit).all()
     
     # Filter by user if guest
     user = get_user_from_request(request)

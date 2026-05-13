@@ -30,7 +30,7 @@ async def get_submissions(
     db: Session = Depends(get_db)
 ):
     """Get submissions with filtering capabilities"""
-    query = db.query(Submission).options(selectinload(Submission.file), selectinload(Submission.profile), selectinload(Submission.alerts))
+    query = db.query(Submission).options(joinedload(Submission.file), joinedload(Submission.profile), joinedload(Submission.alerts))
     
     # Filter by user if guest
     user = get_user_from_request(request)
