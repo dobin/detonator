@@ -70,7 +70,7 @@
                     </div>
                     <div class="col-span-8">
                         {% if submission.alerts and submission.alerts|length > 0 %}
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <table class="min-w-full divide-y divide-gray-600 text-sm">
                             <thead>
                                 <tr>
                                     <th class="px-3 py-2 text-left font-medium text-label">Threat</th>
@@ -78,7 +78,7 @@
                                     <th class="px-3 py-2 text-left font-medium text-label">Source</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody class="divide-y divide-gray-600">
                                 {% for alert in submission.alerts %}
                                 <tr>
                                     <td class="px-3 py-2">
