@@ -26,7 +26,7 @@ class Profile(Base):
     port: Mapped[int] = Column(Integer, nullable=False)
     rededr_port: Mapped[int] = Column(Integer, nullable=True)
     default_drop_path: Mapped[str] = Column(String(255), default="", nullable=False)
-    comment: Mapped[str] = Column(Text, nullable=True)
+    comment: Mapped[str] = Column(Text, nullable=False, default="")
     data: Mapped[dict] = Column(JSON, default={}, nullable=False)
     password: Mapped[str] = Column(String(255), default="", nullable=False)
 

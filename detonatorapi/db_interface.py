@@ -96,10 +96,10 @@ def db_create_file(
 
 def db_create_profile(db, 
                       name: str, 
-                      vm_ip: str,
+                      vm_ip: str|None,
                       connector: str, 
                       port: int, 
-                      rededr_port: int, 
+                      rededr_port: int|None, 
                       data: dict, 
                       default_drop_path: str = "", 
                       comment: str = "", 
