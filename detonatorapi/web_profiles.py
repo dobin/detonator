@@ -21,6 +21,29 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def _censor_profile_for_nonadmin(profile: Profile, is_admin: bool) -> dict:
+    """Helper to remove sensitive data from profiles for non-admin users"""
+    result = {
+        "id": profile.id,
+        "name": profile.name,
+        "connector": profile.connector,
+        "vm_ip": profile.vm_ip,
+        "port": profile.port,
+        "rededr_port": profile.rededr_port,
+        "default_drop_path": profile.default_drop_path,
+        "comment": profile.comment,
+    }
+    
+    if is_admin:
+        result["data"] = profile.data
+        result["password"] = profile.password
+    else:
+        result["data"] = {}
+        result["password"] = ""
+    
+    return result
+
+
 def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
     if value is None:
         return None
@@ -39,23 +62,17 @@ def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
 async def get_profiles(request: Request, db: Session = Depends(get_db)):
     """Get available profiles"""
     profiles = db_list_profiles(db)
+    is_admin = get_user_from_request(request) == "admin"
 
     # Convert to dict format similar to old templates
     ret = {}
     for profile in profiles:
         requires_password: bool = len(profile.password) > 0
+        profile_data = _censor_profile_for_nonadmin(profile, is_admin)
         ret[profile.name] = {
-            "id": profile.id,
-            "connector": profile.connector,
-            "vm_ip": profile.vm_ip,
-            "port": profile.port,
-            "rededr_port": profile.rededr_port,
-            "default_drop_path": profile.default_drop_path,
-            "comment": profile.comment,
+            **profile_data,
             "require_password": requires_password,
         }
-        if get_user_from_request(request) == "admin":
-            ret[profile.name]["data"] = profile.data
     return ret
 
 
@@ -152,11 +169,8 @@ async def get_profile(request: Request, profile_id: int, db: Session = Depends(g
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    if get_user_from_request(request) != "admin":
-        db.expunge(db_profile)
-        db_profile.data = {}
-
-    return db_profile
+    is_admin = get_user_from_request(request) == "admin"
+    return _censor_profile_for_nonadmin(db_profile, is_admin)
 
 
 @router.get("/profiles/{profile_id}/status", response_model=ProfileStatusResponse)
