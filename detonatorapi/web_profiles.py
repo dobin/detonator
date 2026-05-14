@@ -32,6 +32,7 @@ def _censor_profile_for_nonadmin(profile: Profile, is_admin: bool) -> dict:
         "rededr_port": profile.rededr_port,
         "default_drop_path": profile.default_drop_path,
         "comment": profile.comment,
+        "created_at": profile.created_at,
     }
     
     if is_admin:
