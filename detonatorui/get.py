@@ -2,21 +2,15 @@ from flask import Blueprint,  render_template, request, jsonify, redirect, url_f
 from typing import Optional, Dict
 import requests
 import logging
-from .config import API_BASE_URL
 import json
 import logging
+
+from .config import API_BASE_URL
+from .auth import api_headers, is_auth_enabled
 
 
 get_bp = Blueprint('get', __name__)
 logger = logging.getLogger(__name__)
-
-
-def _auth_headers() -> Dict[str, str]:
-    headers: Dict[str, str] = {}
-    password = request.headers.get("X-Auth-Password")
-    if password:
-        headers["X-Auth-Password"] = password
-    return headers
 
 
 # MAIN Pages
@@ -31,7 +25,6 @@ def login_page():
 
 @get_bp.route("/logout")
 def logout_page():
-    # This will be handled by JavaScript to clear localStorage
     return render_template("logout.html")
 
 @get_bp.route("/files")
@@ -43,7 +36,7 @@ def create_file_submission_page(file_id):
     """Page to create a submission for a specific file"""
     try:
         # Fetch file details
-        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=_auth_headers())
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=api_headers())
         if file_response.status_code == 200:
             file_data = file_response.json()
         else:
@@ -52,7 +45,7 @@ def create_file_submission_page(file_id):
             return redirect(url_for('get.files_page'))
             
         # Fetch profiles
-        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
+        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if profiles_response.status_code == 200:
             profiles = profiles_response.json()
         else:
@@ -70,7 +63,7 @@ def edit_file_page(file_id):
     """Page to edit a file's metadata"""
     try:
         # Fetch file details
-        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=_auth_headers())
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=api_headers())
         if file_response.status_code == 200:
             file_data = file_response.json()
         else:
@@ -92,7 +85,7 @@ def submissions_page():
 def submission_detail_page(submission_id):
     """Page to display details of a specific submission"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=api_headers())
         if response.status_code == 200:
             submission = response.json()
         else:
@@ -108,7 +101,7 @@ def submission_detail_page(submission_id):
 def submission_page():
     # Fetch profiles list
     try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if response.status_code == 200:
             profiles = response.json()
         else:
@@ -137,7 +130,7 @@ def view_profile_page(profile_id):
     """Page to view a specific profile (read-only)"""
     try:
         # Fetch the profile data
-        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=api_headers())
         if response.status_code == 200:
             profile = response.json()
         else:
@@ -146,7 +139,7 @@ def view_profile_page(profile_id):
             return redirect(url_for('get.profiles_page'))
         
         # Fetch available connectors
-        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=api_headers())
         if connectors_response.status_code == 200:
             connectors = connectors_response.json()
         else:
@@ -168,7 +161,7 @@ def edit_profile_page(profile_id):
     """Page to edit a specific profile"""
     try:
         # Fetch the profile data
-        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=api_headers())
         if response.status_code == 200:
             profile = response.json()
         else:
@@ -177,7 +170,7 @@ def edit_profile_page(profile_id):
             return redirect(url_for('get.profiles_page'))
         
         # Fetch available connectors
-        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=api_headers())
         if connectors_response.status_code == 200:
             connectors = connectors_response.json()
         else:
@@ -198,7 +191,7 @@ def create_profile_page():
     """Page to create a new profile"""
     try:
         # Fetch available connectors
-        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        connectors_response = requests.get(f"{API_BASE_URL}/api/connectors", headers=api_headers())
         if connectors_response.status_code == 200:
             connectors = connectors_response.json()
         else:
@@ -244,7 +237,7 @@ def semidatasieve(submission_id):
 def files_template():
     """Template endpoint to render files list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/files", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/files", headers=api_headers())
         if response.status_code == 200:
             files = response.json()
             # Sort submissions by ID in descending order (newest first)
@@ -296,7 +289,7 @@ def submissions_template():
         if filter_status and filter_status != 'all':
             params['status'] = filter_status
         
-        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params, headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params, headers=api_headers())
         if response.status_code == 200:
             submissions = response.json()
         else:
@@ -311,7 +304,7 @@ def submission_details_template(submission_id):
     """Template endpoint to render submission details via HTMX"""
     submission: Optional[Dict] = {}
     try:
-        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=api_headers())
         if response.status_code == 200:
             submission = response.json()
         else:
@@ -326,7 +319,7 @@ def submission_details_template(submission_id):
 def vms_template():
     """Template endpoint to render VMs list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/vms", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/vms", headers=api_headers())
         if response.status_code == 200:
             vms = response.json()
             vms = sorted(vms, key=lambda vm: vm['name'])
@@ -341,7 +334,7 @@ def vms_template():
 def profiles_template():
     """Template endpoint to render profiles list via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if response.status_code == 200:
             profiles = response.json()
             
@@ -349,7 +342,7 @@ def profiles_template():
             for profile_name, profile in profiles.items():
                 url = f"{API_BASE_URL}/api/profiles/{profile['id']}/status"
                 try:
-                    status_response = requests.get(url, headers=_auth_headers())
+                    status_response = requests.get(url, headers=api_headers())
                     if status_response.status_code == 200:
                         status_data = status_response.json()
                         profile['agent_alive'] = status_data.get('agent_alive', False)
@@ -377,7 +370,7 @@ def profiles_template():
 def profiles_overview_template():
     """Template endpoint to render profiles overview for index page via HTMX"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/profiles")
+        response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if response.status_code == 200:
             templates = response.json()
             # Add the name to each template for easier access in templates
@@ -430,7 +423,7 @@ def submissions_table_template():
         if filter_status and filter_status != 'all':
             params['status'] = filter_status
         
-        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params)
+        response = requests.get(f"{API_BASE_URL}/api/submissions", params=params, headers=api_headers())
         if response.status_code == 200:
             submissions = response.json()
         else:
@@ -446,14 +439,14 @@ def create_file_submission_template(file_id):
     """Template endpoint to render submission creation form via HTMX"""
     try:
         # Fetch file details
-        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}")
+        file_response = requests.get(f"{API_BASE_URL}/api/files/{file_id}", headers=api_headers())
         if file_response.status_code == 200:
             file_data = file_response.json()
         else:
             file_data = None
             
         # Fetch profiles
-        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles")
+        profiles_response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if profiles_response.status_code == 200:
             profiles = profiles_response.json()
         else:
@@ -469,7 +462,7 @@ def create_file_submission_template(file_id):
 def get_connector_info(connector_name):
     """Get connector information for display"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/connectors", headers=_auth_headers())
+        response = requests.get(f"{API_BASE_URL}/api/connectors", headers=api_headers())
         if response.status_code == 200:
             connectors = response.json()
             if connector_name in connectors:

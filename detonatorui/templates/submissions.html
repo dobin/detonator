@@ -196,8 +196,8 @@
 
     function deleteSubmission(submissionId) {
         if (confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
-            fetch('{{ API_BASE_URL }}/api/submissions/' + submissionId, {
-                method: 'DELETE'
+            fetch('/api/submissions/' + submissionId + '/delete', {
+                method: 'POST'
             })
             .then(response => response.json())
             .then(data => {

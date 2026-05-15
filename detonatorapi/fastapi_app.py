@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from dotenv import load_dotenv
@@ -16,7 +15,7 @@ from .web_files import router as files_router
 from .web_submissions import router as submissions_router
 from .web_vms import router as vms_router
 from .web_profiles import router as profiles_router
-from .settings import CORS_ALLOW_ORIGINS, AUTH_PASSWORD
+from .settings import AUTH_PASSWORD
 from .utils import sanitize_runtime_seconds
 from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
 from .web_files import MAX_FILE_SIZE
@@ -30,16 +29,6 @@ logging.getLogger("fastapi").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Detonator API", version="0.1.0")
-
-
-# Add CORS middleware to allow requests from Flask frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ALLOW_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.on_event("startup")

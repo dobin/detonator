@@ -58,8 +58,8 @@ document.head.appendChild(style);
 
 function deleteProfile(profileId, profileName) {
     if (confirm(`Are you sure you want to delete profile "${profileName}"?`)) {
-        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}`, {
-            method: 'DELETE'
+        fetch(`/api/profiles/${profileId}/delete`, {
+            method: 'POST'
         })
         .then(response => response.json())
         .then(data => {
@@ -89,7 +89,7 @@ function deleteProfile(profileId, profileName) {
 
 function releaseLock(profileId, profileName) {
     if (confirm(`Are you sure you want to release the lock for profile "${profileName}"?`)) {
-        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/release_lock`, {
+        fetch(`/api/profiles/${profileId}/release_lock`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -120,7 +120,7 @@ function releaseLock(profileId, profileName) {
 
 function rebootProfile(profileId, profileName) {
     if (confirm(`Are you sure you want to reboot the VM for profile "${profileName}"?`)) {
-        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/reboot`, {
+        fetch(`/api/profiles/${profileId}/reboot`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -160,7 +160,7 @@ function revertProfile(profileId, profileName) {
         processingMsg.innerHTML = '<div class="flex items-center"><div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 spinner-border mr-2"></div>Reverting VM... This may take a minute.</div>';
         document.body.appendChild(processingMsg);
         
-        fetch(`{{ API_BASE_URL }}/api/profiles/${profileId}/revert`, {
+        fetch(`/api/profiles/${profileId}/revert`, {
             method: 'POST'
         })
         .then(response => response.json())

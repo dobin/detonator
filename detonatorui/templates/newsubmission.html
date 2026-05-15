@@ -396,11 +396,11 @@
         }
         
         // Check authentication and set runtime field accordingly
-        const password = localStorage.getItem('auth_password');
+        const isAuth = {{ IS_AUTHENTICATED|lower }};
         const runtimeField = document.getElementById('runtime');
         const runtimeDescription = document.getElementById('runtime_description');
-        
-        if (!password) {
+
+        if (!isAuth) {
             // User is not authenticated - set runtime to 12 and make read-only
             runtimeField.value = 12;
             runtimeField.readOnly = true;

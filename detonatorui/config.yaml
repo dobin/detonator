@@ -1,1 +1,5 @@
 api_base_url: "http://localhost:8000"
+
+# Flask session signing key. Change this in production.
+# If not set, a random key is generated on each startup (invalidating existing sessions).
+secret_key: ""

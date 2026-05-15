@@ -1,6 +1,7 @@
 
 import os
 import yaml
+import secrets
 from pathlib import Path
 
 
@@ -16,3 +17,5 @@ def load_config():
 _config = load_config()
 
 API_BASE_URL = _config.get("api_base_url", "http://localhost:8000")
+SECRET_KEY = _config.get("secret_key") or secrets.token_hex(32)
+

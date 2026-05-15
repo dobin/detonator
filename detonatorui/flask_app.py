@@ -1,19 +1,23 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from functools import wraps
 import requests
 import os
 import logging
+import hmac
 from datetime import datetime
 from pathlib import Path
 from .post import post_bp
 from .get import get_bp
-from .config import API_BASE_URL
+from .config import API_BASE_URL, SECRET_KEY
 from detonatorapi.settings import AUTH_PASSWORD
 from detonatorapi.edr_cloud.elastic_rule_resolver import ElasticRuleResolver
-
+from .auth import is_auth_enabled, api_headers
 
 app = Flask(__name__)
-app.secret_key = "detonator-secret-key"  # Change this in production
+app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024  # 128 MB
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 
 @app.errorhandler(413)
@@ -35,18 +39,43 @@ csv_path = Path(__file__).parent.parent / "elastic_rules" / "elastic_rules.csv"
 elastic_rule_resolver = ElasticRuleResolver(csv_path=str(csv_path))
 
 
-# Make API_BASE_URL available to all templates
 @app.context_processor
-def inject_api_base_url():
-    # Check if authentication is enabled
-    auth_enabled = False
-    if AUTH_PASSWORD != None and AUTH_PASSWORD != "":
-        auth_enabled = True
-    
+def inject_template_globals():
     return {
         'API_BASE_URL': API_BASE_URL,
-        'AUTH_ENABLED': auth_enabled
+        'AUTH_ENABLED': is_auth_enabled(),
+        'IS_AUTHENTICATED': not is_auth_enabled() or session.get("authenticated", False),
     }
+
+
+# Authentication
+
+
+
+@app.route("/login", methods=["POST"])
+def login_post():
+    """Validate password and set session cookie."""
+    password = request.form.get("password", "")
+    if not is_auth_enabled():
+        session["authenticated"] = True
+        return redirect(request.args.get("return_url", "/"))
+
+    if AUTH_PASSWORD and hmac.compare_digest(password, AUTH_PASSWORD):
+        session["authenticated"] = True
+        session.permanent = True
+        return redirect(request.args.get("return_url") or "/")
+
+    flash("Invalid password. Please try again.", "error")
+    return redirect(url_for("get.login_page", return_url=request.args.get("return_url")))
+
+
+@app.route("/logout")
+def logout():
+    """Clear the session and redirect to login page."""
+    session.clear()
+    if is_auth_enabled():
+        return redirect(url_for("get.login_page"))
+    return redirect(url_for("get.index"))
 
 
 # Helper function for Jinja2 templates

@@ -140,10 +140,7 @@
 
     function downloadFile(fileId, filename) {
         fetch('{{ API_BASE_URL }}/api/files/' + fileId + '/download', {
-            method: 'POST',
-            headers: {
-                'X-Auth-Password': localStorage.getItem('authToken') || ''
-            }
+            method: 'POST'
         })
         .then(response => {
             if (!response.ok) {

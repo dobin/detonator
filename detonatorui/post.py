@@ -1,8 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session, redirect, url_for
 import requests
 import logging
 import json
+
 from .config import API_BASE_URL
+from .auth import api_headers, is_auth_enabled
 
 from detonatorapi.utils import (
     filename_randomizer,
@@ -14,6 +16,13 @@ from detonatorapi.utils import (
 
 logger = logging.getLogger(__name__)
 post_bp = Blueprint('post', __name__)
+
+
+@post_bp.before_request
+def require_auth_for_post():
+    """Require authentication for all POST routes in this blueprint."""
+    if is_auth_enabled() and not session.get("authenticated"):
+        return jsonify({"error": "Authentication required. Please log in.", "auth_required": True}), 401
 
 
 def handle_api_response(response, operation_name="operation"):
@@ -45,50 +54,43 @@ def create_submission():
     try:
         files = {}
         data = {}
-        
-        # Forward authentication header from request
-        headers = {}
-        if 'X-Auth-Password' in request.headers:
-            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
-        elif 'Authorization' in request.headers:
-            headers['Authorization'] = request.headers.get('Authorization')
-        
+
         if 'file' in request.files:
             # fix filename handling
             uploaded_file = request.files['file']
             filename = uploaded_file.filename
-            
+
             # Check if filename randomization is enabled
             randomize = request.form.get('randomize_filename') == 'on'
             if randomize and filename:
                 filename = filename_randomizer(filename)
-            
+
             files['file'] = (filename, uploaded_file.stream, uploaded_file.content_type)
-        
+
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']
-        
+
         if 'file_comment' in request.form:
             data['file_comment'] = request.form['file_comment']
-            
+
         if 'submission_comment' in request.form:
             data['submission_comment'] = request.form['submission_comment']
-            
+
         if 'exec_arguments' in request.form:
             data['exec_arguments'] = request.form['exec_arguments']
-            
+
         if 'project' in request.form:
             data['project'] = request.form['project']
-            
+
         if 'profile_name' in request.form:
             data['profile_name'] = request.form['profile_name']
-            
+
         if 'password' in request.form:
             data['password'] = request.form['password']
 
         if 'token' in request.form:
             data['token'] = request.form['token']
-        
+
         if 'runtime' in request.form:
             raw_runtime = request.form['runtime'].strip()
             if raw_runtime:
@@ -101,14 +103,14 @@ def create_submission():
                         "error": f"Runtime must be between {RUNTIME_MIN_SECONDS} and {RUNTIME_MAX_SECONDS} seconds"
                     }, 400
                 data['runtime'] = runtime_value
-        
+
         if 'drop_path' in request.form:
             data['drop_path'] = request.form['drop_path']
-        
+
         if 'execution_mode' in request.form:
             data['execution_mode'] = request.form['execution_mode']
-                    
-        response = requests.post(f"{API_BASE_URL}/api/create-submission", files=files, data=data, headers=headers)
+
+        response = requests.post(f"{API_BASE_URL}/api/create-submission", files=files, data=data, headers=api_headers())
         return handle_api_response(response, "file upload and submission")
     except requests.RequestException as e:
         return {"error": f"Could not upload file: {str(e)}"}, 500
@@ -118,16 +120,9 @@ def create_submission():
 def create_profile():
     """Proxy endpoint to create a profile via FastAPI"""
     try:
-        # Forward authentication header from request
-        headers = {}
-        if 'X-Auth-Password' in request.headers:
-            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
-        elif 'Authorization' in request.headers:
-            headers['Authorization'] = request.headers.get('Authorization')
-        
         # Prepare form data
         data = {}
-        
+
         # Required fields
         if 'name' in request.form:
             data['name'] = request.form['name']
@@ -139,7 +134,7 @@ def create_profile():
             data['port'] = request.form['port']
         if 'data' in request.form:
             data['data'] = request.form['data']
-        
+
         # Optional fields
         if 'default_drop_path' in request.form:
             data['default_drop_path'] = request.form['default_drop_path']
@@ -149,23 +144,23 @@ def create_profile():
             data['password'] = request.form['password']
         if 'rededr_port' in request.form:
             data['rededr_port'] = request.form['rededr_port']
-        
+
         # Send POST request to FastAPI
         response = requests.post(
-            f"{API_BASE_URL}/api/profiles", 
-            data=data, 
-            headers=headers
+            f"{API_BASE_URL}/api/profiles",
+            data=data,
+            headers=api_headers()
         )
-        
+
         result = handle_api_response(response, "profile creation")
-        
+
         # If handle_api_response returned a tuple (error case), return it
         if isinstance(result, tuple):
             return result
-        
+
         # Success case - return success message
         return jsonify({"message": "Profile created successfully", "profile": result}), 200
-        
+
     except requests.RequestException as e:
         logger.exception(f"Exception while creating profile: {e}")
         return jsonify({"error": f"Could not create profile: {str(e)}"}), 500
@@ -175,16 +170,9 @@ def create_profile():
 def update_profile(profile_id):
     """Proxy endpoint to update a profile via FastAPI"""
     try:
-        # Forward authentication header from request
-        headers = {}
-        if 'X-Auth-Password' in request.headers:
-            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
-        elif 'Authorization' in request.headers:
-            headers['Authorization'] = request.headers.get('Authorization')
-        
         # Prepare form data
         data = {}
-        
+
         # Required fields
         if 'name' in request.form:
             data['name'] = request.form['name']
@@ -196,7 +184,7 @@ def update_profile(profile_id):
             data['port'] = request.form['port']
         if 'data' in request.form:
             data['data'] = request.form['data']
-        
+
         # Optional fields
         if 'default_drop_path' in request.form:
             data['default_drop_path'] = request.form['default_drop_path']
@@ -206,23 +194,23 @@ def update_profile(profile_id):
             data['password'] = request.form['password']
         if 'rededr_port' in request.form:
             data['rededr_port'] = request.form['rededr_port']
-        
+
         # Send PUT request to FastAPI
         response = requests.put(
-            f"{API_BASE_URL}/api/profiles/{profile_id}", 
-            data=data, 
-            headers=headers
+            f"{API_BASE_URL}/api/profiles/{profile_id}",
+            data=data,
+            headers=api_headers()
         )
-        
+
         result = handle_api_response(response, "profile update")
-        
+
         # If handle_api_response returned a tuple (error case), return it
         if isinstance(result, tuple):
             return result
-        
+
         # Success case - return success message
         return jsonify({"message": "Profile updated successfully", "profile": result}), 200
-        
+
     except requests.RequestException as e:
         logger.exception(f"Exception while updating profile {profile_id}: {e}")
         return jsonify({"error": f"Could not update profile: {str(e)}"}), 500
@@ -232,39 +220,104 @@ def update_profile(profile_id):
 def update_file(file_id):
     """Proxy endpoint to update a file's metadata via FastAPI"""
     try:
-        # Forward authentication header from request
-        headers = {}
-        if 'X-Auth-Password' in request.headers:
-            headers['X-Auth-Password'] = request.headers.get('X-Auth-Password')
-        elif 'Authorization' in request.headers:
-            headers['Authorization'] = request.headers.get('Authorization')
-        
         # Prepare form data
         data = {}
-        
+
         if 'source_url' in request.form:
             data['source_url'] = request.form['source_url']
         if 'comment' in request.form:
             data['comment'] = request.form['comment']
         if 'exec_arguments' in request.form:
             data['exec_arguments'] = request.form['exec_arguments']
-        
+
         # Send PUT request to FastAPI
         response = requests.put(
-            f"{API_BASE_URL}/api/files/{file_id}", 
-            data=data, 
-            headers=headers
+            f"{API_BASE_URL}/api/files/{file_id}",
+            data=data,
+            headers=api_headers()
         )
-        
+
         result = handle_api_response(response, "file update")
-        
+
         # If handle_api_response returned a tuple (error case), return it
         if isinstance(result, tuple):
             return result
-        
+
         # Success case - return success message
         return jsonify({"message": "File updated successfully", "file": result}), 200
-        
+
     except requests.RequestException as e:
         logger.exception(f"Exception while updating file {file_id}: {e}")
         return jsonify({"error": f"Could not update file: {str(e)}"}), 500
+
+
+# --- Admin action proxies (called by templates via fetch) ---
+
+@post_bp.route("/api/profiles/<int:profile_id>/delete", methods=["POST", "DELETE"])
+def delete_profile(profile_id):
+    """Proxy endpoint to delete a profile via FastAPI"""
+    try:
+        response = requests.delete(f"{API_BASE_URL}/api/profiles/{profile_id}", headers=api_headers())
+        result = handle_api_response(response, "profile deletion")
+        if isinstance(result, tuple):
+            return result
+        return jsonify(result), response.status_code
+    except requests.RequestException as e:
+        logger.exception(f"Exception while deleting profile {profile_id}: {e}")
+        return jsonify({"error": f"Could not delete profile: {str(e)}"}), 500
+
+
+@post_bp.route("/api/profiles/<int:profile_id>/release_lock", methods=["POST"])
+def release_lock(profile_id):
+    """Proxy endpoint to release a profile lock via FastAPI"""
+    try:
+        response = requests.post(f"{API_BASE_URL}/api/profiles/{profile_id}/release_lock", headers=api_headers())
+        result = handle_api_response(response, "lock release")
+        if isinstance(result, tuple):
+            return result
+        return jsonify(result), response.status_code
+    except requests.RequestException as e:
+        logger.exception(f"Exception while releasing lock for profile {profile_id}: {e}")
+        return jsonify({"error": f"Could not release lock: {str(e)}"}), 500
+
+
+@post_bp.route("/api/profiles/<int:profile_id>/reboot", methods=["POST"])
+def reboot_profile(profile_id):
+    """Proxy endpoint to reboot a profile's VM via FastAPI"""
+    try:
+        response = requests.post(f"{API_BASE_URL}/api/profiles/{profile_id}/reboot", headers=api_headers())
+        result = handle_api_response(response, "VM reboot")
+        if isinstance(result, tuple):
+            return result
+        return jsonify(result), response.status_code
+    except requests.RequestException as e:
+        logger.exception(f"Exception while rebooting profile {profile_id}: {e}")
+        return jsonify({"error": f"Could not reboot VM: {str(e)}"}), 500
+
+
+@post_bp.route("/api/profiles/<int:profile_id>/revert", methods=["POST"])
+def revert_profile(profile_id):
+    """Proxy endpoint to revert a profile's VM via FastAPI"""
+    try:
+        response = requests.post(f"{API_BASE_URL}/api/profiles/{profile_id}/revert", headers=api_headers())
+        result = handle_api_response(response, "VM revert")
+        if isinstance(result, tuple):
+            return result
+        return jsonify(result), response.status_code
+    except requests.RequestException as e:
+        logger.exception(f"Exception while reverting profile {profile_id}: {e}")
+        return jsonify({"error": f"Could not revert VM: {str(e)}"}), 500
+
+
+@post_bp.route("/api/submissions/<int:submission_id>/delete", methods=["POST", "DELETE"])
+def delete_submission(submission_id):
+    """Proxy endpoint to delete a submission via FastAPI"""
+    try:
+        response = requests.delete(f"{API_BASE_URL}/api/submissions/{submission_id}", headers=api_headers())
+        result = handle_api_response(response, "submission deletion")
+        if isinstance(result, tuple):
+            return result
+        return jsonify(result), response.status_code
+    except requests.RequestException as e:
+        logger.exception(f"Exception while deleting submission {submission_id}: {e}")
+        return jsonify({"error": f"Could not delete submission: {str(e)}"}), 500

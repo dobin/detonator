@@ -45,30 +45,4 @@
         </div>
     </div>
 </div>
-
-<script>
-    // Check API status on page load
-    window.addEventListener('DOMContentLoaded', function() {
-        const apiUrl = '{{ API_BASE_URL }}';
-        const checkingDiv = document.getElementById('api-status-checking');
-        const errorDiv = document.getElementById('api-status-error');
-        const urlDisplay = document.getElementById('api-url-display');
-        
-        fetch(apiUrl + '/api/health', {
-            method: 'GET',
-            mode: 'cors',
-            cache: 'no-cache'
-        })
-        .then(response => {
-            checkingDiv.classList.add('hidden');
-            if (! response.ok) {
-                errorDiv.classList.remove('hidden');
-            }
-        })
-        .catch(error => {
-            checkingDiv.classList.add('hidden');
-            errorDiv.classList.remove('hidden');
-        });
-    });
-</script>
 {% endblock %}

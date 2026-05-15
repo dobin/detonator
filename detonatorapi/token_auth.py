@@ -1,3 +1,23 @@
+"""
+Authentication module for Detonator API.
+
+Two authentication paths are supported:
+
+1. Browser → Flask (session cookie) → FastAPI (X-Auth-Password header)
+   - Flask validates the user's password, sets a signed session cookie.
+   - Flask proxies API calls to FastAPI, injecting X-Auth-Password with the
+     server-side AUTH_PASSWORD value.
+   - The browser never sees or stores the raw password.
+
+2. curl / direct API → FastAPI (X-Auth-Password or Authorization header)
+   - The user provides the password directly via X-Auth-Password header,
+     Authorization: Bearer <password>, or Authorization: Basic <base64>.
+   - Useful for scripting and direct API access.
+
+When AUTH_PASSWORD is empty/None, authentication is disabled and all
+requests are treated as admin.
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 from fastapi import Request, HTTPException
@@ -14,6 +34,7 @@ def check_password_auth(request: Request) -> bool:
         return True
     
     # Check for X-Auth-Password header
+    # As used by DetonatorUi
     auth_password = request.headers.get("X-Auth-Password", "")
     if hmac.compare_digest(auth_password, AUTH_PASSWORD):
         return True
