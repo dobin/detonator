@@ -58,34 +58,6 @@ And run the server:
 Access the web interface on `http://localhost:5000`. 
 The REST API is at `http://localhost:8000`. 
 
-## Setup
-
-### Setup VMs
-
-The following scripts are optimized for my usage. Read through them and copy paste what you need. 
-
-[setup_detonator_windows.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/setup_detonator_windows.ps1) will help you configure Windows, and correctly install and configure RedEdr and Detonator:
-* Enabling Autologon
-* Disable OOBE, Windows Welcome Experience, and more annoyances
-* Create rededr user
-* Install RedEdr and DetonatorAgent, configure startup and firewall rules
-
-[update_detonatoragent.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_detonatoragent.ps1) and [update_rededr.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_rededr.ps1) are scripts to deploy onto the VM, which when executed (e.g. via SSH) will update the RedEdr and DetonatorAgent installation. 
-
-[ssh_install.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/ssh_install.ps1) shows how you install SSH on Windows for root remote access. Helpful for updating the installation. 
-
-
-### Setup Proxmox
-
-The following scripts are to be executed on the Proxmox host. 
-
-[proxmox_create_user_permission.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_create_user_permissions.sh) will create an API
-user/key to be used with Detonator so it can start/stop/revert VMs. Note the permissions are set per-VM. 
-
-[proxmox_update_snapshot.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_update_snapshot.sh) helps updating a VM by
-stopping & reverting it, running the update scripts (stored on the desktop), and then creating a new snapshot. 
-
-
 ## Usage
 
 To submit a file on the previously configured `localdetonator`:
@@ -152,15 +124,52 @@ $ curl http://localhost:8000/api/submissions/1 | jq
 }
 ```
 
+## Detailed DetonatorCmd Usage
 
-## Architecture
+```
+(detonator) $ python -m detonatorcmd  --help
+usage: __main__.py [-h] [--url URL] [--profilepassword PROFILEPASSWORD] [--adminpassword ADMINPASSWORD] [--profile PROFILE] [--file-comment FILE_COMMENT]
+                   [--submission-comment SUBMISSION_COMMENT] [--project PROJECT] [--source-url SOURCE_URL] [--exec_arguments EXEC_ARGUMENTS] [--runtime RUNTIME]
+                   [--exec-mode {exec,autoit,clickfix}] [--no-randomize-filename] [--drop-path DROP_PATH] [--debug]
+                   [filename]
 
-You can use Detonator in three different setups: 
-* **Live**: The simplest, just attach a running DetonatorAgent instance
-* **Proxmox**: Using Proxmox to revert VMs to their snapshots
-* **Azure**: Instantiate new VM for each submission (experimental)
+Detonator Command Line Client
 
-## Setup Guides
+positional arguments:
+  filename              File to submit
+
+options:
+  -h, --help            show this help message and exit
+  --url URL             API base URL
+  --profilepassword PROFILEPASSWORD
+                        Password for the profile (if required)
+  --adminpassword ADMINPASSWORD
+                        Admin password for API authentication
+  --profile PROFILE, -p PROFILE
+                        Profile to use
+  --file-comment FILE_COMMENT, -c FILE_COMMENT
+                        Comment for the file
+  --submission-comment SUBMISSION_COMMENT, -sc SUBMISSION_COMMENT
+                        Comment for the submission
+  --project PROJECT, -j PROJECT
+                        Project name for the submission
+  --source-url SOURCE_URL, -s SOURCE_URL
+                        Source URL of the file
+  --exec_arguments EXEC_ARGUMENTS, -a EXEC_ARGUMENTS
+                        Command line arguments (parameter or dll function) to pass to the executable
+  --runtime RUNTIME, -r RUNTIME
+                        Runtime in seconds
+  --exec-mode {exec,autoit,clickfix}, -e {exec,autoit,clickfix}
+                        Execution mode (default: exec)
+  --no-randomize-filename
+                        Randomize filename before upload
+  --drop-path DROP_PATH
+                        Path to drop malware files
+  --debug               Enable debug output
+```
+
+
+## Extended Setup
 
 More documentation:
 * [Configure with reverse proxy](https://github.com/dobin/detonator/doc/setup-reverseproxy.md)
@@ -170,9 +179,57 @@ More documentation:
 * [Overview](https://github.com/dobin/detonator/doc/overview) of code architecture (mostly Claude generated. Probably obsolete)
 
 
-## Other EDRs than Defender/MDE
+### Setup VMs
 
-Only Defender/MDE is supported currently. 
+The following scripts are optimized for my usage. Read through them and copy paste what you need. 
+
+[setup_detonator_windows.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/setup_detonator_windows.ps1) will help you configure Windows, and correctly install and configure RedEdr and Detonator:
+* Enabling Autologon
+* Disable OOBE, Windows Welcome Experience, and more annoyances
+* Create rededr user
+* Install RedEdr and DetonatorAgent, configure startup and firewall rules
+
+[update_detonatoragent.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_detonatoragent.ps1) and [update_rededr.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/update_rededr.ps1) are scripts to deploy onto the VM, which when executed (e.g. via SSH) will update the RedEdr and DetonatorAgent installation. 
+
+[ssh_install.ps1](https://github.com/dobin/detonator/blob/main/scripts/vm/ssh_install.ps1) shows how you install SSH on Windows for root remote access. Helpful for updating the installation. 
+
+
+### Setup Proxmox
+
+The following scripts are to be executed on the Proxmox host. 
+
+[proxmox_create_user_permission.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_create_user_permissions.sh) will create an API
+user/key to be used with Detonator so it can start/stop/revert VMs. Note the permissions are set per-VM. 
+
+[proxmox_update_snapshot.sh](https://github.com/dobin/detonator/blob/main/scripts/proxmox/proxmox_update_snapshot.sh) helps updating a VM by
+stopping & reverting it, running the update scripts (stored on the desktop), and then creating a new snapshot. 
+
+
+### Authentication
+
+There is an admin login on DetonatorUi & DetonatorApi.
+* No password means everyone is admin (default)
+* Password can be configured in `detonatorapi/settings.yaml`
+* If enabled, only admins can change things (all POST basically)
+* If enabled, everyone can still submit files (with a max runtime of 12s)
+* For detonatorcmd: Use `--adminpassword`
+
+There is also a per-profile password for each profile: 
+* in DB profile.password
+* If set, users need the password to submit a file to this profile
+* Completely independant of the admin-password above
+* For detonatorcmd: Use `--profilepassword`
+
+
+
+## Supported EDRs
+
+Supported EDRs: 
+* Defender
+* MDE
+* Elastic Defend
+* Crowdstrike
+* Fibratus
 
 There are two ways to get the EDR data: 
 * Local log events gathered by DetonatorAgent, and then parsed by Detonator
