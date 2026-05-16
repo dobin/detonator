@@ -6,15 +6,15 @@ from typing import Optional
 
 
 class DetonatorClient:
-    def __init__(self, baseUrl, token, debug=False):
+    def __init__(self, baseUrl, adminpassword, debug=False):
         self.baseUrl = baseUrl
-        self.token = token
+        self.adminpassword = adminpassword
         self.debug = debug
 
 
     def get_profiles(self):
         try:
-            response = requests.get(f"{self.baseUrl}/api/profiles", headers={"Authorization": f"Bearer {self.token}"})
+            response = requests.get(f"{self.baseUrl}/api/profiles", headers={"Authorization": f"Bearer {self.adminpassword}"})
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
@@ -39,7 +39,7 @@ class DetonatorClient:
                   submission_comment, 
                   project, 
                   profile_name, 
-                  password, 
+                  profilepassword, 
                   runtime, 
                   drop_path="", 
                   exec_arguments="", 
@@ -61,13 +61,12 @@ class DetonatorClient:
             'file': (upload_filename, file_content, 'text/plain')
         }
         data = {
-            'token': self.token,
             'source_url': source_url,
             'file_comment': file_comment,
             'submission_comment': submission_comment,
             'project': project,
             'profile_name': profile_name,
-            'password': password,
+            'password': profilepassword,
             'runtime': runtime,
             'drop_path': drop_path,
             'exec_arguments': exec_arguments,
@@ -77,6 +76,7 @@ class DetonatorClient:
             f"{self.baseUrl}/api/create-submission",
             files=files,
             data=data,
+            headers={"Authorization": f"Bearer {self.adminpassword}"},
         )
         
         submission_id = None

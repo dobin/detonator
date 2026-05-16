@@ -30,8 +30,8 @@ def main():
 
     # Connection related
     parser.add_argument("--url", default="http://localhost:8000", help="API base URL")
-    parser.add_argument("--password", default="", help="Password for the profile (if required)")
-    parser.add_argument("--token", default="", help="Token (if you have one)")
+    parser.add_argument("--profilepassword", default="", help="Password for the profile (if required)")
+    parser.add_argument("--adminpassword", default="", help="Admin password for API authentication")
     
     # Submission related
     parser.add_argument("--profile", "-p", default="", help="Profile to use")
@@ -51,7 +51,7 @@ def main():
 
     args = parser.parse_args()
     
-    detClient = DetonatorClient(args.url, args.token, args.debug)
+    detClient = DetonatorClient(args.url, args.adminpassword, args.debug)
 
     if not args.filename:
         print("Error: filename is required")
@@ -77,7 +77,7 @@ def main():
             args.submission_comment,
             args.project,
             args.profile,
-            args.password,
+            args.profilepassword,
             args.runtime,
             args.drop_path,
             args.exec_arguments,
