@@ -82,7 +82,7 @@ def main():
             args.drop_path,
             args.exec_arguments,
             not args.no_randomize_filename,
-            args.exec_mode,
+            args.execution_mode,
         )
         
 
