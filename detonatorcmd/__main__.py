@@ -42,7 +42,7 @@ def main():
     parser.add_argument("--exec_arguments", "-a", default="", help="Command line arguments (parameter or dll function) to pass to the executable")
     #parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds for submission completion")
     parser.add_argument("--runtime", "-r", type=int, default=10, help="Runtime in seconds")
-    parser.add_argument("--exec-mode", "-e", default="exec", choices=["exec", "autoit", "clickfix"], help="Execution mode (default: exec)")
+    parser.add_argument("--execution-mode", "-e", default="exec", choices=["exec", "autoit", "clickfix"], help="Execution mode (default: exec)")
     parser.add_argument("--no-randomize-filename", action="store_true", default=False, help="Randomize filename before upload")
     parser.add_argument("--drop-path", default="", help="Path to drop malware files")
 

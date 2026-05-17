@@ -130,7 +130,7 @@ $ curl http://localhost:8000/api/submissions/1 | jq
 (detonator) $ python -m detonatorcmd  --help
 usage: __main__.py [-h] [--url URL] [--profilepassword PROFILEPASSWORD] [--adminpassword ADMINPASSWORD] [--profile PROFILE] [--file-comment FILE_COMMENT]
                    [--submission-comment SUBMISSION_COMMENT] [--project PROJECT] [--source-url SOURCE_URL] [--exec_arguments EXEC_ARGUMENTS] [--runtime RUNTIME]
-                   [--exec-mode {exec,autoit,clickfix}] [--no-randomize-filename] [--drop-path DROP_PATH] [--debug]
+                   [--execution-mode {exec,autoit,clickfix}] [--no-randomize-filename] [--drop-path DROP_PATH] [--debug]
                    [filename]
 
 Detonator Command Line Client
@@ -159,7 +159,7 @@ options:
                         Command line arguments (parameter or dll function) to pass to the executable
   --runtime RUNTIME, -r RUNTIME
                         Runtime in seconds
-  --exec-mode {exec,autoit,clickfix}, -e {exec,autoit,clickfix}
+  --execution-mode {exec,autoit,clickfix}, -e {exec,autoit,clickfix}
                         Execution mode (default: exec)
   --no-randomize-filename
                         Randomize filename before upload
