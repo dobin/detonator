@@ -49,10 +49,7 @@ class MdeCloudClient:
         start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Build OData filter with time and hostname
         filter_clauses = [
-            f"createdDateTime ge {start_iso}",
-            f"createdDateTime le {end_iso}",
             f"status eq 'new'",
         ]
         odata_filter = " and ".join(filter_clauses)
@@ -96,9 +93,24 @@ class MdeCloudClient:
             for alert in all_alerts:
                 if self._alert_matches_hostname(alert, hostname_lower):
                     filtered_alerts.append(alert)
-            return filtered_alerts
+            all_alerts = filtered_alerts
 
-        return all_alerts
+        # Client-side filtering by firstActivityDateTime since Graph API
+        # alerts_v2 doesn't support OData filters on this field
+        filtered_alerts = []
+        for alert in all_alerts:
+            first_activity = alert.get("firstActivityDateTime")
+            if first_activity:
+                try:
+                    # Parse the ISO 8601 datetime (handles fractional seconds)
+                    activity_dt = datetime.fromisoformat(first_activity.replace("Z", "+00:00"))
+                    if start_time <= activity_dt <= end_time:
+                        filtered_alerts.append(alert)
+                except (ValueError, TypeError):
+                    # If we can't parse the date, include the alert anyway
+                    filtered_alerts.append(alert)
+
+        return filtered_alerts
     
 
     def fetch_incidents(
@@ -352,12 +364,12 @@ if __name__ == "__main__":
         print(f"Found {len(alerts)} alert(s):\n")
         for i, alert in enumerate(alerts, 1):
             alert_id = alert.get("id", "?")
-            ts = alert.get("lastActivityDateTime", "?")
+            ts = alert.get("firstActivityDateTime", "?")
             title = alert.get("title", "?")
             severity = alert.get("severity", "?")
             status = alert.get("status", "?")
             print(f"  {i:3d}. [{severity}] {title}")
-            print(f"       ID: {alert_id}  |  Status: {status}  |  Time: {ts}")
+            print(f"       ID: {alert_id}  |  Status: {status}  |  FirstTime: {ts}")
             print(f"       Incident ID: {alert.get('incidentId', '?')}")
             print()
 
