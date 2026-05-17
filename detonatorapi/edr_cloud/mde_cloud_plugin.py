@@ -129,19 +129,14 @@ class CloudMdePlugin(EdrCloud):
                 # get incident ID from alert.raw (json of original alert)
                 try:
                     alert_data = json.loads(alert.raw)
-                    incident_id = alert_data.get("incidentId", None)
-                    self.mdeClient.resolve_incident(incident_id, comment)
-                    db_submission_add_log(db, submission, f"Closed incident {incident_id} in MDE")
+                    incident_ids.add(alert_data.get("incidentId"))
                 except Exception as exc:
                     logger.error(f"Failed to parse alert raw data for alert {alert.id}: {exc}")
                     incident_id = None
-                
-                # Update ORM attributes
-                alert.status = "Resolved"
-                alert.auto_closed_at = datetime.now(timezone.utc)
-                alert.comment = comment
 
-                incident_ids.add(alert.incident_id)
+        for incident_id in incident_ids:
+            self.mdeClient.resolve_incident(incident_id, comment)
+            db_submission_add_log(db, submission, f"Closed incident {incident_id} in MDE")
                     
         db.commit()
         return True
