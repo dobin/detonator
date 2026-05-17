@@ -48,7 +48,6 @@ class CloudMdePlugin(EdrCloud):
 
 
     def poll(self, db: Session, submission: Submission) -> bool:
-        # Submission Info
         if not submission.profile:
             return False
         device_info = submission.profile.data.get("edr_mde", None)
@@ -56,7 +55,6 @@ class CloudMdePlugin(EdrCloud):
             return False
         device_id = device_info.get("device_id", None)
         device_hostname = device_info.get("hostname", None)
-
         if not self.mdeClient:
             raise RuntimeError("MDE Client not initialized")
 
@@ -64,18 +62,17 @@ class CloudMdePlugin(EdrCloud):
         time_from = submission.created_at
         time_to = submission.completed_at or datetime.utcnow()
         
-        try:
-            poll_msg = f"MDE poll for submission {submission.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
-            #db_submission_add_log(db, submission, poll_msg)
-            logger.info(poll_msg)
+        # Log
+        poll_msg = f"MDE poll for submission {submission.id}: from {time_from.isoformat()} to {time_to.isoformat()} "
+        db_submission_add_log(db, submission, poll_msg)
+        logger.info(poll_msg)
 
-            mde_alerts = self.mdeClient.fetch_alerts(
-                device_id, device_hostname, time_from, time_to
-            )
-            alerts: List[SubmissionAlert] = self.convert_mde_alerts(mde_alerts)
-            self.store_alerts(db, submission, alerts)
-        except Exception as exc:
-            db_submission_add_log(db, submission, f"MDE poll: failed: {exc}")
+        # Fetch alerts from MDE
+        mde_alerts = self.mdeClient.fetch_alerts(
+            device_id, device_hostname, time_from, time_to
+        )
+        alerts: List[SubmissionAlert] = self.convert_mde_alerts(mde_alerts)
+        self.store_alerts(db, submission, alerts)
 
         return True
 
@@ -83,92 +80,68 @@ class CloudMdePlugin(EdrCloud):
     def convert_mde_alerts(self, alerts: List[dict]) -> List[SubmissionAlert]:
         converted_alerts: List[SubmissionAlert] = []
         for alert in alerts:
-            alert_id = alert.get("AlertId", None)
-            detected_at = alert.get("Timestamp")
+            # We have: 
+            #   createdDatetime
+            #   lastUpdateDateTime
+            #   firstActivityDateTime
+            #   lastActivityDateTime
+            detected_at = alert.get("firstActivityDateTime", None)
 
-            detected_dt = None
-            if detected_at:
-                try:
-                    # Handle Microsoft's ISO 8601 format with up to 7 decimal places
-                    # Remove 'Z' and parse, then truncate microseconds if needed
-                    timestamp_str = detected_at.rstrip('Z')
-                    detected_dt = datetime.fromisoformat(timestamp_str)
-                except ValueError:
-                    # Fallback: try with explicit format parsing
-                    try:
-                        # Try parsing with strptime, handling variable fractional seconds
-                        detected_dt = datetime.strptime(detected_at[:26] + 'Z', "%Y-%m-%dT%H:%M:%S.%fZ")
-                    except ValueError:
-                        logger.warning(f"Invalid alert detected_at format: {detected_at}")
-                        # Use current time as fallback to avoid NULL constraint violation
-                        detected_dt = datetime.utcnow()
+            # Category: prefer the list form, fall back to single string
+            categories = alert.get("categories", [])
+            if categories:
+                category = ", ".join(categories) if isinstance(categories, list) else str(categories)
             else:
-                # If no timestamp provided, use current time
-                detected_dt = datetime.utcnow()
-                logger.warning(f"No timestamp in alert, using current time")
+                category = alert.get("category", "")
+
+            additional_data = {}  # Todo?
 
             submissionAlert = SubmissionAlert(
                 source="MDE Cloud Plugin",
                 raw=json.dumps(alert),
                 
-                alert_id=alert_id,
-                title=alert.get("Title"),
-                severity=alert.get("Severity"),
-                category=alert.get("Categories", ""),
+                alert_id=alert.get("id"),
+                title=alert.get("title"),
+                severity=alert.get("severity"),
+                category=category,
                 
-                detection_source=alert.get("DetectionSource"),
-                detected_at=detected_dt,
-                additional_data={},
+                detection_source=alert.get("detectionSource"),
+                detected_at=detected_at,
+                additional_data=additional_data,
             )
             converted_alerts.append(submissionAlert)
         return converted_alerts
 
 
     def finish_monitoring(self, db: Session, submission: Submission) -> bool:
-        # Submission Info
         if not submission.profile:
             return False
-    
-        logger.info("submission %s: Finalizing MDE alert monitoring", submission.id)
-
-        try:
-            self._auto_close(db, submission)
-        except Exception as exc:
-            logger.error(f"Failed to auto close alerts for submission {submission.id}: {exc}")
-            db_submission_add_log(db, submission, f"MDE auto-close failed: {exc}")
-
-        return True
-    
-
-    def _auto_close(self, db: Session, submission: Submission):
         if not self.mdeClient:
             raise RuntimeError("MDE Client not initialized")
 
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
-
-        closed_incidents = set()
+        incident_ids = set()
         for alert in submission.alerts:
             if not alert.auto_closed_at:
-                try:
-                    # Update the alert in the MDE Client
-                    self.mdeClient.resolve_alert(alert.alert_id, comment) # Or equivalent mdeClient alert update endpoint
-                    
-                    # Update ORM attributes
-                    alert.status = "Resolved"
-                    alert.auto_closed_at = datetime.now(timezone.utc)
-                    alert.comment = comment
-                    
-                except Exception as exc:
-                    logger.error(f"Failed to resolve alert {alert.alert_id}: {exc}")
-                    
-            incident_id = alert.incident_id
-            if incident_id and incident_id not in closed_incidents:
-                try:
-                    self.mdeClient.resolve_incident(incident_id, comment)
-                    closed_incidents.add(incident_id)
-                except Exception as exc:
-                    logger.error(f"Failed to resolve incident {incident_id}: {exc}")
+                self.mdeClient.resolve_alert(alert.alert_id, comment)
+                db_submission_add_log(db, submission, f"Closed alert {alert.id} in MDE")
 
-        # Add the submission log and commit the changes to the database
-        db_submission_add_log(db, submission, "Detection window completed. Alerts auto-closed.")
+                # get incident ID from alert.raw (json of original alert)
+                try:
+                    alert_data = json.loads(alert.raw)
+                    incident_id = alert_data.get("incidentId", None)
+                    self.mdeClient.resolve_incident(incident_id, comment)
+                    db_submission_add_log(db, submission, f"Closed incident {incident_id} in MDE")
+                except Exception as exc:
+                    logger.error(f"Failed to parse alert raw data for alert {alert.id}: {exc}")
+                    incident_id = None
+                
+                # Update ORM attributes
+                alert.status = "Resolved"
+                alert.auto_closed_at = datetime.now(timezone.utc)
+                alert.comment = comment
+
+                incident_ids.add(alert.incident_id)
+                    
         db.commit()
+        return True
