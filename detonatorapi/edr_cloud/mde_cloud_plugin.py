@@ -85,7 +85,14 @@ class CloudMdePlugin(EdrCloud):
             #   lastUpdateDateTime
             #   firstActivityDateTime
             #   lastActivityDateTime
-            detected_at = alert.get("firstActivityDateTime", None)
+            detected_at_str = alert.get("firstActivityDateTime", None)
+            detected_at = None
+            if detected_at_str:
+                try:
+                    # Parse ISO 8601 format, e.g. "2026-05-17T15:15:53.4423363Z"
+                    detected_at = datetime.fromisoformat(detected_at_str.replace("Z", "+00:00"))
+                except (ValueError, TypeError) as exc:
+                    logger.warning(f"Failed to parse detected_at '{detected_at_str}': {exc}")
 
             # Category: prefer the list form, fall back to single string
             categories = alert.get("categories", [])
