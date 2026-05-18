@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Set, Tuple
 import requests
+from dateutil.parser import isoparse
 
 logger = logging.getLogger(__name__)
 
@@ -102,19 +103,8 @@ class MdeCloudClient:
             first_activity = alert.get("firstActivityDateTime")
             if first_activity:
                 try:
-                    # Parse the ISO 8601 datetime (handles fractional seconds)
-                    # Microsoft Graph API can return more than 6 digits of fractional seconds,
-                    # but Python's fromisoformat() only supports up to 6. Truncate if needed.
-                    datetime_str = first_activity.replace("Z", "+00:00")
-                    # Find the fractional seconds and truncate to 6 digits
-                    if "." in datetime_str and "+" in datetime_str:
-                        parts = datetime_str.split(".")
-                        fractional_and_tz = parts[1].split("+")
-                        if len(fractional_and_tz[0]) > 6:
-                            fractional_and_tz[0] = fractional_and_tz[0][:6]
-                        datetime_str = parts[0] + "." + "+".join(fractional_and_tz)
-                    
-                    activity_dt = datetime.fromisoformat(datetime_str)
+                    # Parse the ISO 8601 datetime (dateutil handles any precision)
+                    activity_dt = isoparse(first_activity)
                     if start_time <= activity_dt <= end_time:
                         logger.info(f"Including alert ID {alert.get('id')} with firstActivityDateTime {first_activity}")
                         filtered_alerts.append(alert)
