@@ -110,9 +110,9 @@ class MdeCloudClient:
                         filtered_alerts.append(alert)
                     else:
                         logger.info(f"Excluding alert ID {alert.get('id')} with firstActivityDateTime {first_activity} outside of range")
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as e:
                     # If we can't parse the date, include the alert anyway
-                    logger.warning(f"Could not parse firstActivityDateTime '{first_activity}' for alert ID {alert.get('id')}")
+                    logger.warning(f"Could not parse firstActivityDateTime '{first_activity}' for alert ID {alert.get('id')}: {type(e).__name__}: {e}")
 
         return filtered_alerts
     
