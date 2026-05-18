@@ -46,6 +46,12 @@ class MdeCloudClient:
             logger.warning("Neither device_id nor hostname provided. Returning empty list.")
             return []
 
+        # Ensure start_time and end_time are timezone-aware (assume UTC if naive)
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=timezone.utc)
+
         # Graph API expects standard ISO 8601 strings (e.g., '2026-05-17T15:00:00Z')
         start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
