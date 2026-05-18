@@ -96,14 +96,25 @@ class MdeCloudClient:
             all_alerts = filtered_alerts
 
         # Client-side filtering by firstActivityDateTime since Graph API
-        # alerts_v2 doesn't support OData filters on this field
+        # alerts_v2 doesn't support OData filters on this field (awesome)
         filtered_alerts = []
         for alert in all_alerts:
             first_activity = alert.get("firstActivityDateTime")
             if first_activity:
                 try:
                     # Parse the ISO 8601 datetime (handles fractional seconds)
-                    activity_dt = datetime.fromisoformat(first_activity.replace("Z", "+00:00"))
+                    # Microsoft Graph API can return more than 6 digits of fractional seconds,
+                    # but Python's fromisoformat() only supports up to 6. Truncate if needed.
+                    datetime_str = first_activity.replace("Z", "+00:00")
+                    # Find the fractional seconds and truncate to 6 digits
+                    if "." in datetime_str and "+" in datetime_str:
+                        parts = datetime_str.split(".")
+                        fractional_and_tz = parts[1].split("+")
+                        if len(fractional_and_tz[0]) > 6:
+                            fractional_and_tz[0] = fractional_and_tz[0][:6]
+                        datetime_str = parts[0] + "." + "+".join(fractional_and_tz)
+                    
+                    activity_dt = datetime.fromisoformat(datetime_str)
                     if start_time <= activity_dt <= end_time:
                         logger.info(f"Including alert ID {alert.get('id')} with firstActivityDateTime {first_activity}")
                         filtered_alerts.append(alert)
