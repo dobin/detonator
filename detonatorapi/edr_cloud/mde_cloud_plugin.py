@@ -127,6 +127,8 @@ class CloudMdePlugin(EdrCloud):
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
         incident_ids = set()
         for alert in submission.alerts:
+            if alert.source != "MDE Cloud Plugin":
+                continue
             self.mdeClient.resolve_alert(alert.alert_id, comment)
             db_submission_add_log(db, submission, f"Closed alert {alert.id} in MDE")
 
