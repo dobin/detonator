@@ -68,9 +68,7 @@ class CloudMdePlugin(EdrCloud):
         logger.info(poll_msg)
 
         # Fetch alerts from MDE
-        mde_alerts = self.mdeClient.fetch_alerts(
-            device_id, device_hostname, time_from, time_to
-        )
+        mde_alerts = self.mdeClient.fetch_alerts(device_id, device_hostname, time_from, time_to)
         alerts: List[SubmissionAlert] = self.convert_mde_alerts(mde_alerts)
         self.store_alerts(db, submission, alerts)
 
@@ -129,17 +127,16 @@ class CloudMdePlugin(EdrCloud):
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
         incident_ids = set()
         for alert in submission.alerts:
-            if not alert.auto_closed_at:
-                self.mdeClient.resolve_alert(alert.alert_id, comment)
-                db_submission_add_log(db, submission, f"Closed alert {alert.id} in MDE")
+            self.mdeClient.resolve_alert(alert.alert_id, comment)
+            db_submission_add_log(db, submission, f"Closed alert {alert.id} in MDE")
 
-                # get incident ID from alert.raw (json of original alert)
-                try:
-                    alert_data = json.loads(alert.raw)
-                    incident_ids.add(alert_data.get("incidentId"))
-                except Exception as exc:
-                    logger.error(f"Failed to parse alert raw data for alert {alert.id}: {exc}")
-                    incident_id = None
+            # get incident ID from alert.raw (json of original alert)
+            try:
+                alert_data = json.loads(alert.raw)
+                incident_ids.add(alert_data.get("incidentId"))
+            except Exception as exc:
+                logger.error(f"Failed to parse alert raw data for alert {alert.id}: {exc}")
+                incident_id = None
 
         for incident_id in incident_ids:
             self.mdeClient.resolve_incident(incident_id, comment)
