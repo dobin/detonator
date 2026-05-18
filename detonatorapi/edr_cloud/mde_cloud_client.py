@@ -105,10 +105,13 @@ class MdeCloudClient:
                     # Parse the ISO 8601 datetime (handles fractional seconds)
                     activity_dt = datetime.fromisoformat(first_activity.replace("Z", "+00:00"))
                     if start_time <= activity_dt <= end_time:
+                        logger.info(f"Including alert ID {alert.get('id')} with firstActivityDateTime {first_activity}")
                         filtered_alerts.append(alert)
+                    else:
+                        logger.info(f"Excluding alert ID {alert.get('id')} with firstActivityDateTime {first_activity} outside of range")
                 except (ValueError, TypeError):
                     # If we can't parse the date, include the alert anyway
-                    filtered_alerts.append(alert)
+                    logger.warning(f"Could not parse firstActivityDateTime '{first_activity}' for alert ID {alert.get('id')}")
 
         return filtered_alerts
     
