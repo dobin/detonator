@@ -67,7 +67,7 @@ class CloudMdePlugin(EdrCloud):
         db_submission_add_log(db, submission, poll_msg)
         logger.info(poll_msg)
 
-        # Fetch alerts from MDE
+        # Fetch alerts from MDE, convert to our format, and store new alerts in DB
         mde_alerts = self.mdeClient.fetch_alerts(device_id, device_hostname, time_from, time_to)
         alerts: List[SubmissionAlert] = self.convert_mde_alerts(mde_alerts)
         self.store_alerts(db, submission, alerts)
@@ -127,8 +127,11 @@ class CloudMdePlugin(EdrCloud):
         comment = f"Auto-Closed by Detonator (submission {submission.id})"
         incident_ids = set()
         for alert in submission.alerts:
+            # We dont need local defender one's
             if alert.source != "MDE Cloud Plugin":
                 continue
+            
+            # Close the alert in MDE
             self.mdeClient.resolve_alert(alert.alert_id, comment)
             db_submission_add_log(db, submission, f"Closed alert {alert.id} in MDE")
 
@@ -140,6 +143,7 @@ class CloudMdePlugin(EdrCloud):
                 logger.error(f"Failed to parse alert raw data for alert {alert.id}: {exc}")
                 incident_id = None
 
+        # Close all incidents as well (just in case)
         for incident_id in incident_ids:
             self.mdeClient.resolve_incident(incident_id, comment)
             db_submission_add_log(db, submission, f"Closed incident {incident_id} in MDE")

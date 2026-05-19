@@ -8,6 +8,142 @@ from dateutil.parser import isoparse
 logger = logging.getLogger(__name__)
 
 
+"""
+Example Alert JSON from MDE Graph API:
+  {
+    "id": "dac6a87bc6-c97b-42a9-b9b2-f6322f6ae12a_1",
+    "providerAlertId": "c6a87bc6-c97b-42a9-b9b2-f6322f6ae12a_1",
+    "incidentId": "49",
+    "status": "new",
+    "severity": "low",
+    "classification": null,
+    "determination": null,
+    "serviceSource": "microsoftDefenderForEndpoint",
+    "detectionSource": "antivirus",
+    "productName": "Microsoft Defender for Endpoint",
+    "detectorId": "ea8363c3-f787-447a-a0a6-e9120fe24fbb",
+    "tenantId": "8545957c-e5e0-4cb6-9015-889779522ac6",
+    "title": "An active 'Ravartar' malware was detected",
+    "description": "Malware and unwanted software are undesirable applications that perform annoying, disruptive, or harmful actions on affected machines. Some of these undesirable applications can replicate and spread from one machine to another. Others are able to receive commands from remote attackers and perform activities associated with cyber attacks.\n\nA malware is considered active if it is found running on the machine or it already has persistence mechanisms in place. Active malware detections are assigned higher severity ratings.\n\nBecause this malware was active, take precautionary measures and check for residual signs of infection.",
+    "recommendedActions": "A. Validate the alert and scope the suspected breach.\n1. Find related machines, network addresses, and files in the incident graph.\n2. Check for other suspicious activities in the machine timeline.\n3. Locate unfamiliar processes in the process tree. Check files for prevalence, their locations, and digital signatures.\n4. Submit relevant files for deep analysis and review file behaviors. \n5. Identify unusual system activity with system owners. \n\nB. If you have validated the alert, contain and mitigate the breach.\n1. Record relevant artifacts, including those you need in mitigation rules.\n2. Stop suspicious processes. Block prevalent malware files across the network.\n3. Isolate affected machines.\n4. Identify potentially compromised accounts. If necessary, reset passwords and decommission accounts.\n5. Block relevant emails, websites, and IP addresses. Remove attack emails from mailboxes.\n6. Update antimalware signatures and run full scans. \n7. Deploy the latest security updates for Windows, web browsers, and other applications.\n\nC. Contact your incident response team, or contact Microsoft support for investigation and remediation services.",
+    "category": "Malware",
+    "categories": [
+      "Malware"
+    ],
+    "assignedTo": null,
+    "alertWebUrl": "https://security.microsoft.com/alerts/dac6a87bc6-c97b-42a9-b9b2-f6322f6ae12a_1?tid=8545957c-e5e0-4cb6-9015-889779522ac6",
+    "incidentWebUrl": "https://security.microsoft.com/incident2/49/overview?tid=8545957c-e5e0-4cb6-9015-889779522ac6",
+    "actorDisplayName": null,
+    "threatDisplayName": "Trojan:Win32/Ravartar!rfn",
+    "threatFamilyName": "Ravartar",
+    "mitreTechniques": [],
+    "createdDateTime": "2026-05-16T13:24:37.7133333Z",
+    "lastUpdateDateTime": "2026-05-16T13:25:06.9933333Z",
+    "resolvedDateTime": null,
+    "firstActivityDateTime": "2026-05-16T13:13:44.5510402Z",
+    "lastActivityDateTime": "2026-05-16T13:13:44.5510402Z",
+    "systemTags": [],
+    "alertPolicyId": null,
+    "investigationState": "terminatedBySystem",
+    "comments": [],
+    "customDetails": {},
+    "evidence": [
+      {
+        "@odata.type": "#microsoft.graph.security.deviceEvidence",
+        "createdDateTime": "2026-05-16T13:24:37.7233333Z",
+        "verdict": "suspicious",
+        "remediationStatus": "active",
+        "remediationStatusDetails": null,
+        "roles": [],
+        "detailedRoles": [
+          "PrimaryDevice"
+        ],
+        "tags": [],
+        "firstSeenDateTime": "2024-07-05T05:27:11.8686113Z",
+        "mdeDeviceId": "26e94d7d31835ae93feefa077b51255ddc1ec98f",
+        "azureAdDeviceId": null,
+        "deviceDnsName": "desktop-8v3jhhq",
+        "hostName": "desktop-8v3jhhq",
+        "ntDomain": null,
+        "dnsDomain": null,
+        "osPlatform": "Windows11",
+        "osBuild": 22631,
+        "version": "23H2",
+        "healthStatus": "active",
+        "riskScore": "high",
+        "rbacGroupId": 230559,
+        "rbacGroupName": "devgrp1",
+        "onboardingStatus": "onboarded",
+        "defenderAvStatus": "notSupported",
+        "lastIpAddress": "10.10.20.100",
+        "lastExternalIpAddress": "91.98.182.117",
+        "ipInterfaces": [],
+        "vmMetadata": null,
+        "loggedOnUsers": [
+          {
+            "accountName": "rededr",
+            "domainName": "DESKTOP-8V3JHHQ"
+          }
+        ],
+        "resourceAccessEvents": []
+      },
+      {
+        "@odata.type": "#microsoft.graph.security.fileEvidence",
+        "createdDateTime": "2026-05-16T13:24:37.7233333Z",
+        "verdict": "malicious",
+        "remediationStatus": "active",
+        "remediationStatusDetails": null,
+        "roles": [],
+        "detailedRoles": [],
+        "tags": [],
+        "detectionStatus": "detected",
+        "mdeDeviceId": "26e94d7d31835ae93feefa077b51255ddc1ec98f",
+        "fileDetails": {
+          "sha1": "8816aae8e4283c6ced7556ec4e61b6ba2f4101df",
+          "sha256": "64b6ae38b46a94e24b2009bd6c817dc75160a9dcf6539cea68b37db0effcfcf2",
+          "md5": "600ba308684fb5c33f154f8746734778",
+          "sha256Ac": null,
+          "fileName": "CFW9_stage-15-c2-agent.exe",
+          "filePath": "C:\\Users\\Public\\Downloads",
+          "fileSize": 670176,
+          "filePublisher": null,
+          "signer": null,
+          "issuer": null
+        }
+      }
+    ],
+    "additionalData": {}
+  }
+"""
+
+
+"""
+Example Incident JSON from MDE Graph API:
+  {
+    "id": "46",
+    "tenantId": "8545957c-e5e0-4cb6-9015-889779522ac6",
+    "status": "resolved",
+    "incidentWebUrl": "https://security.microsoft.com/incident2/46/overview?tid=8545957c-e5e0-4cb6-9015-889779522ac6",
+    "redirectIncidentId": null,
+    "displayName": "Multiple threat families detected on one endpoint",
+    "createdDateTime": "2026-04-25T08:29:00.8366667Z",
+    "lastUpdateDateTime": "2026-05-17T13:59:10.4733333Z",
+    "assignedTo": "DobinRutishauser@rutdeval.onmicrosoft.com",
+    "classification": "informationalExpectedActivity",
+    "determination": "securityTesting",
+    "severity": "high",
+    "customTags": [],
+    "systemTags": [],
+    "description": null,
+    "lastModifiedBy": "User-DobinRutishauser@rutdeval.onmicrosoft.com",
+    "resolvingComment": null,
+    "summary": null,
+    "priorityScore": 96,
+    "comments": []
+  }
+"""
+
+
 class MdeCloudClient:
 
     def __init__(self, tenant_id: str, client_id: str):
@@ -42,9 +178,8 @@ class MdeCloudClient:
         """
         Fetches MDE alerts for a specific host using Graph API alerts_v2 endpoint.
         """
-        if not device_id and not hostname:
-            logger.warning("Neither device_id nor hostname provided. Returning empty list.")
-            return []
+        if not hostname or hostname == "":
+            raise ValueError("Hostname is required to fetch MDE alerts")
 
         # Ensure start_time and end_time are timezone-aware (assume UTC if naive)
         if start_time.tzinfo is None:
@@ -52,10 +187,8 @@ class MdeCloudClient:
         if end_time.tzinfo is None:
             end_time = end_time.replace(tzinfo=timezone.utc)
 
-        # Graph API expects standard ISO 8601 strings (e.g., '2026-05-17T15:00:00Z')
-        start_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-
+        # All new Alerts
+        # We need to filter them later based on hostname and firstActivityDateTime
         filter_clauses = [
             f"status eq 'new'",
         ]
@@ -73,7 +206,6 @@ class MdeCloudClient:
         }
 
         all_alerts = []
-
         # Handle pagination smoothly via @odata.nextLink
         while url:
             response = requests.get(url, headers=headers, params=params if url.endswith("alerts_v2") else None)
@@ -94,13 +226,12 @@ class MdeCloudClient:
 
         # Client-side filtering by hostname since Graph API doesn't support
         # filtering on nested evidence properties (awesome)
-        if hostname:
-            filtered_alerts = []
-            hostname_lower = hostname.lower()
-            for alert in all_alerts:
-                if self._alert_matches_hostname(alert, hostname_lower):
-                    filtered_alerts.append(alert)
-            all_alerts = filtered_alerts
+        filtered_alerts = []
+        hostname_lower = hostname.lower()
+        for alert in all_alerts:
+            if self._alert_matches_hostname(alert, hostname_lower):
+                filtered_alerts.append(alert)
+        all_alerts = filtered_alerts
 
         # Client-side filtering by firstActivityDateTime since Graph API
         # alerts_v2 doesn't support OData filters on this field (awesome)
@@ -112,7 +243,7 @@ class MdeCloudClient:
                     # Parse the ISO 8601 datetime (dateutil handles any precision)
                     activity_dt = isoparse(first_activity)
                     if start_time <= activity_dt <= end_time:
-                        logger.info(f"Including alert ID {alert.get('id')} with firstActivityDateTime {first_activity}")
+                    #    logger.info(f"Including alert ID {alert.get('id')} with firstActivityDateTime {first_activity}")
                         filtered_alerts.append(alert)
                     #else:
                     #    logger.info(f"Excluding alert ID {alert.get('id')} with firstActivityDateTime {first_activity} outside of range")
@@ -123,6 +254,7 @@ class MdeCloudClient:
         return filtered_alerts
     
 
+    # Not really used by Detonator - can be used manually on cmdline
     def fetch_incidents(
         self,
         device_id: Optional[str],
@@ -237,13 +369,6 @@ class MdeCloudClient:
         if response.status_code >= 400:
             raise RuntimeError(f"MDE API {method} {url} failed: {response.status_code} {response.text}")
         return response
-
-
-    def _build_alert_evidence_query(self, filters: List[str], pipeline: List[str]) -> str:
-        lines = ["AlertEvidence"]
-        lines.extend(filters)
-        lines.extend(pipeline)
-        return "\n".join(lines).strip()
     
 
     @staticmethod
