@@ -67,6 +67,7 @@ class ConnectorProxmox(ConnectorBase):
                 Submission.profile_id == submission.profile_id
             ).first()
             if submissions_using_vm:
+                logger.info(f"Submission {submissions_using_vm.id} is currently using the same VM as submission {submission_id} and in state {submissions_using_vm.status}") 
                 return False
 
             # Check agent reachability and lock status
