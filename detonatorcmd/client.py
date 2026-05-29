@@ -126,6 +126,7 @@ class DetonatorClient:
         #print(f"Waiting for submission {submission_id} to complete...")i
         start_time = time.time()
         seen_alerts = set()  # Track alerts we've already printed
+        absorber_message_printed = False
         
         while time.time() - start_time < timeout:
             submission = self.get_submission(submission_id)
@@ -146,10 +147,28 @@ class DetonatorClient:
             #print(f"Submission {submission_id} status: {submission['status']}")
             #sys.stdout.write(f".")
             #sys.stdout.flush()
-            
-            if submission['status'] in ["finished", "error"]:
-                #print(f"Submission finished with status: {submission['status']}")
+
+            if submission['status'] == "error":
+                print(f"Submission {submission_id} finished with error: {submission.get('error_message', 'No error message provided')}")
                 return submission
+            
+            if submission['status'] == "finished":
+                # Check if absorber is still running    
+                absorber_status = submission.get('absorber_status', 'unknown')
+                if absorber_status == "running":
+                    if not absorber_message_printed:
+                        print("Absorber still running. Ctrl-c if you wanna cancel early.")
+                        absorber_message_printed = True
+                    # we continue polling
+                elif absorber_status == "finished":
+                    print("Absorber finished, all detections finished.")
+                    return submission
+                elif absorber_status == "error":
+                    print("Absorber finished with error, but submission marked as finished? Check server logs for details.")
+                    return submission
+                else:
+                    print(f"Submission finished with status: {submission['status']}")
+                    return submission
             elif self.debug:
                 print(f"Submission {submission_id} status: {submission['status']}")
                 
