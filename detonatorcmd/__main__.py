@@ -70,6 +70,10 @@ def main():
         print_profiles(detClient.get_profiles())
         return
     
+    print("Detonator Command Line Client")
+    print("-  To be used with Detonator API")
+    print("-  Not DetonatorUI, or DetonatorAgent directly")
+    
     detClient.submit_file(
             args.filename,
             args.source_url,
