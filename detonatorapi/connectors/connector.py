@@ -17,6 +17,7 @@ DO_LOCKING = True
 SLEEP_TIME_REDEDR_WARMUP = 3.0
 SLEEP_TIME_POST_SUBMISSION = 10.0
 SLEEP_INTERVAL_PROCESSING = 3  # seconds between absorb checks during execution
+SLEEP_TIME_ETW_DELIVERY = 3.0
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,13 @@ class ConnectorBase:
                 # Not executed, detected on file-write
                 db_submission.agent_phase = "no_execution"
                 db_submission.edr_verdict = "file_detected"
+
+                # Give windows some time to deliver the ETW events for the file detection
+                time.sleep(SLEEP_TIME_ETW_DELIVERY)
+
+                # absorb new events from DetonatorAgent produced by the EDR locally
+                absorb_agent_edr_data(thread_db, db_submission, agentApi)
+
                 db_submission_add_log(thread_db, db_submission, f"File {db_submission.file.filename} is detected as malware when writing to disk (no execution)")
                 thread_db.commit()
             elif executionFeedback is ExecutionFeedback.ERROR:
@@ -176,10 +184,7 @@ class ConnectorBase:
                         db_submission_add_log(thread_db, db_submission, f"Execution interrupted at {min(elapsed, runtime)}/{runtime} seconds - agent_phase changed to {db_submission.agent_phase}")
                         break
 
-                    # absorb new events
-                    # This will update: 
-                    # - submission.alerts
-                    # - submission.edr_verdict
+                    # absorb new events from DetonatorAgent produced by the EDR locally
                     absorb_agent_edr_data(thread_db, db_submission, agentApi)
                 
                 # enough execution.
