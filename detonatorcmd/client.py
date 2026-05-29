@@ -127,52 +127,57 @@ class DetonatorClient:
         start_time = time.time()
         seen_alerts = set()  # Track alerts we've already printed
         absorber_message_printed = False
-        
-        while time.time() - start_time < timeout:
-            submission = self.get_submission(submission_id)
-            if not submission:
-                print("Error: Could not get submission status")
-                return None
-            
-            # Check for new alerts
-            if submission.get('alerts'):
-                for alert in submission['alerts']:
-                    # Create a unique identifier for each alert
-                    alert_key = (alert.get('title'), alert.get('severity'), alert.get('source'))
-                    if alert_key not in seen_alerts:
-                        print(f"\n[ALERT] [{alert['severity']}] {alert['title']} (Source: {alert['source']})")
-                        seen_alerts.add(alert_key)
-                        sys.stdout.flush()
+    
+        submission = None
+        try:
+            while time.time() - start_time < timeout:
+                submission = self.get_submission(submission_id)
+                if not submission:
+                    print("Error: Could not get submission status")
+                    return None
                 
-            #print(f"Submission {submission_id} status: {submission['status']}")
-            #sys.stdout.write(f".")
-            #sys.stdout.flush()
+                # Check for new alerts
+                if submission.get('alerts'):
+                    for alert in submission['alerts']:
+                        # Create a unique identifier for each alert
+                        alert_key = (alert.get('title'), alert.get('severity'), alert.get('source'))
+                        if alert_key not in seen_alerts:
+                            print(f"\n[ALERT] [{alert['severity']}] {alert['title']} (Source: {alert['source']})")
+                            seen_alerts.add(alert_key)
+                            sys.stdout.flush()
+                    
+                #print(f"Submission {submission_id} status: {submission['status']}")
+                #sys.stdout.write(f".")
+                #sys.stdout.flush()
 
-            if submission['status'] == "error":
-                print(f"Submission {submission_id} finished with error: {submission.get('error_message', 'No error message provided')}")
-                return submission
-            
-            if submission['status'] == "finished":
-                # Check if absorber is still running    
-                absorber_status = submission.get('absorber_status', 'unknown')
-                if absorber_status == "running":
-                    if not absorber_message_printed:
-                        print("Absorber still running. Ctrl-c if you wanna cancel early.")
-                        absorber_message_printed = True
-                    # we continue polling
-                elif absorber_status == "finished":
-                    print("Absorber finished, all detections finished.")
+                if submission['status'] == "error":
+                    print(f"Submission {submission_id} finished with error: {submission.get('error_message', 'No error message provided')}")
                     return submission
-                elif absorber_status == "error":
-                    print("Absorber finished with error, but submission marked as finished? Check server logs for details.")
-                    return submission
-                else:
-                    print(f"Submission finished with status: {submission['status']}")
-                    return submission
-            elif self.debug:
-                print(f"Submission {submission_id} status: {submission['status']}")
                 
-            time.sleep(1)
+                if submission['status'] == "finished":
+                    # Check if absorber is still running    
+                    absorber_status = submission.get('absorber_status', 'unknown')
+                    if absorber_status == "running":
+                        if not absorber_message_printed:
+                            print("Absorber still running. Ctrl-c if you wanna cancel early.")
+                            absorber_message_printed = True
+                        # we continue polling
+                    elif absorber_status == "finished":
+                        print("Absorber finished, all detections finished.")
+                        return submission
+                    elif absorber_status == "error":
+                        print("Absorber finished with error, but submission marked as finished? Check server logs for details.")
+                        return submission
+                    else:
+                        print(f"Submission finished with status: {submission['status']}")
+                        return submission
+                elif self.debug:
+                    print(f"Submission {submission_id} status: {submission['status']}")
+                    
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nCancelled by user.")
+            return submission
         
         print(f"Timeout waiting for submission {submission_id} to complete")
         return None
