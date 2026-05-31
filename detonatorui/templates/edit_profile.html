@@ -94,6 +94,7 @@
             </div>
 
             <!-- VM IP Field -->
+            {% if IS_AUTHENTICATED %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>
                     <label for="vm_ip" class="block text-sm font-medium text-description mb-2">
@@ -112,6 +113,23 @@
                     IP address of the target virtual machine where DetonatorAgent is running.
                 </div>
             </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label class="block text-sm font-medium text-description mb-2">
+                        VM IP Address <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        value="Hidden - Authentication required"
+                        class="input-field w-full"
+                        disabled>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    IP address of the target virtual machine where DetonatorAgent is running.
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Default Malware Path Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -134,6 +152,7 @@
             </div>
 
             <!-- Port Field -->
+            {% if IS_AUTHENTICATED %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>
                     <label for="port" class="block text-sm font-medium text-description mb-2">
@@ -154,8 +173,26 @@
                     Port number on the VM of the DetonatorAgent. 
                 </div>
             </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label class="block text-sm font-medium text-description mb-2">
+                        Port <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        value="Hidden - Authentication required"
+                        class="input-field w-full"
+                        disabled>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Port number on the VM of the DetonatorAgent. 
+                </div>
+            </div>
+            {% endif %}
 
             <!-- RedEdr Port Field -->
+            {% if IS_AUTHENTICATED %}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div>
                     <label for="rededr_port" class="block text-sm font-medium text-description mb-2">
@@ -176,6 +213,23 @@
                     Port number for the RedEdr agent on the VM (optional).
                 </div>
             </div>
+            {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label class="block text-sm font-medium text-description mb-2">
+                        RedEdr Port
+                    </label>
+                    <input 
+                        type="text" 
+                        value="Hidden - Authentication required"
+                        class="input-field w-full"
+                        disabled>
+                </div>
+                <div class="text-sm text-description pt-7">
+                    Port number for the RedEdr agent on the VM (optional).
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Comment Field -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
