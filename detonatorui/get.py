@@ -231,6 +231,26 @@ def semidatasieve(submission_id):
     """Page to display semidatasieve results for a submission"""
     return render_template("semidatasieve.html", submission_id=submission_id)
 
+
+@get_bp.route("/proxy/submissions/<int:submission_id>")
+def proxy_submission(submission_id):
+    """Proxy submission data from the API backend so the browser does not need CORS."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/submissions/{submission_id}",
+            headers=api_headers(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                f"Failed to fetch submission {submission_id} from API: "
+                f"{response.status_code} {response.text}"
+            )
+            return jsonify({"error": "Failed to fetch submission"}), response.status_code
+        return jsonify(response.json())
+    except requests.RequestException as e:
+        logger.exception(f"Exception while proxying submission {submission_id}: {e}")
+        return jsonify({"error": str(e)}), 502
+
 # Template endpoints for HTMX (return HTML)
 
 @get_bp.route("/templates/files")
