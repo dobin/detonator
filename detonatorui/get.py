@@ -251,6 +251,37 @@ def proxy_submission(submission_id):
         logger.exception(f"Exception while proxying submission {submission_id}: {e}")
         return jsonify({"error": str(e)}), 502
 
+
+@get_bp.route("/semidatasieve/<int:submission_id>/rededr_events")
+def semidatasieve_events(submission_id):
+    """Return rededr_events for a submission as a JSON array for SemiDataSieve."""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/api/submissions/{submission_id}",
+            headers=api_headers(),
+        )
+        if response.status_code != 200:
+            logger.error(
+                f"Failed to fetch submission {submission_id} from API: "
+                f"{response.status_code} {response.text}"
+            )
+            return jsonify([]), response.status_code
+        
+        data = response.json()
+        rededr_events_str = data.get('rededr_events', '[]')
+        try:
+            events = json.loads(rededr_events_str)
+            if not isinstance(events, list):
+                events = []
+            return jsonify(events)
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse rededr_events for submission {submission_id}")
+            return jsonify([]), 500
+    except requests.RequestException as e:
+        logger.exception(f"Exception while fetching events for submission {submission_id}: {e}")
+        return jsonify([]), 502
+
+
 # Template endpoints for HTMX (return HTML)
 
 @get_bp.route("/templates/files")
