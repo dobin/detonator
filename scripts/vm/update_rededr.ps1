@@ -8,6 +8,9 @@ Stop-Process -Name "RedEdr" -Force
 # Stop the RedEdr PPL (or we cant overwrite RedEdrPplService.exe)
 C:\RedEdr\RedEdr.exe --pplstop
 
+# Remove the Kernel driver (or we cant overwrite RedEdrDriver.sys)
+C:\RedEdr\RedEdr.exe --krnunload
+
 $zipPath = "C:\RedEdr\rededr_download.zip"
 $extractPath = "C:\RedEdr"
 
