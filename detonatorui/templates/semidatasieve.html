@@ -406,7 +406,7 @@
 
         // List of all filters (can be configured via Flask)
         // For Flask integration, uncomment the next line in your template:
-        // const FLASK_FILTERS = {{ filters | tojson | safe }};
+        // const FLASK_FILTERS = {# filters | tojson | safe #};
         const DEMO_FILTERS = [
             //{ type: "key", action: "include", key: "level", value: "", active: true },
             //{ type: "key", action: "exclude", key: "level", value: "INFO", active: true },
@@ -416,7 +416,7 @@
         
         // Visibility configuration (can be configured via Flask)
         // For Flask integration, uncomment the next line in your template:
-        // const FLASK_VISIBILITY = {{ visibility | tojson | safe }};
+        // const FLASK_VISIBILITY = {# visibility | tojson | safe #};
         const DEMO_VISIBILITY = [
             { type: "key", action: "hide", key: "etw_event_id", value: "" },
             { type: "key", action: "header", key: "event", value: "" },
@@ -429,7 +429,7 @@
 
         // Color configuration for keys and values (can be configured via Flask)
         // For Flask integration, uncomment the next line in your template:
-        // const FLASK_COLOR_RULES = {{ color_rules | tojson | safe }};
+        // const FLASK_COLOR_RULES = {# color_rules | tojson | safe #};
         const DEMO_COLOR_RULES = [
             { type: "key", match: "event", color: "blue", backgroundColor: "#e6f2ff" },
             { type: "key", match: "etw_provider_name", color: "white", backgroundColor: "#d9534f" },
