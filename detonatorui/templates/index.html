@@ -9,22 +9,20 @@
             <h2 class="text-2xl font-bold mb-4">Detonator - MalDev Testing Service</h2>
             
             <p class="text-secondary mb-6">
-                Submit your RedTeam tools to test them against various EDR's by spinning up VMs.
-            </p><p>
-                Detonator is a controlled malware detonation platform built for red teamers and offensive security researchers.
-            </p><br><p>
-                Upload redteaming tools or initial access payload, select an EDR, and Detonator automatically spins up a 
-                clean virtual machine with that EDR deployed. The payload is executed in a realistic environment, 
-                and Detonator retrieves the EDR's response including: detection status, severity, and more telemetry 
-                on what was flagged.
-            </p><br><p>
-                <b>Test, iterate, and understand EDR behavior without guessing blindly.</b>
-            </p><br><p>
-                Detonator helps to validate tradecraft, measure detection surface, 
-                and refine payloads based on real EDR feedback. Fast, safely, repeatably, and hopefully reproducibly.
-            </p><br>
+                Submit your RedTeam tools and initial access payloads to test them against various EDR's. 
+            </p>
             <p>
-                Source:
+                Detonator enables realistic and reproducible maldev techniques tests by running the submitted payloads in a clean VM. <br>
+                You'll get: 
+                <ul class="list-disc list-inside ml-4 space-y-1"> 
+                    <li>Detection results (including all detection details)</li>
+                    <li>ETW Detection surface via RedEdr</li>
+                    <li>EDR telemetry and analysis via RedEdr EDR-introspection</li>
+                </ul>
+            </p>
+            
+            <p>
+                <br>Source:
                 <ul class="list-disc list-inside ml-4 space-y-1">
                     <li><a href="https://github.com/dobin/detonator" class="link">Detonator</a></li>
                     <li><a href="https://github.com/dobin/detonatorAgent" class="link">DetonatorAgent</a></li>
