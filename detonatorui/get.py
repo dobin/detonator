@@ -1,4 +1,4 @@
-from flask import Blueprint,  render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint,  render_template, request, jsonify, redirect, url_for, flash, session as flask_session
 from typing import Optional, Dict
 import requests
 import logging
@@ -104,12 +104,17 @@ def submission_page():
         response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if response.status_code == 200:
             profiles = response.json()
+            
+            # If user is not authenticated, hide profiles that require a password
+            is_authenticated = not is_auth_enabled() or flask_session.get("authenticated", False)
+            if not is_authenticated:
+                profiles = {name: p for name, p in profiles.items() if not p.get("require_password", False)}
         else:
             logger.error(f"Failed to fetch profiles: {response.status_code} {response.text}")
-            profiles = []
+            profiles = {}
     except requests.RequestException as e:
         logger.exception(f"Exception while fetching profiles: {e}")
-        profiles = []
+        profiles = {}
     
     return render_template("newsubmission.html", profiles=profiles)
 
@@ -388,6 +393,11 @@ def profiles_template():
         response = requests.get(f"{API_BASE_URL}/api/profiles", headers=api_headers())
         if response.status_code == 200:
             profiles = response.json()
+            
+            # If user is not authenticated, hide profiles that require a password
+            is_authenticated = not is_auth_enabled() or flask_session.get("authenticated", False)
+            if not is_authenticated:
+                profiles = {name: p for name, p in profiles.items() if not p.get("require_password", False)}
             
             # Check status for each profile
             for profile_name, profile in profiles.items():
