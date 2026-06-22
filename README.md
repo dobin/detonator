@@ -1,9 +1,9 @@
 # Detonator
 
-Orchestrate detonating your MalDev in VMs with different EDRs to see their detection surface. 
+Detonator executes and evaluates red team artifacts to validate detection coverage in a reproducible manner. 
 
 Detonator provides a Web and REST interface for [DetonatorAgents](https://github.com/dobin/DetonatorAgent). It lets you choose one of your VM's with a installed EDR to execute your
-malware or inital access chain, and see what detection occur. 
+offensive tooling artifacts, and see exactly what detections occur. 
 
 You can freely use it on [detonator.r00ted.ch](https://detonator.r00ted.ch). 
 
