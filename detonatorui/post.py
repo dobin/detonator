@@ -18,9 +18,20 @@ logger = logging.getLogger(__name__)
 post_bp = Blueprint('post', __name__)
 
 
+# Routes that are allowed for guest users (unauthenticated)
+GUEST_ALLOWED_ROUTES = [
+    'post.create_submission',  # Allow guest users to submit files with restricted runtime
+]
+
+
 @post_bp.before_request
 def require_auth_for_post():
-    """Require authentication for all POST routes in this blueprint."""
+    """Require authentication for POST routes, except those explicitly allowed for guests."""
+    # Allow guest access to specific routes
+    if request.endpoint in GUEST_ALLOWED_ROUTES:
+        return None
+    
+    # Require authentication for all other POST routes
     if is_auth_enabled() and not session.get("authenticated"):
         return jsonify({"error": "Authentication required. Please log in.", "auth_required": True}), 401
 
