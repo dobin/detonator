@@ -253,7 +253,10 @@ class AgentApi:
                 try:
                     alerts.append(EdrAlertResponse(**alert))
                 except TypeError as exc:
-                    logger.warning(f"Agent: Alert #{idx} has unexpected shape: {exc}")
+                    logger.warning(f"Agent: Alert #{idx} has unexpected shape: {exc} -- payload={alert}")
+                except Exception as exc:
+                    # e.g. pydantic ValidationError for null/malformed fields
+                    logger.warning(f"Agent: Alert #{idx} failed validation: {exc} -- payload={alert}")
 
             return EdrAlertsResponse(
                 success=bool(data.get("success", False)),
