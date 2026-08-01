@@ -444,8 +444,9 @@
             { type: "key", action: "header", key: "etw_provider_name", value: "" },
             { type: "key", action: "header", key: "etw_process", value: "" },
             { type: "key", action: "header", key: "type", value: "" },
-            { type: "key", action: "header", key: "func", value: "" },
+            { type: "key", action: "header", key: "time_offset", value: "" },
 
+            { type: "key", action: "important", key: "func", value: "" },
             { type: "key", action: "important", key: "event", value: "" },
             { type: "key", action: "important", key: "message", value: "" },
         ];
@@ -934,7 +935,19 @@
             // --- Build all logs into a fragment (perf: single DOM insertion) ---
             const fragment = document.createDocumentFragment();
 
+            // Track previous event_time for offset calculation
+            let prevEventTime = null;
+
             logs.forEach((log, logIndex) => {
+                // Calculate time offset if event_time exists
+                let timeOffset = null;
+                if (log.event_time !== undefined && prevEventTime !== null) {
+                    const offsetValue = (log.event_time - prevEventTime) / 10000; // Convert to milliseconds
+                    timeOffset = offsetValue.toFixed(2) + "ms";
+                }
+                if (log.event_time !== undefined) {
+                    prevEventTime = log.event_time;
+                }
                 const logDiv = document.createElement("div");
                 logDiv.classList.add("log-line");
 
@@ -973,7 +986,13 @@
                     return arrayEntryDiv;
                 };
 
-                Object.entries(log).forEach(([key, value]) => {
+                // Add virtual time_offset key if available
+                const logEntries = Object.entries(log);
+                if (timeOffset !== null) {
+                    logEntries.push(["time_offset", timeOffset]);
+                }
+
+                logEntries.forEach(([key, value]) => {
                     if (hideKeys.has(key)) return;
 
                     const targetDiv = headerKeys.has(key)
