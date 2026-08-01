@@ -440,7 +440,9 @@
         // For Flask integration, uncomment the next line in your template:
         // const FLASK_VISIBILITY = {# visibility | tojson | safe #};
         const DEMO_VISIBILITY = [
-            { type: "key", action: "hide", key: "etw_event_id", value: "" },
+            { type: "key", action: "hide", key: "etw_event_id", value: "" },  // Too detailed
+            { type: "key", action: "hide", key: "type", value: "" },          // Not really necessary to show
+
             { type: "key", action: "header", key: "etw_provider_name", value: "" },
             { type: "key", action: "header", key: "etw_process", value: "" },
             { type: "key", action: "header", key: "type", value: "" },
@@ -471,8 +473,8 @@
             { type: "value", match: "Microsoft-Antimalware-Engine", backgroundColor: "#f2e6ff" },
             { type: "value", match: "Microsoft-Windows-Threat-Intelligence", backgroundColor: "#e6c1e3" },
             { type: "value", match: "RedTestProvider", backgroundColor: "#ffc08a" },
-            { type: "value", match: "MsMpEng.exe", backgroundColor: "#e32f22" },
-            { type: "value", match: "MsSense.exe", backgroundColor: "#e35c22" },
+            { type: "value", match: "MsMpEng.exe", color: "#e32f22" },
+            { type: "value", match: "MsSense.exe", color: "#e35c22" },
         ];
         const colorRules = typeof FLASK_COLOR_RULES !== 'undefined' ? FLASK_COLOR_RULES : DEMO_COLOR_RULES;
 
