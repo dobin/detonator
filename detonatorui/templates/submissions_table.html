@@ -57,8 +57,8 @@
             <div class="w-full md:w-32">
                 <label for="user-filter" class="block text-sm font-medium text-label mb-1">User</label>
                 <select id="user-filter" class="select">
-                    <option value="all">All</option>
-                    <option value="guest" {% if AUTH_ENABLED %}selected{% endif %}>Guest</option>
+                    <option value="all" {% if IS_AUTHENTICATED %}selected{% endif %}>All</option>
+                    <option value="guest" {% if not IS_AUTHENTICATED %}selected{% endif %}>Guest</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>
@@ -163,10 +163,10 @@ function clearFilters() {
     document.getElementById('limit-filter').value = '10';
     
     // Reset user filter to default based on auth
-    {% if AUTH_ENABLED %}
-    document.getElementById('user-filter').value = 'guest';
-    {% else %}
+    {% if IS_AUTHENTICATED %}
     document.getElementById('user-filter').value = 'all';
+    {% else %}
+    document.getElementById('user-filter').value = 'guest';
     {% endif %}
     
     // Apply filters

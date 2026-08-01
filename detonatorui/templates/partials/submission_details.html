@@ -202,7 +202,7 @@
             {% if submission.agent_logs %}
             <div id="agent-logs" class="tab-content hidden">
                 <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.agent_logs|pretty_json }}
+                >{{ submission.agent_logs }}
                 </pre>
             </div>
             {% endif %}
@@ -210,8 +210,10 @@
             {% if submission.process_output %}
             <div id="execution-logs" class="tab-content hidden">
                 <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
-                >{{ submission.process_output }}
-                </pre>
+                >{{ (submission.process_output|from_json).stdout }}</pre>
+
+                <pre class="bg-code p-2 rounded text-sm overflow-y-auto w-full" data-scroll-bottom
+                >{{ (submission.process_output|from_json).stderr }}</pre>
             </div>
             {% endif %}
             

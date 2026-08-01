@@ -6,12 +6,18 @@ import logging
 import hmac
 from datetime import datetime
 from pathlib import Path
+import json
+
+from detonatorapi.settings import AUTH_PASSWORD
+from detonatorapi.edr_cloud.elastic_rule_resolver import ElasticRuleResolver
 from .post import post_bp
 from .get import get_bp
 from .config import API_BASE_URL, SECRET_KEY
-from detonatorapi.settings import AUTH_PASSWORD
-from detonatorapi.edr_cloud.elastic_rule_resolver import ElasticRuleResolver
 from .auth import is_auth_enabled, api_headers
+
+
+logger = logging.getLogger(__name__)
+
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -140,17 +146,16 @@ def strftime_filter(value, format='%Y-%m-%d %H:%M:%S'):
 # decode JSON strings in templates
 @app.template_filter('from_json')
 def from_json_filter(s):
-    import json
     return json.loads(s)
 
 # Pretty print JSON in templates
 @app.template_filter('pretty_json')
 def pretty_json_filter(s):
-    import json
     try:
         obj = json.loads(s)
         return json.dumps(obj, indent=4)
     except Exception:
+        logger.warning("Failed to pretty print JSON: %s", s)
         return s  # fallback: return original string if invalid
 
 

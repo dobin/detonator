@@ -5,7 +5,7 @@
 {% block content %}
 <div class="card card-body">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Submission Management</h2>
+        <h2 class="text-2xl font-bold">Submissions</h2>
         <div class="space-x-2">
             <button 
                 onclick="refreshSubmissions()"
@@ -57,8 +57,8 @@
             <div class="w-full md:w-32">
                 <label for="user-filter" class="block text-sm font-medium text-label mb-1">User</label>
                 <select id="user-filter" class="input">
-                    <option value="all">All</option>
-                    <option value="guest" {% if AUTH_ENABLED %}selected{% endif %}>Guest</option>
+                    <option value="all" {% if IS_AUTHENTICATED %}selected{% endif %}>All</option>
+                    <option value="guest" {% if not IS_AUTHENTICATED %}selected{% endif %}>Guest</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>
@@ -180,10 +180,10 @@
         document.getElementById('limit-filter').value = '10';
         
         // Reset user filter to default based on auth
-        {% if AUTH_ENABLED %}
-        document.getElementById('user-filter').value = 'guest';
-        {% else %}
+        {% if IS_AUTHENTICATED %}
         document.getElementById('user-filter').value = 'all';
+        {% else %}
+        document.getElementById('user-filter').value = 'guest';
         {% endif %}
         
         // Apply filters
