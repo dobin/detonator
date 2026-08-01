@@ -642,3 +642,10 @@
 .input-focus-ring:focus {
     ring-color: var(--info);
 }
+
+/* Preformatted Text / ASCII Art */
+pre {
+    line-height: 1;
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}

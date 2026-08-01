@@ -9,15 +9,17 @@
             <h2 class="text-2xl font-bold mb-4">Detonator - MalDev Testing Service</h2>
             
             <p class="text-secondary mb-6">
-                Detonator executes and evaluates red team artifacts to validate detection coverage
+                Detonator executes red team artifacts to validate detection coverage
                 in a reproducible manner.  
             </p>
-            <p>
-                Detonator enables realistic and reproducible tests for offensive tooling artifacts 
-                and offsec techniques, by running the submitted payloads in a clean VM. <br>
-                You'll get for your submitted payloads:
+            <p class="text-secondary mb-6">
+                Realistic and reproducible tests for offensive tooling artifacts 
+                and offsec techniques, by running the submitted payloads in a clean VM, and retrieving 
+                the detection events.
+            </p>
+            <p class="text-secondary mb-6">
                 <ul class="list-disc list-inside ml-4 space-y-1"> 
-                    <li>Detection results (including all detection details)</li>
+                    <li>Detection results (including all alert details)</li>
                     <li>ETW Detection surface via RedEdr</li>
                     <li>EDR telemetry and analysis via RedEdr EDR-introspection</li>
                 </ul>
@@ -41,7 +43,27 @@
             </p>
         </div>
         <div class="flex items-center justify-center">
-            <img src="{{ url_for('static', filename='detonator1.jpg') }}" alt="Detonator" class="rounded-lg shadow-lg max-w-full h-auto">
+<pre>                   maldev                          
+                     │                             
+                     ▼                             
+                ┌───────────┐                      
+                │           │                      
+                │ Detonator │                      
+                │           │                      
+                └─────┬─────┘                      
+                      │                            
+      ┌───────────────┼──────────────────┐         
+      ▼               ▼                  ▼         
+┌──────────┐     ┌─────────┐     ┌────────────────┐
+│          │     │         │     │                │
+│ Defender │     │   MDE   │     │  CrowdStrike   │
+│ VM       │     │   VM    │     │  VM            │
+│          │     │         │     │                │
+└────┬─────┘     └────┬────┘     └───────┬────────┘
+     │                │                  │         
+     ▼                ▼                  ▼         
+  alerts           alerts             alerts       
+</pre>
         </div>
     </div>
 </div>
