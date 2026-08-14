@@ -5,7 +5,7 @@
 {% block content %}
 <div class="card card-body">
     <h2 class="text-2xl font-bold mb-4">New Submission</h2>
-    <p class="text-secondary mb-6">Upload a file and automatically start malware analysis with VM provisioning.</p>
+    <p class="text-secondary mb-6">Upload a executable file to be analyzed under EDR.</p>
     
     <div class="bg-light p-4 rounded-lg">
         <form 
@@ -20,7 +20,7 @@
                 <div>
                     <h3 class="text-sm font-medium text-label mb-1">File *</h3>
                     <p class="text-sm text-description">
-                        Your malware file to execute on the VM <br>
+                        Your executable file to be analyzed under EDR. <br>
                     </p>
                 </div>
                 <div>
@@ -39,7 +39,7 @@
                 <div>
                     <h3 class="text-sm font-medium text-label mb-1">Submission Profile *</h3>
                     <p class="text-sm text-description">
-                        The VM / EDR you want to test against
+                        The VM / EDR you want to test against.
                     </p>
                 </div>
                 <div>
@@ -68,9 +68,9 @@
                 <div>
                     <h3 class="text-sm font-medium text-label mb-1">Submission Execution Mode *</h3>
                     <p class="text-sm text-description">
-                        <b>AutoIt</b> is more realistic for initial access payloads. Will "click" the file (and container). <br>
-                        <b>Direct</b> execution invokes the target directly. Supports .exe arguments. Supports .dll. For testing tools.
-                        <b>Clickfix</b> will interpret the content of the file as single line string to be inserted into the run dialog. 
+                        <b>AutoIt</b> most realistic. Will "click" the file. Maybe unreliable. Also supports .zip, .iso. <br>
+                        <b>Direct</b> child execution. Will "CreateProcess()" it. Reliable. Supports .exe with arguments. And .dll. <br>
+                        <b>Clickfix</b> will interpret the content of the file as single line string to be inserted into the Windows run dialog.
                     </p>
                 </div>
                 <div>
@@ -110,9 +110,9 @@
             <!-- Runtime -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-medium text-label mb-1">Submission Runtime (seconds)</h3>
+                    <h3 class="text-sm font-medium text-label mb-1">Runtime (seconds)*</h3>
                     <p class="text-sm text-description">
-                        How long the payload runs. Increase this to observe post-ex behaviors like beacon callbacks.
+                        How long the payload and VM is allowed to run.
                     </p>
                 </div>
                 <div>
@@ -201,7 +201,7 @@
                 <div>
                     <h3 class="text-sm font-medium text-label mb-1">File Comment</h3>
                     <p class="text-sm text-description">
-                        [Optional] description of the payload. What loader, C2 payload etc.
+                        [Optional] Description of the payload. What loader, C2 payload etc.
                     </p>
                 </div>
                 <div>
@@ -220,7 +220,7 @@
                 <div>
                     <h3 class="text-sm font-medium text-label mb-1">Submission Comment</h3>
                     <p class="text-sm text-description">
-                        [Optional] description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives
+                        [Optional] Description of what you're testing or trying to achieve with this analysis. Include your hypothesis, what detection capabilities you're evaluating, or research objectives
                     </p>
                 </div>
                 <div>
