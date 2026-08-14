@@ -221,7 +221,6 @@ There is also a per-profile password for each profile:
 * For detonatorcmd: Use `--profilepassword`
 
 
-
 ## Supported EDRs
 
 Supported EDRs: 

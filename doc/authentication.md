@@ -6,35 +6,43 @@ Detonator now supports password-based authentication to protect write operations
 
 ## Configuration
 
-Set the authentication password via environment variable:
+Set the authentication password in `detonatorapi/settings.yaml`:
 
-```bash
-export DETONATOR_AUTH_PASSWORD="your-secure-password-here"
+```yaml
+auth_password: "your-secure-password-here"
 ```
 
-Or add it to your `.env` file:
-
-```
-DETONATOR_AUTH_PASSWORD=your-secure-password-here
-```
-
-If `DETONATOR_AUTH_PASSWORD` is not set or empty, authentication is disabled and all operations are allowed.
+If `auth_password` is not set or empty, authentication is disabled and all operations are allowed.
 
 ## Web Interface Authentication
 
 ### Login
 1. Navigate to `/login` in your browser
 2. Enter your password
-3. The password is stored in browser's localStorage
+3. The password is validated server-side and stored in a session cookie
 4. You'll be redirected to the main application
 
 ### Logout
 Click the "Logout" button in the sidebar navigation. This will:
-- Clear the password from localStorage
+- Clear the session cookie
 - Redirect you to the logout confirmation page
 
 ### Auto-redirect
 If you try to access a write operation without authentication, you'll automatically be redirected to the login page.
+
+### Guest Access
+When authentication is enabled, unauthenticated users (guests) can still:
+- Submit files for analysis (with a restricted runtime of 12 seconds)
+- View read-only pages
+
+All other write operations (creating/updating/deleting profiles, files, submissions) require authentication.
+
+### Per-Profile Password
+In addition to the admin password, each profile can have its own password:
+- Configured in the database (`profile.password` field)
+- Required when submitting files to that specific profile
+- Independent of the admin password above
+- For `detonatorcmd`: Use `--profilepassword`
 
 ## API Authentication with curl
 
