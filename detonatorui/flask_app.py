@@ -146,7 +146,24 @@ def strftime_filter(value, format='%Y-%m-%d %H:%M:%S'):
 # decode JSON strings in templates
 @app.template_filter('from_json')
 def from_json_filter(s):
-    return json.loads(s)
+    """Decode process output without letting malformed agent data break a page."""
+    if isinstance(s, dict):
+        data = s
+    else:
+        try:
+            data = json.loads(s)
+        except (TypeError, json.JSONDecodeError):
+            logger.warning("Invalid JSON in process output; displaying it as stdout")
+            return {"stdout": s or "", "stderr": ""}
+
+    if not isinstance(data, dict):
+        logger.warning("Unexpected process output JSON type: %s", type(data).__name__)
+        return {"stdout": s or "", "stderr": ""}
+
+    return {
+        "stdout": data.get("stdout", ""),
+        "stderr": data.get("stderr", ""),
+    }
 
 # Pretty print JSON in templates
 @app.template_filter('pretty_json')
