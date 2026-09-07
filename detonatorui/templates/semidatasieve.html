@@ -64,7 +64,7 @@
         .log-entry:last-child {
             border-bottom: none;
         }
-        
+
         .log-key, .log-value {
             position: relative;
             cursor: pointer;
@@ -497,6 +497,7 @@
         document.getElementById("log-container").addEventListener("click", function(event) {
             HidePopups();
         });
+
         function HidePopups() {
             document.getElementById("settings").style.display = "none";
             document.getElementById("storage").style.display = "none";
@@ -994,8 +995,13 @@
                     logEntries.push(["time_offset", timeOffset]);
                 }
 
-                logEntries.forEach(([key, value]) => {
+                logEntries.forEach(([key, value], fieldIndex) => {
                     if (hideKeys.has(key)) return;
+
+                    // Put the separator at the start of the next field. Chromium
+                    // can discard whitespace at the end of an inline element when
+                    // copying, but it preserves whitespace inside the next label.
+                    const fieldPrefix = fieldIndex === 0 ? "" : " ";
 
                     const targetDiv = headerKeys.has(key)
                         ? getHeaderDiv()
@@ -1009,7 +1015,7 @@
 
                         const keySpan = document.createElement("span");
                         keySpan.classList.add("log-key");
-                        keySpan.textContent = key + ": ";
+                        keySpan.textContent = fieldPrefix + key + ": ";
                         keySpan.dataset.logIndex = logIndex;
                         keySpan.dataset.key = key;
 
@@ -1041,9 +1047,9 @@
                             itemDiv.style.borderBottom = "1px solid #eee";
 
                             if (typeof item === 'object' && item !== null) {
-                                Object.entries(item).forEach(([itemKey, itemValue]) => {
+                                Object.entries(item).forEach(([itemKey, itemValue], itemIndex) => {
                                     const itemKeySpan = document.createElement("span");
-                                    itemKeySpan.textContent = itemKey + ": ";
+                                    itemKeySpan.textContent = (itemIndex === 0 ? "" : " ") + itemKey + ": ";
                                     itemKeySpan.style.fontWeight = "bold";
                                     itemKeySpan.style.marginRight = "5px";
 
@@ -1078,7 +1084,7 @@
                     } else {
                         const keySpan = document.createElement("span");
                         keySpan.classList.add("log-key");
-                        keySpan.textContent = key + ": ";
+                        keySpan.textContent = fieldPrefix + key + ": ";
                         keySpan.dataset.logIndex = logIndex;
                         keySpan.dataset.key = key;
 
