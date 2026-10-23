@@ -10,6 +10,10 @@ import logging
 import argparse
 import requests
 
+from detonatorapi.environment import load_project_environment
+
+load_project_environment()
+
 from detonatorui.flask_app import app as flask_app
 
 from detonatorapi.logging_config import setup_logging

@@ -5,6 +5,10 @@ from typing import Dict, List, Optional, Set, Tuple
 import requests
 from dateutil.parser import isoparse
 
+from ..environment import load_project_environment
+
+load_project_environment()
+
 logger = logging.getLogger(__name__)
 
 

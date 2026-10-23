@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
 import logging
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, Form
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
@@ -18,10 +17,11 @@ from .web_profiles import router as profiles_router
 from .settings import AUTH_PASSWORD
 from .utils import sanitize_runtime_seconds
 from .edr_cloud.edr_cloud_manager import edr_cloud_plugins
+from .environment import load_project_environment
 from .web_files import MAX_FILE_SIZE
 
-# Load environment variables
-load_dotenv()
+# Load environment variables before the application initializes its plugins.
+load_project_environment()
 
 # Setup logging - reduce verbosity for HTTP requests
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)

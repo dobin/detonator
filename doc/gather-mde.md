@@ -18,7 +18,13 @@ myfirstvm:
       device_id: "4234k4j2k3j4k23j4k2j43"
 ```
 
-Store the corresponding Azure client secret in the environment variable `MDE_AZURE_CLIENT_SECRET`. When configured, Detonator will poll MDE for alerts tied to the submission’s device ID during the configured detection window and automatically resolve them once the window expires. 
+Store the corresponding Azure client secret in `MDE_AZURE_CLIENT_SECRET`. Detonator reads this from either the process environment or a `.env` file in the repository root. To configure the latter, copy `.env.sample` to `.env` and set:
+
+```dotenv
+MDE_AZURE_CLIENT_SECRET=your-client-secret
+```
+
+Values supplied through the process environment take precedence over `.env`. When configured, Detonator will poll MDE for alerts tied to the submission’s device ID during the configured detection window and automatically resolve them once the window expires. 
 
 Make sure that all components (Detonator Linux, VM etc.) have the correct time configured.
 
@@ -30,7 +36,7 @@ Make sure that all components (Detonator Linux, VM etc.) have the correct time c
    - `SecurityAlert.Read.All` and `SecurityAlert.ReadWrite.All`  
    - `SecurityIncident.Read.All` and `SecurityIncident.ReadWrite.All` *(needed if you want Detonator to auto-close related incidents)*  
    - `ThreatHunting.Read.All`
-3. Under **Certificates & secrets**, create a **client secret**; copy the value into an environment variable (e.g., `export MDE_LAB_CLIENT_SECRET="..."`).  
+3. Under **Certificates & secrets**, create a **client secret**; copy the value to `MDE_AZURE_CLIENT_SECRET` in the process environment or the repository-root `.env` file.  
 4. Use the app’s **Application (client) ID**, tenant ID in each profile’s `mde` block as shown above, and export `MDE_AZURE_CLIENT_SECRET`. Detonator automatically requests the `https://api.security.microsoft.com/.default` scope, so you don’t need to configure it per profile.
 
 You can test it using `tools/mde_log_test.py` (make sure there are some alerts for that machine). 
