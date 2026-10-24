@@ -37,10 +37,11 @@ Add-Content -Path $authorizedKeysFile -Value $authorizedKey
 #################
 # Add/Install SSH
 
-# This is slow as fuck, completely unusable
-# Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+# This is slow as fuck, completely fucking unusable piece of shit microsoft
+# better do:  (not verified)
+#   winget install "openssh preview"
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 
-winget install "openssh preview"
 Start-Service sshd
 Set-Service -Name sshd -StartupType 'Automatic'
 New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
