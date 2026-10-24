@@ -39,6 +39,15 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlo
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultUsername" -Value $user -PropertyType String -Force
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultPassword" -Value $password -PropertyType String -Force
 
+# Newer windows require this too? (or we get a "Other user" "Please enter a user name and password" on boot)
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "DefaultDomainName" -Value $env:COMPUTERNAME -PropertyType String -Force
+
+# This maybe needed too who the fuck knows
+$passwordlessPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device"
+if (!(Test-Path $passwordlessPath)) { New-Item -Path $passwordlessPath -Force | Out-Null }
+New-ItemProperty -Path $passwordlessPath -Name "DevicePasswordLessBuildVersion" -Value 0 -PropertyType DWord -Force
+
+
 # Disable hibernation (and with it fast startup)
 # This is extremely important for Proxmox Revert-To-Snapshot style
 # functionality for ETW-TI and Hooking (allow self-signed kernel drivers)
